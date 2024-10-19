@@ -1,298 +1,409 @@
 ﻿namespace rec RTOpenAI.Ws
 open System
 
+// Shared Types
+type InputAudioTranscription =
+    {
+        model: string option
+        enabled: bool option
+    }
+
+type TurnDetection =
+    {
+        ``type``: string
+        threshold: float option
+        prefix_padding_ms: int option
+        silence_duration_ms: int option
+    }
+
+type Property =
+    {
+        ``type``: string
+    }
+
+type Parameters =
+    {
+        ``type``: string
+        properties: Map<string, Property>
+        required: string list
+    }
+
+type Tool =
+    {
+        ``type``: string
+        name: string
+        description: string
+        parameters: Parameters
+    }
+
+type Session =
+    {
+        id: string option
+        ``object``: string option
+        model: string option
+        modalities: string list option
+        instructions: string option
+        voice: string option
+        input_audio_format: string option
+        output_audio_format: string option
+        input_audio_transcription: InputAudioTranscription option
+        turn_detection: TurnDetection option
+        tools: Tool list option
+        tool_choice: string option
+        temperature: float option
+        max_output_tokens: int option
+    }
+
+type ErrorDetail =
+    {
+        ``type``: string
+        code: string
+        message: string
+        param: string option
+        event_id: string option
+    }
+
+type Usage =
+    {
+        total_tokens: int
+        input_tokens: int
+        output_tokens: int
+    }
+
+// Client Event Record Types
+type SessionUpdateEvent =
+    {
+        event_id: string
+        ``type``: string  // "session.update"
+        session: Session
+    }
+
+type InputAudioBufferAppendEvent =
+    {
+        event_id: string
+        ``type``: string  // "input_audio_buffer.append"
+        audio: string  // Base64 encoded audio data
+    }
+
+type InputAudioBufferCommitEvent =
+    {
+        event_id: string
+        ``type``: string  // "input_audio_buffer.commit"
+    }
+
+type InputAudioBufferClearEvent =
+    {
+        event_id: string
+        ``type``: string  // "input_audio_buffer.clear"
+    }
+
+type ConversationItemCreateEvent =
+    {
+        event_id: string
+        ``type``: string  // "conversation.item.create"
+        previous_item_id: string option
+        item: ConversationItem
+    }
+
+type ConversationItemTruncateEvent =
+    {
+        event_id: string
+        ``type``: string  // "conversation.item.truncate"
+        item_id: string
+        content_index: int
+        audio_end_ms: int
+    }
+
+type ConversationItemDeleteEvent =
+    {
+        event_id: string
+        ``type``: string  // "conversation.item.delete"
+        item_id: string
+    }
+
+type ResponseCreateEvent =
+    {
+        event_id: string
+        ``type``: string  // "response.create"
+        response: Response
+    }
+
+type ResponseCancelEvent =
+    {
+        event_id: string
+        ``type``: string  // "response.cancel"
+    }
+
+type ConversationItemContent =
+    {
+        ``type``: string
+        text: string option
+        transcript: string option
+    }
+
+type ConversationItem =
+    {
+        id: string
+        ``type``: string  // e.g., "message"
+        status: string
+        role: string
+        content: ConversationItemContent list
+    }
+
+type Response =
+    {
+        modalities: string list option
+        instructions: string option
+        voice: string option
+        output_audio_format: string option
+        tools: Tool list option
+        tool_choice: string option
+        temperature: float option
+        max_output_tokens: int option
+    }
+
+
 type ClientEvent =
-| SessionUpdate             of SessionUpdate
-| InputAudioBufferAppend    of InputAudioBufferAppend
-| InputAudioBufferCommit    of InputAudioBufferCommit
-| InputAudioBufferClear     of InputAudioBufferClear
-| ConversationItemCreate    of ConversationItemCreate
-| ConversationItemTruncate  of ConversationItemDelete
-| ResponseCreate            of ResponseCreate
-| ResponseCancel            of ResponseCancel
+    | SessionUpdate of SessionUpdateEvent
+    | InputAudioBufferAppend of InputAudioBufferAppendEvent
+    | InputAudioBufferCommit of InputAudioBufferCommitEvent
+    | InputAudioBufferClear of InputAudioBufferClearEvent
+    | ConversationItemCreate of ConversationItemCreateEvent
+    | ConversationItemTruncate of ConversationItemTruncateEvent
+    | ConversationItemDelete of ConversationItemDeleteEvent
+    | ResponseCreate of ResponseCreateEvent
+    | ResponseCancel of ResponseCancelEvent
 
-type SessionUpdate = {
-    event_id: string
-    ``type``: string
-    session: Session
-}
+// Server Event Record Types
+type ErrorEvent =
+    {
+        event_id: string
+        ``type``: string  // "error"
+        error: ErrorDetail
+    }
 
-and Session = {
-    modalities: string list
-    instructions: string
-    voice: string
-    input_audio_format: string
-    output_audio_format: string
-    input_audio_transcription: InputAudioTranscription
-    turn_detection: TurnDetection
-    tools: Tool list
-    tool_choice: string
-    temperature: float
-    max_output_tokens: int option
-}
+type SessionCreatedEvent =
+    {
+        event_id: string
+        ``type``: string  // "session.created"
+        session: Session
+    }
 
-and InputAudioTranscription = {
-    model: string
-}
+type SessionUpdatedEvent =
+    {
+        event_id: string
+        ``type``: string  // "session.updated"
+        session: Session
+    }
 
-and TurnDetection = {
-    ``type``: string
-    threshold: float
-    prefix_padding_ms: int
-    silence_duration_ms: int
-}
+type ConversationCreatedEvent =
+    {
+        event_id: string
+        ``type``: string  // "conversation.created"
+        conversation: Conversation
+    }
 
-and Tool = {
-    ``type``: string
-    name: string
-    description: string
-    parameters: Parameters
-}
+type ConversationItemCreatedEvent =
+    {
+        event_id: string
+        ``type``: string  // "conversation.item.created"
+        previous_item_id: string option
+        item: ConversationItem
+    }
 
-and Parameters = {
-    ``type``: string
-    properties: Properties
-    required: string list
-}
+type ConversationItemInputAudioTranscriptionCompletedEvent =
+    {
+        event_id: string
+        ``type``: string  // "conversation.item.input_audio_transcription.completed"
+        item_id: string
+        content_index: int
+        transcript: string
+    }
 
-and Properties = {
-    location: Location option
-    a: A option
-    b: B option
-}
+type ConversationItemInputAudioTranscriptionFailedEvent =
+    {
+        event_id: string
+        ``type``: string  // "conversation.item.input_audio_transcription.failed"
+        item_id: string
+        content_index: int
+        error: ErrorDetail
+    }
 
-and Location = {
-    ``type``: string
-}
+type ConversationItemTruncatedEvent =
+    {
+        event_id: string
+        ``type``: string  // "conversation.item.truncated"
+        item_id: string
+        content_index: int
+        audio_end_ms: int
+    }
 
-and A = {
-    ``type``: string
-}
+type ConversationItemDeletedEvent =
+    {
+        event_id: string
+        ``type``: string  // "conversation.item.deleted"
+        item_id: string
+    }
 
-and B = {
-    ``type``: string
-}
+type InputAudioBufferCommittedEvent =
+    {
+        event_id: string
+        ``type``: string  // "input_audio_buffer.committed"
+        previous_item_id: string option
+        item_id: string
+    }
 
-type InputAudioBufferAppend = {
-    event_id: string
-    ``type``: string
-    audio: string
-}
+type InputAudioBufferClearedEvent =
+    {
+        event_id: string
+        ``type``: string  // "input_audio_buffer.cleared"
+    }
 
-type InputAudioBufferCommit = {
-    event_id: string
-    ``type``: string
-}
+type InputAudioBufferSpeechStartedEvent =
+    {
+        event_id: string
+        ``type``: string  // "input_audio_buffer.speech_started"
+        audio_start_ms: int
+        item_id: string
+    }
 
-type InputAudioBufferClear = {
-    event_id: string
-    ``type``: string
-}
+type InputAudioBufferSpeechStoppedEvent =
+    {
+        event_id: string
+        ``type``: string  // "input_audio_buffer.speech_stopped"
+        audio_end_ms: int
+        item_id: string
+    }
 
-type ConversationItemCreate = {
-    event_id: string
-    ``type``: string
-    previous_item_id: string option
-    item: Item
-}
+type ResponseCreatedEventServer =
+    {
+        event_id: string
+        ``type``: string  // "response.created"
+        response: ResponseDetails
+    }
 
-and Item = {
-    id: string
-    ``type``: string
-    status: string
-    role: string
-    content: Content list
-}
+type ResponseDoneEvent =
+    {
+        event_id: string
+        ``type``: string  // "response.done"
+        response: ResponseDetails
+    }
 
-and Content = {
-    ``type``: string
-    text: string
-}
+type ResponseOutputItemAddedEvent =
+    {
+        event_id: string
+        ``type``: string  // "response.output_item.added"
+        response_id: string
+        output_index: int
+        item: ResponseOutputItem
+    }
 
-type ConversationItemTruncate = {
-    event_id: string
-    ``type``: string
-    item_id: string
-    content_index: int
-    audio_end_ms: int
-}
+type ResponseOutputItemDoneEvent =
+    {
+        event_id: string
+        ``type``: string  // "response.output_item.done"
+        response_id: string
+        output_index: int
+        item: ResponseOutputItem
+    }
 
-type ConversationItemDelete = {
-    event_id: string
-    ``type``: string
-    item_id: string
-}
+type ResponseContentPartAddedEvent =
+    {
+        event_id: string
+        ``type``: string  // "response.content_part.added"
+        response_id: string
+        item_id: string
+        output_index: int
+        content_index: int
+        part: ContentPart
+    }
 
-type ResponseCreate = {
-    event_id: string
-    ``type``: string
-    response: Response
-}
+type ResponseContentPartDoneEvent =
+    {
+        event_id: string
+        ``type``: string  // "response.content_part.done"
+        response_id: string
+        item_id: string
+        output_index: int
+        content_index: int
+        part: ContentPart
+    }
 
-and Response = {
-    modalities: string list
-    instructions: string
-    voice: string
-    output_audio_format: string
-    tools: Tool list
-    tool_choice: string
-    temperature: float
-    max_output_tokens: int
-}
+type ResponseTextDeltaEvent =
+    {
+        event_id: string
+        ``type``: string  // "response.text.delta"
+        response_id: string
+        item_id: string
+        output_index: int
+        content_index: int
+        delta: string
+    }
 
-type ResponseCancel = {
-    event_id: string
-    ``type``: string
-}
+type ResponseTextDoneEvent =
+    {
+        event_id: string
+        ``type``: string  // "response.text.done"
+        response_id: string
+        item_id: string
+        output_index: int
+        content_index: int
+        text: string
+    }
 
+type Conversation =
+    {
+        id: string
+        ``object``: string
+    }
+
+type ResponseDetails =
+    {
+        id: string
+        ``object``: string
+        status: string
+        status_details: string option
+        output: ResponseOutputItem list
+        usage: Usage option
+    }
+
+type ResponseOutputItem =
+    {
+        id: string
+        ``object``: string
+        ``type``: string
+        status: string
+        role: string
+        content: ConversationItemContent list
+    }
+
+type ContentPart =
+    {
+        ``type``: string
+        text: string option
+        delta: string option
+        transcript: string option
+    }
 
 type ServerEvent =
-| Error of ErrorDetail
-| SessionCreated of SessionEvent
-| SessionUpdated
-| ConversationCreated
-| ConversationItemCreated
-| ConversationItemInputAudioTranscriptionCompleted
-| ConversationItemInputAudioTranscriptionFailed
-| ConversationItemTruncated
-| ConversationItemDeleted
-| InputAudioBufferCommitted
-| InputAudioBufferCleared
-| InputAudioBufferSpeechStarted
-| InputAudioBufferSpeechStopped
-| ResponseCreated
-| ResponseDone
-| ResponseOutputItemAdded
-| ResponseOutputItemDone
-| ResponseContentPartAdded
-| ResponseContentPartDone
-| ResponseTextDelta
-| ResponseTextDone
-| ResponseAudioTranscriptDelta
-| ResponseAudioTranscriptDone
-| ResponseAudioDelta
-| ResponseAudioDone
-| ResponseFunctionCallArgumentsDelta
-| ResponseFunctionCallArgumentsDone
-| RateLimitsUpdated
-
-type ErrorDetail = {
-    Type: string
-    Code: string
-    Message: string
-    Param: string option
-    EventId: string
-}
-
-type ErrorEvent = {
-    EventId: string
-    Type: string
-    Error: ErrorDetail
-}
-
-type SessionEvent = {
-    EventId: string
-    Type: string
-    Session: Session
-}
-
-type Conversation = {
-    Id: string
-    Object: string
-}
-
-type ConversationEvent = {
-    EventId: string
-    Type: string
-    Conversation: Conversation
-}
-
-type ItemContent = {
-    Type: string
-    Transcript: string option
-}
-
-
-type ConversationItemEvent = {
-    EventId: string
-    Type: string
-    PreviousItemId: string option
-    Item: Item
-}
-
-type TranscriptionError = {
-    Type: string
-    Code: string
-    Message: string
-    Param: string option
-}
-
-type TranscriptionFailedEvent = {
-    EventId: string
-    Type: string
-    ItemId: string
-    ContentIndex: int
-    Error: TranscriptionError
-}
-
-type TruncatedEvent = {
-    EventId: string
-    Type: string
-    ItemId: string
-    ContentIndex: int
-    AudioEndMs: int
-}
-
-type DeletedEvent = {
-    EventId: string
-    Type: string
-    ItemId: string
-}
-
-type InputAudioBufferEvent = {
-    EventId: string
-    Type: string
-    PreviousItemId: string option
-    ItemId: string option
-    AudioStartMs: int option
-    AudioEndMs: int option
-}
-
-type ResponseContent = {
-    Type: string
-    Text: string
-}
-
-type ResponseItem = {
-    Id: string
-    Object: string
-    Type: string
-    Status: string
-    Role: string
-    Content: ResponseContent list
-}
-
-type ResponseUsage = {
-    TotalTokens: int
-    InputTokens: int
-    OutputTokens: int
-}
-
-type ResponseEvent = {
-    EventId: string
-    Type: string
-    Response: Response
-}
-
-type RateLimit = {
-    Name: string
-    Limit: int
-    Remaining: int
-    ResetSeconds: int
-}
-
-type RateLimitsUpdatedEvent = {
-    EventId: string
-    Type: string
-    RateLimits: RateLimit list
-}
+    | Error of ErrorEvent
+    | SessionCreated of SessionCreatedEvent
+    | SessionUpdated of SessionUpdatedEvent
+    | ConversationCreated of ConversationCreatedEvent
+    | ConversationItemCreated of ConversationItemCreatedEvent
+    | ConversationItemInputAudioTranscriptionCompleted of ConversationItemInputAudioTranscriptionCompletedEvent
+    | ConversationItemInputAudioTranscriptionFailed of ConversationItemInputAudioTranscriptionFailedEvent
+    | ConversationItemTruncated of ConversationItemTruncatedEvent
+    | ConversationItemDeleted of ConversationItemDeletedEvent
+    | InputAudioBufferCommitted of InputAudioBufferCommittedEvent
+    | InputAudioBufferCleared of InputAudioBufferClearedEvent
+    | InputAudioBufferSpeechStarted of InputAudioBufferSpeechStartedEvent
+    | InputAudioBufferSpeechStopped of InputAudioBufferSpeechStoppedEvent
+    | ResponseCreated of ResponseCreatedEventServer
+    | ResponseDone of ResponseDoneEvent
+    | ResponseOutputItemAdded of ResponseOutputItemAddedEvent
+    | ResponseOutputItemDone of ResponseOutputItemDoneEvent
+    | ResponseContentPartAdded of ResponseContentPartAddedEvent
+    | ResponseContentPartDone of ResponseContentPartDoneEvent
+    | ResponseTextDelta of ResponseTextDeltaEvent
+    | ResponseTextDone of ResponseTextDoneEvent

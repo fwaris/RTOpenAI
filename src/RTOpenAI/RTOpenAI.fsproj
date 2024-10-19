@@ -34,7 +34,6 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <Compile Include="RTApi2.fs" />
     <Compile Include="RTApi.fs" />
     <Compile Include="App.fs" />
     <Compile Include="MauiProgram.fs" />
