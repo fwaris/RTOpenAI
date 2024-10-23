@@ -42,18 +42,15 @@ module Machine =
             {session with Conversation=[]}
 
         | Events.ServerEvent.ConversationItemTruncated e ->
-            dispatch (Log $"{e}") // not sure what to do here
             session
 
         | Events.ServerEvent.ConversationItemDeleted e ->
             {session with Conversation = Conversation.deleteItem e session.Conversation}
 
         | Events.ServerEvent.InputAudioBufferCommitted e ->
-            dispatch (Log $"{e}")
             session
 
         | Events.ServerEvent.InputAudioBufferCleared e ->
-            dispatch (Log $"{e}")
             {session with InputAudioBuffer=[]}
 
         | Events.ServerEvent.InputAudioBufferSpeechStarted e ->
@@ -107,19 +104,12 @@ module Machine =
         | Events.ServerEvent.RateLimitsUpdated e ->
             session
 
-
-    let run (initState:Session) machine dispatch = 
+    let run (state:Ref<Session>) machine dispatch = 
         let comp = 
             async {
-                let mutable state = initState
-                let mutable run = true
-                while run do
-                    match state.Ws.State with
-                    | WebSocketState.Open -> 
-                        let! s' = Session.nextEvent state.Ws state machine
-                        state <- s'
-                    | _ -> 
-                        run <- false
+                while state.Value.Ws.State = WebSocketState.Open do
+                    let! s' = Session.nextEvent state.Value.Ws state.Value machine
+                    state.Value <- s'
             }
         async {
             match! Async.Catch(comp) with

@@ -5,11 +5,11 @@ open System.Text.Json.Serialization
 //default static properties added by github copilot
 //default values added manually
 
-(* Code gen notes
+(* Codegen notes
 - o1 largely got all objects correct 
-- Howver several corrections were needed to be properly compatible with API defs
+- However several corrections were needed to make event definitions correct as per API documentation
 - strongly typed and json converters added manually
-- o1 missed resonse.audio_... and later events (maybe due to token limit set in the api call)
+- o1 missed resonse.audio_... and later events (maybe due to token limit set in the codegen api call)
 *)
 
 // Shared Types
