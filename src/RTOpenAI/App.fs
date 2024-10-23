@@ -6,21 +6,10 @@ open Microsoft.Maui
 open Microsoft.Maui.Graphics
 open Microsoft.Maui.Accessibility
 open Microsoft.Maui.Primitives
-
 open type Fabulous.Maui.View
 
 module App =
     let inline debug (s:'a) = System.Diagnostics.Debug.WriteLine(s)
-    type Measure = {Date: DateTime; Weight: float}
-    let testData = [ {Date = DateTime.Now; Weight = 100.}; {Date = DateTime.Now; Weight = 200.}]
-    type Model = 
-        { 
-            weights  : Measure list        
-        }
-
-    type Msg = | Export | Clicked  | SetWeight of string
-
-    type CmdMsg = SemanticAnnounce of string 
 
     let semanticAnnounce text =
         Cmd.ofSub(fun _ -> SemanticScreenReader.Announce(text))
@@ -28,6 +17,11 @@ module App =
     let mapCmd cmdMsg =
         match cmdMsg with
         | SemanticAnnounce text -> semanticAnnounce text
+
+    let testData = [
+        { Date = DateTime.Now; Weight = 100.0 }
+        { Date = DateTime.Now.AddDays(-1.); Weight = 99.0 }
+    ]
 
     let init () = { weights=testData }, []
 
@@ -84,4 +78,6 @@ module App =
             )
         )
 
-    let program = Program.statefulWithCmdMsg init update view mapCmd
+    let program = 
+        Program.statefulWithCmdMsg init update view mapCmd
+        
