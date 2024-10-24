@@ -1,4 +1,5 @@
 ﻿namespace RTOpenAI
+open System
 open System.Net.WebSockets
 
 module Machine =
@@ -51,7 +52,7 @@ module Machine =
             session
 
         | Events.ServerEvent.InputAudioBufferCleared e ->
-            {session with InputAudioBuffer=[]}
+            session
 
         | Events.ServerEvent.InputAudioBufferSpeechStarted e ->
             session

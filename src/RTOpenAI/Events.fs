@@ -6,9 +6,9 @@ open System.Text.Json.Serialization
 //default values added manually
 
 (* Codegen notes
-- o1 largely got all objects correct 
+- o1 largely got all objects correct (almost 450 lines of code with no compile errors)
 - However several corrections were needed to make event definitions correct as per API documentation
-- strongly typed and json converters added manually
+- Strongly typed properties and json converters added manually
 - o1 missed resonse.audio_... and later events (maybe due to token limit set in the codegen api call)
 *)
 
@@ -268,6 +268,7 @@ type ConversationItem =
         name : string option
         arguments : string option
         output : string option
+        audio : int16[] list
    }
    with static member Default = 
                 { 
@@ -281,6 +282,7 @@ type ConversationItem =
                     name = None
                     arguments = None
                     output = None
+                    audio = []
                 }
 
 type Response =

@@ -1,5 +1,6 @@
 ﻿namespace RTOpenAI
 open System
+open System.Buffers
 open System.Threading
 open System.Net.WebSockets
 
@@ -7,7 +8,7 @@ type Session = {
         Ws : ClientWebSocket
         RTSession: Events.Session
         Conversation: Events.ConversationItem list
-        InputAudioBuffer: Events.InputAudioBufferAppendEvent list
+        InputAudioBuffer: int16[] list
         Response: Events.ServerEvent list
     }
 

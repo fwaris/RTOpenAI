@@ -6,6 +6,7 @@ type Measure = { Date: DateTime; Weight: float }
 type Model = 
     { 
         weights  : Measure list        
+        audioManager : Lazy<Plugin.Maui.Audio.IAudioManager>
     }
 
 type Msg = 

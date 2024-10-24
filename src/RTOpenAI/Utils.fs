@@ -59,3 +59,9 @@ module Utils =
         use outStream = new FileStream(outpath, FileMode.Create)
         decrStream.CopyTo(outStream)
 
+    let toInt16Buffer (base64:string) = 
+        let bytes = Convert.FromBase64String(base64) //pcm audio format little endian regardless of platform
+        let buff:int16[] = Array.zeroCreate (bytes.Length/2)
+        for i in 0..buff.Length-1 do
+            let short = BitConverter.ToInt16(bytes,i*2)
+            buff.[i] <- short
