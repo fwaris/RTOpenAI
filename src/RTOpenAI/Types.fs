@@ -11,19 +11,20 @@ type Model =
         isPlaying : bool
         audioSource : Plugin.Maui.Audio.IAudioSource option
         mailbox : System.Threading.Channels.Channel<Msg>
+        log : string list
     }
 
 and Msg = 
     | Export 
     | Play  
-    | PlayDone
+    | Play_Done
     | SetWeight of string
     | EventError of exn    
-    | SessionCreated
-    | SessionEnded
-    | Log of string
-    | RecordStartStop
-    | SetRecorder of Plugin.Maui.Audio.IAudioRecorder option * Plugin.Maui.Audio.IAudioSource option
-    | Error of exn
+    | Session_Created
+    | Session_Ended
+    | Log_Append of string
+    | Log_Clear
+    | Recorder_StartStop
+    | Recorder_Set of Plugin.Maui.Audio.IAudioRecorder option * Plugin.Maui.Audio.IAudioSource option
 
 type CmdMsg = SemanticAnnounce of string 

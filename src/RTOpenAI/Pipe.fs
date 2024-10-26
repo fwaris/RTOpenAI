@@ -5,62 +5,61 @@ open System.Threading
 open System.Net.WebSockets
 open System.Text
 open System.Text.Json
+open FSharp.Control.Websockets
 
 module Pipe = 
 
-    let sendRaw (client:ClientWebSocket) (message: string) = async {
-        let bytes = Encoding.UTF8.GetBytes(message)
-        let buffer = ArraySegment<byte>(bytes)
-        do! client.SendAsync(buffer, WebSocketMessageType.Text, true, CancellationToken.None) |> Async.AwaitTask
+    let sendRaw (client:ThreadSafeWebSocket.ThreadSafeWebSocket) (message: string) = async {
+        return! ThreadSafeWebSocket.sendMessageAsUTF8 client message
     }
 
-    let receiveRaw (client:ClientWebSocket) = async {
-        let buffer = ArraySegment<byte>(Array.zeroCreate 1024)
-        let! result = client.ReceiveAsync(buffer, CancellationToken.None) |> Async.AwaitTask
-        let message = Encoding.UTF8.GetString(buffer.Array, 0, result.Count)
-        return message
+    let receiveRaw (client:ThreadSafeWebSocket.ThreadSafeWebSocket) = async {
+        return! ThreadSafeWebSocket.receiveMessageAsUTF8 client
     }
 
-    let send<'t> (client:ClientWebSocket) (message: 't) = async {
+    let send<'t> (client:ThreadSafeWebSocket.ThreadSafeWebSocket) (message: 't) = async {
         let json = JsonSerializer.Serialize(message)
-        do! sendRaw client json
+        return! sendRaw client json
     }
 
-    let receive<'t> (client:ClientWebSocket) = async {
-        let! message = receiveRaw client
-        let result = JsonSerializer.Deserialize<'t>(message)
-        return result
+    let receive<'t> (client:ThreadSafeWebSocket.ThreadSafeWebSocket) = async {
+        let! rslt = receiveRaw client
+        return 
+            rslt
+            |> Result.map (function 
+                | WebSocket.ReceiveUTF8Result.String text -> JsonSerializer.Deserialize<'t>(text) |> Some
+                | _ -> None) //socket closed
     }
 
-    let sendEvent (client:ClientWebSocket) (event: Events.ClientEvent) = async {
+    let sendEvent (client:ThreadSafeWebSocket.ThreadSafeWebSocket) (event: Events.ClientEvent) = async {
         match event with
         | Events.ClientEvent.SessionUpdate session -> 
             let message = JsonSerializer.Serialize(session)
-            do! sendRaw client message
+            return! sendRaw client message
         | Events.ClientEvent.ConversationItemCreate item -> 
             let message = JsonSerializer.Serialize(item)
-            do! sendRaw client message
+            return! sendRaw client message
         | Events.ClientEvent.ConversationItemDelete item -> 
             let message = JsonSerializer.Serialize(item)
-            do! sendRaw client message
+            return! sendRaw client message
         | Events.ClientEvent.ConversationItemTruncate item -> 
             let message = JsonSerializer.Serialize(item)
-            do! sendRaw client message
+            return! sendRaw client message
         | Events.ClientEvent.InputAudioBufferAppend buffer -> 
             let message = JsonSerializer.Serialize(buffer)
-            do! sendRaw client message
+            return! sendRaw client message
         | Events.ClientEvent.InputAudioBufferClear buffer -> 
             let message = JsonSerializer.Serialize(buffer)
-            do! sendRaw client message
+            return! sendRaw client message
         | Events.ClientEvent.InputAudioBufferCommit buffer -> 
             let message = JsonSerializer.Serialize(buffer)
-            do! sendRaw client message
+            return! sendRaw client message
         | Events.ClientEvent.ResponseCancel response -> 
             let message = JsonSerializer.Serialize(response)
-            do! sendRaw client message
+            return! sendRaw client message
         | Events.ClientEvent.ResponseCreate response -> 
             let message = JsonSerializer.Serialize(response)
-            do! sendRaw client message
+            return! sendRaw client message
     }
 
     let toEvent (j: JsonDocument) =
@@ -89,7 +88,7 @@ module Pipe =
         | "response.text.done" -> Events.ResponseTextDone (JsonSerializer.Deserialize<Events.ResponseTextDoneEvent>(j))
         | x -> failwith $"Unknown event type '{x}'"
 
-    let receiveEvent (client:ClientWebSocket) = async {
-            let!  message = receive<JsonDocument> client
-            return toEvent message
+    let receiveEvent (client:ThreadSafeWebSocket.ThreadSafeWebSocket) = async {
+            let!  rslt = receive<JsonDocument> client
+            return rslt |> Result.map (Option.map toEvent)
         }

@@ -12,7 +12,7 @@ module Machine =
             session
 
         | Events.ServerEvent.SessionCreated e -> 
-            dispatch SessionCreated
+            dispatch Session_Created
             {session with RTSession=e.session}
 
         | Events.ServerEvent.SessionUpdated e ->            
@@ -114,7 +114,7 @@ module Machine =
             }
         async {
             match! Async.Catch(comp) with
-            | Choice1Of2 _ -> dispatch SessionEnded
+            | Choice1Of2 _ -> dispatch Session_Ended
             | Choice2Of2 ex -> dispatch (EventError ex)
         }
         |> Async.Start

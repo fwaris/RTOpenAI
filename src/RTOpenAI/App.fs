@@ -3,6 +3,7 @@ open System
 open System.IO
 open Fabulous
 open Fabulous.Maui
+open Microsoft.Maui.Controls
 open Microsoft.Maui
 open Microsoft.Maui.Graphics
 open Microsoft.Maui.Accessibility
@@ -37,7 +38,7 @@ module App =
                     use str = src.GetAudioStream()
                     let player = model.audioManager.Value.CreateAsyncPlayer(str)
                     do! player.PlayAsync(System.Threading.CancellationToken.None)
-                    if  not player.IsPlaying then model.mailbox.Writer.TryWrite(PlayDone) |> ignore
+                    if  not player.IsPlaying then model.mailbox.Writer.TryWrite(Play_Done) |> ignore
                 | None -> ()
             with ex -> 
                 debug ex.Message            
@@ -85,6 +86,7 @@ module App =
             isPlaying = false
             audioSource = None
             mailbox = System.Threading.Channels.Channel.CreateBounded<Msg>(30)
+            log = []
         },[]
 
     let update msg model =
@@ -92,43 +94,50 @@ module App =
         | Export -> model, []
         | SetWeight s -> debug s; model,[]
         | Play -> playRecording model; {model with isPlaying=true},[]
-        | PlayDone -> {model with isPlaying=false},[]
-        | RecordStartStop -> model,Cmd.OfTask.either startStopRecording model SetRecorder Error
-        | SetRecorder (rcdr,src) -> { model with recorder = rcdr; audioSource = src },[]
-        | Error exn -> debug exn.Message; model,[]
+        | Play_Done -> {model with isPlaying=false},[]
+        | Recorder_StartStop -> model,Cmd.OfTask.either startStopRecording model Recorder_Set EventError
+        | Recorder_Set (rcdr,src) -> { model with recorder = rcdr; audioSource = src },[]
+        | EventError exn -> debug exn.Message; model,[]
+        | Log_Append s -> { model with log = s::model.log |> List.truncate C.MAX_LOG },[]
+        | Log_Clear -> { model with log = [] },[]
+
+    let logView (model:Model) =
+        (ListView(model.log) (fun item -> TextCell($"{item}")))
+            .gridColumn(1)
+            .header(Label("Log"))
+            .horizontalScrollBarVisibility(ScrollBarVisibility.Never)
+
+    let controlsView (model:Model) = 
+        let indicatorViewRef = ViewRef<IndicatorView>()
+        (VStack(spacing = 25.) {
+            IndicatorView(indicatorViewRef)
+                .selectedIndicatorColor(Colors.Green)
+                .indicatorSize(24.)
+                .indicatorsShape(IndicatorShape.Circle)
+                .indicatorColor(Colors.LightGray)
+            Button("\ue037", Play)
+                .font(48,fontFamily = "MaterialIconsTwoTone")
+                .semantics(hint = "Counts the number of times you click")
+                .isEnabled(model.audioSource.IsSome && not model.isPlaying)
+                .centerHorizontal()
+            Button((if model.recorder.IsNone then "\ue029" else "\ue047") , Recorder_StartStop)
+                .font(48,fontFamily = "MaterialIconsTwoTone")
+                .semantics(hint = "Counts the number of times you click")
+                .centerHorizontal()
+        })
+            .padding(30., 0., 30., 0.)
+            .centerVertical()
+            .gridColumn(0)
+        
 
     let view model =
         Application(
             ContentPage(
                 ScrollView(
-                    (VStack(spacing = 25.) {                        
-                        (CollectionView(model.weights) (fun c -> 
-                            HStack(spacing = 10.) {
-                                Label(c.Date.ToString("yyyy-MM-dd"))
-                                    .font(size = 16.)
-                                    .centerHorizontal()
-                                Label(c.Weight.ToString())
-                                    .font(size = 16.)
-                                    .centerHorizontal()
-                            }))
-                            .width(200)
-                            .centerHorizontal()
-                        (ListView(model.weights) (fun m -> EntryCell(null,string m.Weight,SetWeight)))
-                            .width(200)
-                            .centerHorizontal()
-                            .header(Label("Weights"))
-                        Button("\ue037", Play)
-                            .font(48,fontFamily = "MaterialIconsTwoTone")
-                            .semantics(hint = "Counts the number of times you click")
-                            .isEnabled(model.audioSource.IsSome && not model.isPlaying)
-                            .centerHorizontal()
-                        Button((if model.recorder.IsNone then "\ue029" else "\ue047") , RecordStartStop)
-                            .font(48,fontFamily = "MaterialIconsTwoTone")
-                            .semantics(hint = "Counts the number of times you click")
-                            .centerHorizontal()
-                    })
-                        .padding(30., 0., 30., 0.)
-                        .centerVertical()
+                    Grid([Dimension.Star; Dimension.Star],[Dimension.Star]) {
+                        controlsView model
+                        logView model
+                    }
                 )
                     .width(300)
             )

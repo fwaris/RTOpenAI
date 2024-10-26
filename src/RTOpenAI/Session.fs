@@ -3,9 +3,10 @@ open System
 open System.Buffers
 open System.Threading
 open System.Net.WebSockets
+open FSharp.Control.Websockets
 
 type Session = {
-        Ws : ClientWebSocket
+        Ws : ThreadSafeWebSocket.ThreadSafeWebSocket
         RTSession: Events.Session
         Conversation: Events.ConversationItem list
         InputAudioBuffer: int16[] list
@@ -90,7 +91,7 @@ module Session =
             do! ws.ConnectAsync(uri, CancellationToken.None) |> Async.AwaitTask
             return 
                 {
-                    Ws=ws 
+                    Ws=ThreadSafeWebSocket.createFromWebSocket(ws)
                     RTSession=Events.Session.Default
                     Conversation=[]
                     Response=[]
@@ -98,8 +99,12 @@ module Session =
                 }
         }
 
-    let nextEvent (ws:ClientWebSocket) (state:'t) (stateMachine:('t * Events.ServerEvent) -> 't) =
+    let nextEvent (ws:ThreadSafeWebSocket.ThreadSafeWebSocket) (state:'t) (stateMachine:('t * Events.ServerEvent) -> 't) =
       async {
-            let! message = Pipe.receiveEvent ws
-            return stateMachine (state, message)
+            let! result = Pipe.receiveEvent ws
+            return
+                match result with
+                | Ok (Some message) -> stateMachine (state, message)
+                | Ok None -> failwith "websocket closed"
+                | Error x -> raise x.SourceException
         }
