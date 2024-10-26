@@ -38,6 +38,8 @@
 
   <Capabilities>
     <rescap:Capability Name="runFullTrust" />
+    <uap:Capability Name="musicLibrary"/>
+    <Capability Name="internetClient"/>
     <DeviceCapability Name="microphone"/>
     <DeviceCapability Name="webcam"/>  
   </Capabilities>

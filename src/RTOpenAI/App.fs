@@ -3,7 +3,6 @@ open System
 open System.IO
 open Fabulous
 open Fabulous.Maui
-open Fabulous.Maui.MediaElement
 open Microsoft.Maui
 open Microsoft.Maui.Graphics
 open Microsoft.Maui.Accessibility
@@ -12,6 +11,8 @@ open type Fabulous.Maui.View
 open Plugin.Maui.Audio
 open Microsoft.Maui.Storage
 open Microsoft.Maui.ApplicationModel
+open FSharp.Control
+open Microsoft.Maui.Storage
 
 module App =
     let inline debug (s:'a) = System.Diagnostics.Debug.WriteLine(s)
@@ -28,59 +29,73 @@ module App =
         { Date = DateTime.Now.AddDays(-1.); Weight = 99.0 }
     ]
 
-    let testFiles() =       
-        let fileNames = ["mysound.wav";"short-beep-tone-47916.mp3"]
-        async {
-            try 
-                for fileName in fileNames do
-                    let! exists = FileSystem.AppPackageFileExistsAsync(fileName) |> Async.AwaitTask
-                    let! size =
-                        async {
-                            if exists then
-                                use! str = FileSystem.OpenAppPackageFileAsync(fileName) |> Async.AwaitTask
-                                return str.Length
-                                
-                            else
-                                return 0
-                        }
-                    debug (sprintf "File %s exists: %b with size %d" fileName exists size)
-            with ex -> 
-                debug ex.Message
-        }
-
-    let playSound (model:Model) =
+    let playRecording (model:Model) =
         task {
-            do! testFiles()
             try
-                use! str = FileSystem.OpenAppPackageFileAsync("mysound.wav") 
-                let player = model.audioManager.Value.CreatePlayer(str)
-                debug $"Can seek: {player.CanSeek}"
-                debug $"Can set speed: {player.CanSetSpeed}"
-                debug $"Is playing: {player.IsPlaying}"
-                debug $"Volume: {player.Volume}"                
-                debug $"Curren position: {player.CurrentPosition}"
-                debug $"Durtion {player.Duration}"
-                MainThread.BeginInvokeOnMainThread(fun () ->
-                    try player.Play() with ex -> debug ex.Message
-                    player.Dispose()
-                )
-                ()
+                match model.audioSource with 
+                | Some src -> 
+                    use str = src.GetAudioStream()
+                    let player = model.audioManager.Value.CreateAsyncPlayer(str)
+                    do! player.PlayAsync(System.Threading.CancellationToken.None)
+                    if  not player.IsPlaying then model.mailbox.Writer.TryWrite(PlayDone) |> ignore
+                | None -> ()
             with ex -> 
-                debug ex.Message
-            ()
+                debug ex.Message            
         }
         |> ignore
 
+    let getRecordPermission() = Permissions.RequestAsync<Permissions.Microphone>()
+
+    let startStopRecording (model:Model) =
+        task {
+            match model.recorder with
+            | Some rcdr ->    
+                let! s = rcdr.StopAsync()                
+                debug $"Recording stopped: {s}"
+                return None, Some s
+            | None -> 
+                let rcdr = model.audioManager.Value.CreateRecorder()
+                let! permission = MainThread.InvokeOnMainThreadAsync<PermissionStatus>(fun () -> getRecordPermission())
+                debug $"Permission: {permission}"
+                if permission = PermissionStatus.Granted then
+                    try 
+                        let temp = Path.GetRandomFileName()
+                        let fn = Path.Combine(FileSystem.CacheDirectory, temp + ".wav")
+                        do! File.Create(fn).DisposeAsync()
+                        debug $"Recording file: {fn}"
+                        let opts = AudioRecordingOptions()
+                        opts.Encoding <- Encoding.LinearPCM                        
+                        opts.BitDepth <- BitDepth.Pcm16bit                    
+                        do! rcdr.StartAsync(fn) 
+                        debug $"Recording started"
+                        return Some rcdr, None
+                    with ex ->
+                        debug ex.Message
+                        return None,None
+                else
+                    return None,None
+        }
 
     let init () = 
-        let audioManager = lazy( IPlatformApplication.Current.Services.GetService(typeof<IAudioManager>) :?> IAudioManager)
-        { weights=testData; audioManager=audioManager },[]
+        let audioManager = lazy(IPlatformApplication.Current.Services.GetService(typeof<IAudioManager>) :?> IAudioManager)
+        { 
+            weights=testData; 
+            audioManager=audioManager; 
+            recorder = None
+            isPlaying = false
+            audioSource = None
+            mailbox = System.Threading.Channels.Channel.CreateBounded<Msg>(30)
+        },[]
 
     let update msg model =
         match msg with
         | Export -> model, []
         | SetWeight s -> debug s; model,[]
-        | Clicked -> playSound model; model,[]
+        | Play -> playRecording model; {model with isPlaying=true},[]
+        | PlayDone -> {model with isPlaying=false},[]
+        | RecordStartStop -> model,Cmd.OfTask.either startStopRecording model SetRecorder Error
+        | SetRecorder (rcdr,src) -> { model with recorder = rcdr; audioSource = src },[]
+        | Error exn -> debug exn.Message; model,[]
 
     let view model =
         Application(
@@ -102,19 +117,15 @@ module App =
                             .width(200)
                             .centerHorizontal()
                             .header(Label("Weights"))
-                        Button("\ue029", Clicked)
+                        Button("\ue037", Play)
+                            .font(48,fontFamily = "MaterialIconsTwoTone")
+                            .semantics(hint = "Counts the number of times you click")
+                            .isEnabled(model.audioSource.IsSome && not model.isPlaying)
+                            .centerHorizontal()
+                        Button((if model.recorder.IsNone then "\ue029" else "\ue047") , RecordStartStop)
                             .font(48,fontFamily = "MaterialIconsTwoTone")
                             .semantics(hint = "Counts the number of times you click")
                             .centerHorizontal()
-                        MediaElement()
-                            .source("https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4")
-                            .centerHorizontal()
-                            .height(200.)
-                        //Image("dotnet_bot.png")
-                        //    .semantics(description = "Cute dotnet bot waving hi to you!")
-                        //    .height(200.)
-                        //    .centerHorizontal()
-
                     })
                         .padding(30., 0., 30., 0.)
                         .centerVertical()
@@ -123,7 +134,23 @@ module App =
             )
         )
 
-    let program  = 
+    
+    let subscribe model : Sub<Msg> =
+        let backgroundEvent dispatch =
+            async{
+                let comp = 
+                     model.mailbox.Reader.ReadAllAsync()
+                     |> AsyncSeq.ofAsyncEnum
+                     |> AsyncSeq.iter (fun msg -> debug $"{msg}"; dispatch msg)
+                match! Async.Catch(comp) with
+                | Choice1Of2 _ -> ()
+                | Choice2Of2 ex -> debug ex.Message
+            }
+            |> Async.Start
+            {new IDisposable with member __.Dispose() = model.mailbox.Writer.Complete()}
+        [ [ nameof backgroundEvent ], backgroundEvent ]
+
+    let program  =         
         Program.statefulWithCmd init update
+        |> Program.withSubscription subscribe
         |> Program.withView view
-   
