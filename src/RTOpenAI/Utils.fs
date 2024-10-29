@@ -6,6 +6,7 @@ open System.Text.Json.Serialization
 open System.Security.Cryptography
 
 module Utils =
+    let inline debug (s:'a) = System.Diagnostics.Debug.WriteLine(s)
 
     let newId() = 
         Guid.NewGuid().ToByteArray() 

@@ -28,12 +28,15 @@
   </PropertyGroup>
   <ItemGroup>
     <!--<Compile Include="Platforms\Windows\App.fs" />-->
+    <None Include="scripts\AudioProps.fsx" />
     <Compile Include="Constants.fs" />
+    <Compile Include="Icons.fs" />
     <Compile Include="Utils.fs" />
-    <Compile Include="Types.fs" />
     <Compile Include="Events.fs" />
     <Compile Include="Pipe.fs" />
+    <Compile Include="Player.fs" />
     <Compile Include="Session.fs" />
+    <Compile Include="Types.fs" />
     <Compile Include="Machine.fs" />
     <Compile Include="App.fs" />
     <Compile Include="MauiProgram.fs" />

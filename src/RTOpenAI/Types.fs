@@ -1,30 +1,23 @@
 ﻿namespace RTOpenAI
 open System
 
-type Measure = { Date: DateTime; Weight: float }
-
 type Model = 
     { 
-        weights  : Measure list        
+        player : Player
         audioManager : Lazy<Plugin.Maui.Audio.IAudioManager>
         recorder : Plugin.Maui.Audio.IAudioRecorder option
-        isPlaying : bool
-        audioSource : Plugin.Maui.Audio.IAudioSource option
-        mailbox : System.Threading.Channels.Channel<Msg>
+        mailbox : System.Threading.Channels.Channel<Msg>        
         log : string list
     }
 
 and Msg = 
     | Export 
-    | Play  
-    | Play_Done
-    | SetWeight of string
+    | Play_Stop  
     | EventError of exn    
     | Session_Created
     | Session_Ended
     | Log_Append of string
     | Log_Clear
     | Recorder_StartStop
-    | Recorder_Set of Plugin.Maui.Audio.IAudioRecorder option * Plugin.Maui.Audio.IAudioSource option
+    | Recorder_Set of Plugin.Maui.Audio.IAudioRecorder option
 
-type CmdMsg = SemanticAnnounce of string 

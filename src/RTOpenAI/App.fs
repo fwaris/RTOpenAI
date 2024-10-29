@@ -16,34 +16,7 @@ open FSharp.Control
 open Microsoft.Maui.Storage
 
 module App =
-    let inline debug (s:'a) = System.Diagnostics.Debug.WriteLine(s)
-
-    let semanticAnnounce text =
-        Cmd.ofMsg(SemanticScreenReader.Announce(text))
-
-    let mapCmd cmdMsg =
-        match cmdMsg with
-        | SemanticAnnounce text -> semanticAnnounce text
-
-    let testData = [
-        { Date = DateTime.Now; Weight = 100.0 }
-        { Date = DateTime.Now.AddDays(-1.); Weight = 99.0 }
-    ]
-
-    let playRecording (model:Model) =
-        task {
-            try
-                match model.audioSource with 
-                | Some src -> 
-                    use str = src.GetAudioStream()
-                    let player = model.audioManager.Value.CreateAsyncPlayer(str)
-                    do! player.PlayAsync(System.Threading.CancellationToken.None)
-                    if  not player.IsPlaying then model.mailbox.Writer.TryWrite(Play_Done) |> ignore
-                | None -> ()
-            with ex -> 
-                debug ex.Message            
-        }
-        |> ignore
+    open Utils
 
     let getRecordPermission() = Permissions.RequestAsync<Permissions.Microphone>()
 
@@ -51,9 +24,11 @@ module App =
         task {
             match model.recorder with
             | Some rcdr ->    
-                let! s = rcdr.StopAsync()                
-                debug $"Recording stopped: {s}"
-                return None, Some s
+                let! s = rcdr.StopAsync()
+                use ms = new MemoryStream()
+                do! s.GetAudioStream().CopyToAsync(ms)
+                model.player.Queue(ms.GetBuffer())
+                return None
             | None -> 
                 let rcdr = model.audioManager.Value.CreateRecorder()
                 let! permission = MainThread.InvokeOnMainThreadAsync<PermissionStatus>(fun () -> getRecordPermission())
@@ -66,25 +41,25 @@ module App =
                         debug $"Recording file: {fn}"
                         let opts = AudioRecordingOptions()
                         opts.Encoding <- Encoding.LinearPCM                        
-                        opts.BitDepth <- BitDepth.Pcm16bit                    
-                        do! rcdr.StartAsync(fn) 
+                        opts.BitDepth <- BitDepth.Pcm16bit   
+                        opts.Channels <- ChannelType.Mono
+                        opts.SampleRate <- 24000
+                        do! rcdr.StartAsync(fn,opts) 
                         debug $"Recording started"
-                        return Some rcdr, None
+                        return Some rcdr
                     with ex ->
                         debug ex.Message
-                        return None,None
+                        return None
                 else
-                    return None,None
+                    return None
         }
 
     let init () = 
         let audioManager = lazy(IPlatformApplication.Current.Services.GetService(typeof<IAudioManager>) :?> IAudioManager)
         { 
-            weights=testData; 
             audioManager=audioManager; 
             recorder = None
-            isPlaying = false
-            audioSource = None
+            player = Player()
             mailbox = System.Threading.Channels.Channel.CreateBounded<Msg>(30)
             log = []
         },[]
@@ -92,11 +67,9 @@ module App =
     let update msg model =
         match msg with
         | Export -> model, []
-        | SetWeight s -> debug s; model,[]
-        | Play -> playRecording model; {model with isPlaying=true},[]
-        | Play_Done -> {model with isPlaying=false},[]
+        | Play_Stop -> model.player.Stop(); model, []
         | Recorder_StartStop -> model,Cmd.OfTask.either startStopRecording model Recorder_Set EventError
-        | Recorder_Set (rcdr,src) -> { model with recorder = rcdr; audioSource = src },[]
+        | Recorder_Set rcdr -> { model with recorder = rcdr },[]
         | EventError exn -> debug exn.Message; model,[]
         | Log_Append s -> { model with log = s::model.log |> List.truncate C.MAX_LOG },[]
         | Log_Clear -> { model with log = [] },[]
@@ -108,19 +81,15 @@ module App =
             .horizontalScrollBarVisibility(ScrollBarVisibility.Never)
 
     let controlsView (model:Model) = 
-        let indicatorViewRef = ViewRef<IndicatorView>()
         (VStack(spacing = 25.) {
-            IndicatorView(indicatorViewRef)
-                .selectedIndicatorColor(Colors.Green)
-                .indicatorSize(24.)
-                .indicatorsShape(IndicatorShape.Circle)
-                .indicatorColor(Colors.LightGray)
-            Button("\ue037", Play)
+            Ellipse()
+                .size(10., 10.)
+                .background(Colors.Green)
+            Button(Icons.cancel, Play_Stop)
                 .font(48,fontFamily = "MaterialIconsTwoTone")
                 .semantics(hint = "Counts the number of times you click")
-                .isEnabled(model.audioSource.IsSome && not model.isPlaying)
                 .centerHorizontal()
-            Button((if model.recorder.IsNone then "\ue029" else "\ue047") , Recorder_StartStop)
+            Button((if model.recorder.IsNone then Icons.mic else Icons.stop) , Recorder_StartStop)
                 .font(48,fontFamily = "MaterialIconsTwoTone")
                 .semantics(hint = "Counts the number of times you click")
                 .centerHorizontal()
