@@ -14,18 +14,17 @@ open Plugin.Maui.Audio
 
     let stop() = 
         match _cancelToken with
-        | Some p ->  p.Cancel(); p.Dispose(); _cancelToken <- None
+        | Some p -> p.Cancel(); _cancelToken <-None; 
         | None -> ()
 
     let play (chunk:byte[]) = 
         async {
             try 
-                let str = new MemoryStream(chunk)
-                let player = audioManager.Value.CreateAsyncPlayer(str)
-                let tknSrc = new CancellationTokenSource()
+                use str = new MemoryStream(chunk)
+                use player = audioManager.Value.CreateAsyncPlayer(str)
+                use tknSrc = new CancellationTokenSource()
                 _cancelToken <- Some tknSrc
-                do! player.PlayAsync(tknSrc.Token) |> Async.AwaitTask
-                _cancelToken <- None
+                do! player.PlayAsync(tknSrc.Token) |> Async.AwaitTask              
                 Utils.debug "Audio played"
             with ex -> 
                 Utils.debug $"Failed to play audio: {ex.Message}"
@@ -37,10 +36,9 @@ open Plugin.Maui.Audio
         |> AsyncSeq.iterAsync play
         |> Async.Start
 
-    member this.Queue item = 
-        if not channel.IsValueCreated then startLoop()
-        let r = channel.Value.Writer.TryWrite(item) 
-        Utils.debug($"queued {r}")
     member this.Stop() = stop()
     member this.Dispose() = stop(); channel.Value.Writer.Complete()
     member this.IsPlaying() = _cancelToken.IsSome
+    member this.Channel = 
+        if not channel.IsValueCreated then startLoop()
+        channel.Value
