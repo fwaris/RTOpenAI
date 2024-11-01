@@ -1,9 +1,10 @@
 ﻿namespace RTOpenAI
 open System
+open LibVLCSharp.Shared
 
 type Model = 
-    { 
-        player : Plugin.Maui.Audio.IAudioPlayer option
+    {         
+        player : (LibVLC*MediaPlayer) option
         audioManager : Lazy<Plugin.Maui.Audio.IAudioManager>
         recorder : Plugin.Maui.Audio.IAudioRecorder option
         mailbox : System.Threading.Channels.Channel<Msg>        
@@ -14,6 +15,8 @@ type Model =
 
 and Msg = 
     | Export 
+    | Play_Start
+    | Play_Started of (LibVLC*MediaPlayer)
     | Play_Stop  
     | EventError of exn    
     | Session_Created

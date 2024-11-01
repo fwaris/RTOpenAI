@@ -14,6 +14,7 @@ open Microsoft.Maui.Storage
 open Microsoft.Maui.ApplicationModel
 open FSharp.Control
 open Microsoft.Maui.Storage
+open LibVLCSharp.Shared
 
 module App =
     open Utils
@@ -61,9 +62,10 @@ module App =
                         }
                         |> Async.Start
                         do! rcdr.StartPcmAsync(pipe)
-                        do! File.Create(fn).DisposeAsync()
-                        do! rcdr.StartAsync(fn, opts)
+                        //do! File.Create(fn).DisposeAsync()
+                        //do! rcdr.StartAsync(fn, opts)
                         debug $"Recording started"
+                        let player = model.audioManager.Value.CreateAsyncPlayer(pipe);
                         return Some (rcdr,null,pipe)
                     with ex ->
                         debug ex.Message
@@ -72,6 +74,35 @@ module App =
                     return None
         }
 
+    let mediaOptions = [|
+        ":demux=rawaud"
+        ":rawaud-channels=1"
+        ":rawaud-samplerate=22050"
+        ":rawaud-fourcc=s16l"
+    |]
+
+    let testPlay (model:Model) =
+        task {
+            let libvlc = new LibVLC()
+            let player = new MediaPlayer(libvlc)
+            let media1 = new Media(libvlc, @"C:\Users\Faisa\Music\PinkPanther30.wav", FromType.FromPath)
+            //let str = new MemoryStream()
+            //use str2 = File.OpenRead(@"C:\Users\Faisa\Music\PinkPanther30 - Copy.pcm")
+            //str2.CopyTo(str)
+            //str2.Dispose()
+            //str.Position <- 0L
+            //let inp = new StreamMediaInput(str)
+            //let format = "pcm://channels=1&sample_rate=44100&bits_per_sample=16&endianness=little"
+            //let media = new Media(libvlc,inp,mediaOptions)            
+            //media.AddOption("--inmem-get" + pointer)
+            player.Stopped.Add(fun x -> model.mailbox.Writer.TryWrite Play_Stop |> ignore)
+            player.Play(media1) |> ignore
+            return (libvlc,player)
+        }
+
+    let playStop (model:Model) = 
+        model.player |> Option.iter(fun (libvlc,player) -> player.Stop(); libvlc.Dispose())
+        {model with player = None},[]
 
     let init () = 
         let audioManager = lazy(IPlatformApplication.Current.Services.GetService(typeof<IAudioManager>) :?> IAudioManager)
@@ -94,7 +125,9 @@ module App =
     let update msg model =
         match msg with
         | Export -> model, []
-        | Play_Stop -> model.player |> Option.iter _.Stop(); model, []
+        | Play_Start -> model,Cmd.OfTask.either testPlay model Play_Started EventError
+        | Play_Started (libvlc,player) -> { model with player = Some (libvlc,player) },[]
+        | Play_Stop -> playStop model
         | Recorder_StartStop -> model,Cmd.OfTask.either startStopRecording model Recorder_Set EventError
         | Recorder_Set (Some (rcdr,str,pipe)) -> { model with recorder = Some rcdr; stream = Some str; audioPipe=Some pipe},[]
         | Recorder_Set None -> { model with recorder = None; stream = None; audioPipe = None },[]
@@ -113,6 +146,10 @@ module App =
             Ellipse()
                 .size(10., 10.)
                 .background(Colors.Green)
+            Button(Icons.play, Play_Start)
+                .font(48,fontFamily = "MaterialIconsTwoTone")
+                .semantics(hint = "Counts the number of times you click")
+                .centerHorizontal()
             Button(Icons.cancel, Play_Stop)
                 .font(48,fontFamily = "MaterialIconsTwoTone")
                 .semantics(hint = "Counts the number of times you click")
