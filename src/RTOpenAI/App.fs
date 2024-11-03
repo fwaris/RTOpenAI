@@ -3,20 +3,30 @@ open System
 open System.IO
 open Fabulous
 open Fabulous.Maui
-open Microsoft.Maui.Controls
 open Microsoft.Maui
-open Microsoft.Maui.Graphics
-open Microsoft.Maui.Accessibility
-open Microsoft.Maui.Primitives
-open type Fabulous.Maui.View
 open Plugin.Maui.Audio
 open Microsoft.Maui.Storage
 open Microsoft.Maui.ApplicationModel
 open FSharp.Control
-open Microsoft.Maui.Storage
 
 module App =
     open Utils
+    let init () = 
+        let audioManager = lazy(IPlatformApplication.Current.Services.GetService(typeof<IAudioManager>) :?> IAudioManager)
+        let pipe = System.Threading.Channels.Channel.CreateBounded<byte[]>(5)
+       // pipe.Writer.WriteAsync(Plugin.Maui.Audio.IAudioRecorder.StreamWaveFileHeader((24000, 16, 1))) |> ignore
+        //let player = audioManager.Value.CreatePlayer()
+        
+        //player.Play();
+        //player.PlaybackEnded.Add(fun x -> debug $"play stopped")
+        { 
+            audioManager=audioManager; 
+            recorder = None
+            playState = None
+            mailbox = System.Threading.Channels.Channel.CreateBounded<Msg>(30)
+            log = []            
+        },[]
+
     let tempFile() = Path.Combine(FileSystem.CacheDirectory, Path.GetRandomFileName() + ".wav")
 
     let getRecordPermission() = Permissions.RequestAsync<Permissions.Microphone>()
@@ -26,9 +36,9 @@ module App =
             match model.recorder with
             | Some rcdr ->    
                 do! rcdr.StopPcmAsync()
-                model.audioPipe |> Option.iter(fun p -> p.Writer.Complete())
-                do! Async.Sleep(100)
-                model.stream |> Option.iter(fun s -> s.Dispose())
+                //model.audioPipe |> Option.iter(fun p -> p.Writer.Complete())
+                //do! Async.Sleep(100)
+                //model.stream |> Option.iter(fun s -> s.Dispose())
                 //let! s = rcdr.StopAsync()
                 //use ms = new MemoryStream()
                 //do! s.GetAudioStream().CopyToAsync(ms)
@@ -44,8 +54,8 @@ module App =
                         debug $"Recording to: {fn}"                        
                         let pipe = System.Threading.Channels.Channel.CreateBounded<byte[]>(5)
                         let opts = AudioRecordingOptions()
-                        opts.Encoding <- Encoding.LinearPCM                        
-                        opts.BitDepth <- BitDepth.Pcm16bit   
+                        opts.Encoding <- Encoding.LinearPCM
+                        opts.BitDepth <- BitDepth.Pcm16bit
                         opts.Channels <- ChannelType.Mono
                         opts.SampleRate <- 24000
                         let str = fn |> File.Create :> Stream
@@ -72,74 +82,66 @@ module App =
                     return None
         }
 
+    let startPlay model = 
+        task {
+            let pipe = System.Threading.Channels.Channel.CreateBounded<byte[]>(5)
+            let pcm = @"C:\Users\Faisa\Music\PinkPanther30 - Copy.pcm"
+            let wav = @"C:\Users\Faisa\Music\PinkPanther30.wav"
+            //let ms :Stream = File.OpenRead(wav)
+            use ms = new MemoryStream(File.ReadAllBytes(wav))
+            ms.Position <- 0L
+            let player = model.audioManager.Value.CreateAsyncPlayer(ms)
+            //let wavBytes = ms.ToArray()
+            //let byteRate = 44100L
+            //let samples = buff.LongLength / byteRate
+            //let rem = buff.LongLength % byteRate
+            //let testHeader = wavBytes.[0..43]
+            //let waveHeader = Plugin.Maui.Audio.IAudioPlayer.WaveFileHeader(samples *  byteRate, 22050,2,16)
+            //pipe.Writer.WriteAsync(testHeader) |> ignore
+            //File.WriteAllBytes(@"C:\Users\Faisa\Music\PinkPanther30 - Copy.pcm.header",waveHeader)
+            let cts = new System.Threading.CancellationTokenSource()
+            //async {
+            //    let comp = 
+            //        wavBytes
+            //        |> Seq.chunkBySize 4096
+            //        |> AsyncSeq.ofSeq
+            //        |> AsyncSeq.iterAsync (fun bytes -> 
+            //            task {
+            //                use ts = new Threading.CancellationTokenSource()
+            //                //ts.CancelAfter(5000)
+            //                let! r = pipe.Writer.WaitToWriteAsync(ts.Token)
+            //                if r then
+            //                    do! pipe.Writer.WriteAsync(bytes)
+            //                else
+            //                   return failwith "Write timeout"
+            //             } |> Async.AwaitTask)
+            //    match! Async.Catch(comp) with
+            //    | Choice1Of2 _ -> ()
+            //    | Choice2Of2 ex -> debug ex.Message
+            //}
+            //|> Async.Start
+            //let player = model.audioManager.Value.CreateAsyncPlayer(pipe)
+            player.PlayAsync(cts.Token) |> ignore
+            return {Player=player; Token=cts; Pipe=pipe }
+        }
 
-    let init () = 
-        let audioManager = lazy(IPlatformApplication.Current.Services.GetService(typeof<IAudioManager>) :?> IAudioManager)
-        let pipe = System.Threading.Channels.Channel.CreateBounded<byte[]>(5)
-       // pipe.Writer.WriteAsync(Plugin.Maui.Audio.IAudioRecorder.StreamWaveFileHeader((24000, 16, 1))) |> ignore
-        //let player = audioManager.Value.CreatePlayer()
-        
-        //player.Play();
-        //player.PlaybackEnded.Add(fun x -> debug $"play stopped")
-        { 
-            audioManager=audioManager; 
-            recorder = None
-            player = None
-            mailbox = System.Threading.Channels.Channel.CreateBounded<Msg>(30)
-            audioPipe = None
-            log = []
-            stream = None
-        },[]
+    let stopPlay (model:Model) = 
+        match model.playState with
+        | Some p -> p.Token.Cancel(); p.Player.Dispose(); { model with playState = None },[]
+        | None -> model,[]
 
     let update msg model =
         match msg with
         | Export -> model, []
-        | Play_Stop -> model.player |> Option.iter _.Stop(); model, []
+        | Play_Start -> model, Cmd.OfTask.either startPlay model Play_Started EventError
+        | Play_Started p -> { model with playState = Some p },[]
+        | Play_Stop -> stopPlay model
         | Recorder_StartStop -> model,Cmd.OfTask.either startStopRecording model Recorder_Set EventError
-        | Recorder_Set (Some (rcdr,str,pipe)) -> { model with recorder = Some rcdr; stream = Some str; audioPipe=Some pipe},[]
-        | Recorder_Set None -> { model with recorder = None; stream = None; audioPipe = None },[]
+        | Recorder_Set (Some (rcdr,str,pipe)) -> { model with recorder=Some rcdr},[]
+        | Recorder_Set None -> { model with recorder = None},[]
         | EventError exn -> debug exn.Message; model,[]
         | Log_Append s -> { model with log = s::model.log |> List.truncate C.MAX_LOG },[]
         | Log_Clear -> { model with log = [] },[]
-
-    let logView (model:Model) =
-        (ListView(model.log) (fun item -> TextCell($"{item}")))
-            .gridColumn(1)
-            .header(Label("Log"))
-            .horizontalScrollBarVisibility(ScrollBarVisibility.Never)
-
-    let controlsView (model:Model) = 
-        (VStack(spacing = 25.) {
-            Ellipse()
-                .size(10., 10.)
-                .background(Colors.Green)
-            Button(Icons.cancel, Play_Stop)
-                .font(48,fontFamily = "MaterialIconsTwoTone")
-                .semantics(hint = "Counts the number of times you click")
-                .centerHorizontal()
-            Button((if model.recorder.IsNone then Icons.mic else Icons.stop) , Recorder_StartStop)
-                .font(48,fontFamily = "MaterialIconsTwoTone")
-                .semantics(hint = "Counts the number of times you click")
-                .centerHorizontal()
-        })
-            .padding(30., 0., 30., 0.)
-            .centerVertical()
-            .gridColumn(0)
-        
-
-    let view model =
-        Application(
-            ContentPage(
-                ScrollView(
-                    Grid([Dimension.Star; Dimension.Star],[Dimension.Star]) {
-                        controlsView model
-                        logView model
-                    }
-                )
-                    .width(300)
-            )
-        )
-
     
     let subscribe model : Sub<Msg> =
         let backgroundEvent dispatch =
@@ -159,4 +161,4 @@ module App =
     let program  =         
         Program.statefulWithCmd init update
         |> Program.withSubscription subscribe
-        |> Program.withView view
+        |> Program.withView View.view

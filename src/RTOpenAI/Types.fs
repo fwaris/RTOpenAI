@@ -1,19 +1,26 @@
 ﻿namespace RTOpenAI
 open System
 
+type PlayState = 
+    {
+        Player: Plugin.Maui.Audio.AsyncAudioPlayer; 
+        Token:System.Threading.CancellationTokenSource
+        Pipe: System.Threading.Channels.Channel<byte[]>
+    }
+
 type Model = 
     { 
-        player : Plugin.Maui.Audio.IAudioPlayer option
+        playState : PlayState option
         audioManager : Lazy<Plugin.Maui.Audio.IAudioManager>
         recorder : Plugin.Maui.Audio.IAudioRecorder option
         mailbox : System.Threading.Channels.Channel<Msg>        
-        audioPipe : System.Threading.Channels.Channel<byte[]> option
         log : string list
-        stream : System.IO.Stream option
     }
 
 and Msg = 
     | Export 
+    | Play_Start
+    | Play_Started of PlayState
     | Play_Stop  
     | EventError of exn    
     | Session_Created
