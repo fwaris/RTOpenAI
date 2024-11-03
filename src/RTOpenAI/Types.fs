@@ -2,21 +2,21 @@
 open System
 open LibVLCSharp.Shared
 
+type PlayState = {Lib:LibVLC; Player:MediaPlayer; Resources:IDisposable list; Pipe:System.Threading.Channels.Channel<byte[]>}
+
 type Model = 
     {         
-        player : (LibVLC*MediaPlayer) option
+        player : PlayState option
         audioManager : Lazy<Plugin.Maui.Audio.IAudioManager>
         recorder : Plugin.Maui.Audio.IAudioRecorder option
-        mailbox : System.Threading.Channels.Channel<Msg>        
-        audioPipe : System.Threading.Channels.Channel<byte[]> option
+        mailbox : System.Threading.Channels.Channel<Msg>                
         log : string list
-        stream : System.IO.Stream option
     }
 
 and Msg = 
     | Export 
     | Play_Start
-    | Play_Started of (LibVLC*MediaPlayer)
+    | Play_Started of PlayState
     | Play_Stop  
     | EventError of exn    
     | Session_Created

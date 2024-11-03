@@ -27,9 +27,9 @@ module App =
             match model.recorder with
             | Some rcdr ->    
                 do! rcdr.StopPcmAsync()
-                model.audioPipe |> Option.iter(fun p -> p.Writer.Complete())
+                //model.audioPipe |> Option.iter(fun p -> p.Writer.Complete())
                 do! Async.Sleep(100)
-                model.stream |> Option.iter(fun s -> s.Dispose())
+                //model.stream |> Option.iter(fun s -> s.Dispose())
                 //let! s = rcdr.StopAsync()
                 //use ms = new MemoryStream()
                 //do! s.GetAudioStream().CopyToAsync(ms)
@@ -85,23 +85,23 @@ module App =
         task {
             let libvlc = new LibVLC()
             let player = new MediaPlayer(libvlc)
-            let media1 = new Media(libvlc, @"C:\Users\Faisa\Music\PinkPanther30.wav", FromType.FromPath)
-            //let str = new MemoryStream()
-            //use str2 = File.OpenRead(@"C:\Users\Faisa\Music\PinkPanther30 - Copy.pcm")
-            //str2.CopyTo(str)
-            //str2.Dispose()
-            //str.Position <- 0L
-            //let inp = new StreamMediaInput(str)
-            //let format = "pcm://channels=1&sample_rate=44100&bits_per_sample=16&endianness=little"
-            //let media = new Media(libvlc,inp,mediaOptions)            
-            //media.AddOption("--inmem-get" + pointer)
+            let pipe = System.Threading.Channels.Channel.CreateBounded<byte[]>(5)
+            let wav = File.ReadAllBytes(@"C:\Users\Faisa\Music\PinkPanther30 - Copy.pcm")
+            let str = new Plugin.Maui.Audio.PcmInputStream(pipe)
+            let inp = new StreamMediaInput(str)
+            let media = new Media(libvlc,inp,mediaOptions)            
             player.Stopped.Add(fun x -> model.mailbox.Writer.TryWrite Play_Stop |> ignore)
-            player.Play(media1) |> ignore
-            return (libvlc,player)
+            player.Play(media) |> ignore
+            return {Lib=libvlc; Player=player; Resources=[str]; Pipe=pipe}
         }
 
     let playStop (model:Model) = 
-        model.player |> Option.iter(fun (libvlc,player) -> player.Stop(); libvlc.Dispose())
+        model.player 
+        |> Option.iter(fun playState -> 
+            playState.Player.Stop()
+            playState.Lib.Dispose()
+            playState.Resources |> List.iter _.Dispose()
+            playState.Pipe.Writer.Complete |> ignore)
         {model with player = None},[]
 
     let init () = 
@@ -117,20 +117,18 @@ module App =
             recorder = None
             player = None
             mailbox = System.Threading.Channels.Channel.CreateBounded<Msg>(30)
-            audioPipe = None
             log = []
-            stream = None
         },[]
 
     let update msg model =
         match msg with
         | Export -> model, []
         | Play_Start -> model,Cmd.OfTask.either testPlay model Play_Started EventError
-        | Play_Started (libvlc,player) -> { model with player = Some (libvlc,player) },[]
+        | Play_Started playState -> { model with player = Some playState },[]
         | Play_Stop -> playStop model
         | Recorder_StartStop -> model,Cmd.OfTask.either startStopRecording model Recorder_Set EventError
-        | Recorder_Set (Some (rcdr,str,pipe)) -> { model with recorder = Some rcdr; stream = Some str; audioPipe=Some pipe},[]
-        | Recorder_Set None -> { model with recorder = None; stream = None; audioPipe = None },[]
+        | Recorder_Set (Some (rcdr,str,pipe)) -> { model with recorder = Some rcdr},[]
+        | Recorder_Set None -> { model with recorder = None},[]
         | EventError exn -> debug exn.Message; model,[]
         | Log_Append s -> { model with log = s::model.log |> List.truncate C.MAX_LOG },[]
         | Log_Clear -> { model with log = [] },[]
