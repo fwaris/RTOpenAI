@@ -81,18 +81,50 @@ module App =
         ":rawaud-fourcc=s16l"
     |]
 
+    type UStream(str) =
+        inherit StreamMediaInput(str)
+        override _.Open(size) = 
+            let v = base.Open(&size)
+            size <- UInt64.MaxValue
+            v
+
     let testPlay (model:Model) =
         task {
             let libvlc = new LibVLC()
             let player = new MediaPlayer(libvlc)
-            let pipe = System.Threading.Channels.Channel.CreateBounded<byte[]>(5)
+            let copts = new System.Threading.Channels.BoundedChannelOptions(1000, SingleWriter = true, SingleReader = true)
+            let pipe = System.Threading.Channels.Channel.CreateBounded<byte[]>(copts)
             let wav = File.ReadAllBytes(@"C:\Users\Faisa\Music\PinkPanther30 - Copy.pcm")
             let str = new Plugin.Maui.Audio.PcmInputStream(pipe)
+            //let ms = new MemoryStream(wav)
             let inp = new StreamMediaInput(str)
             let media = new Media(libvlc,inp,mediaOptions)            
             player.Stopped.Add(fun x -> model.mailbox.Writer.TryWrite Play_Stop |> ignore)
             player.Play(media) |> ignore
-            return {Lib=libvlc; Player=player; Resources=[str]; Pipe=pipe}
+            let disp = 
+                {new IDisposable with
+                     member this.Dispose(): unit = 
+                         pipe.Writer.TryComplete() |> ignore                    
+                }
+            async {
+                let comp = 
+                    wav
+                    |> Seq.chunkBySize (22050 * 2)
+                    |> Seq.indexed
+                    |> AsyncSeq.ofSeq
+                    |> AsyncSeq.iterAsync (fun (i,bytes) -> 
+                        task {
+                            debug $"wrote: {bytes.Length} {i}"
+                            do! pipe.Writer.WriteAsync(bytes)
+                        }
+                        |> Async.AwaitTask)
+                    |> Async.Catch
+                match! comp with
+                | Choice1Of2 _ -> debug "done pipe"; pipe.Writer.TryComplete() |> ignore
+                | Choice2Of2 ex -> pipe.Writer.TryComplete() |> ignore; debug ex.Message
+            }
+            |> Async.Start
+            return {Lib=libvlc; Player=player; Resources=[str; disp]; Pipe=pipe}
         }
 
     let playStop (model:Model) = 

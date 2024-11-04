@@ -1,11 +1,12 @@
-#r "nuget: NAudio.Core"
+#r "nuget: MetadataExtractor, 2.9.0-rc2"
+open MetadataExtractor
 
-open System
-open NAudio.Wave
+let w1 = @"C:\Users\Faisa\Music\PinkPanther30.wav"
+let r1 = MetadataExtractor.Formats.Wav.WavMetadataReader.ReadMetadata(w1)
+r1.[0].Tags |> Seq.iter (fun x -> printfn "%A" x)
 
-let testFile = @"C:\Users\Faisa\AppData\Local\Packages\5D26BACE-A3ED-4E42-ABDA-1B0C073F7763_9zz4h110yvjzm\LocalCache\o551an5p.sog.wav"
 
+22050 = (44100 / 2)
 
-let wave = new WaveFileReader(testFile)
-wave.WaveFormat
-wave.Close()
+44100. * 10./ 8.;;
+
