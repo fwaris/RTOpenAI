@@ -159,12 +159,12 @@ let recordToFile (format:AudioFormat) (file:BinaryWriter) (token:System.Threadin
         printfn "Recording stopped"
     }
 
-let record() = 
+let record seconds (file:string) = 
     let comp = 
         async {
-            let cts = new System.Threading.CancellationTokenSource(5000)
+            let cts = new System.Threading.CancellationTokenSource(seconds * 1000)
             let audioFormat = { Frequency = 22050; BitsPerSample = 16; Channels = 1 }
-            use str = File.OpenWrite(@"C:\Users\Faisa\Music\recording.pcm")
+            use str = File.Create(file)
             use file = new BinaryWriter(str)
             do! recordToFile audioFormat file cts.Token |> Async.AwaitTask
         }
@@ -176,6 +176,8 @@ let record() =
     |> Async.Start
 
 (*
-record()
+let file = @"C:\Users\Faisa\Music\recording.pcm"
+record 20 file
+playPcmFile (File.ReadAllBytes(file))
 *)
 
