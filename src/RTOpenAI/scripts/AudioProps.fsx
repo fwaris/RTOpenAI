@@ -12,8 +12,9 @@ open Silk.NET.OpenAL
 open System.Threading
 open Silk.NET.OpenAL.Native.Extensions
 
-//let wav = File.ReadAllBytes(@"/Users/faisalwaris/Downloads/PinkPanther30.wav").[44..]
-let pp1 = File.ReadAllBytes(@"C:\Users\Faisa\Music\PinkPanther30.wav").[44..]
+let (@@) a b = Path.Combine(a,b)
+let root = Environment.GetFolderPath Environment.SpecialFolder.UserProfile @@ "rt"
+if Directory.Exists root |> not then Directory.CreateDirectory root |> ignore
 
 let sampleRate = 22050
 let format = BufferFormat.Mono16
@@ -174,10 +175,13 @@ let record seconds (file:string) =
         | Choice2Of2 ex -> printfn "Recording failed: %A" (ex.Message,ex.StackTrace)
     }
     |> Async.Start
+    
+
 
 (*
-let file = @"C:\Users\Faisa\Music\recording.pcm"
-record 20 file
+let file = root @@ "recording.pcm"
+
+record 5 file
 playPcmFile (File.ReadAllBytes(file))
 *)
 

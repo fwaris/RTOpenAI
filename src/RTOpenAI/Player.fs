@@ -1,44 +1,196 @@
 ﻿namespace RTOpenAI
 open System
 open System.IO
+open System.Diagnostics
 open System.Threading
 open System.Threading.Channels
 open FSharp.Control
-open Microsoft.Maui
-open Plugin.Maui.Audio
+open Silk.NET.OpenAL
+open FSharp.NativeInterop
 
- type Player() =
-    let audioManager = lazy(IPlatformApplication.Current.Services.GetService(typeof<IAudioManager>) :?> IAudioManager)
+type internal PlayState =
+        {
+            alc : ALContext
+            al : AL
+            device : nativeptr<Device>
+            context : nativeptr<Context>
+            buffers : uint[]
+            source : uint
+            mutable disposed : bool
+        }
+    with
+        static member private _checkError(al:AL,src:string) =
+            let err = al.GetError();
+            if err <> AudioError.NoError then
+                let msg = $"Audio processing error in {src}: %A{err}"
+                Log.error msg                
+                failwith msg
+                
+        member this.CheckError(src:string) = PlayState._checkError(this.al,src)
+            
+        static member Create() =
+            let alc = ALContext.GetApi()
+            let al = AL.GetApi()
+            PlayState._checkError(al,"init")
+            let device = alc.OpenDevice(String.Empty)
+            PlayState._checkError(al,"open device")            
+            let context = alc.CreateContext(device, NativePtr.nullPtr)
+            PlayState._checkError(al,"create context")            
+            let _ = alc.MakeContextCurrent(context)
+            PlayState._checkError(al,"make context concurrent")            
+            let buffers = al.GenBuffers(2)
+            PlayState._checkError(al,"gen buffers")            
+            let source = al.GenSource()
+            PlayState._checkError(al,"gen source")            
+            let state = 
+                {
+                    alc = alc
+                    al = al
+                    device = device
+                    context = context
+                    buffers = buffers
+                    source = source
+                    disposed = false
+                }
+            al.SetSourceProperty(source, SourceBoolean.SourceRelative, true)
+            state.CheckError("relative source")
+            al.SetSourceProperty(source,  SourceFloat.Gain, 1.0f )
+            state.CheckError("gain")
+            al.SetSourceProperty(source, SourceVector3.Position, 0.f,0.f,0.f)
+            state.CheckError("position")
+            state
+            
+        interface IDisposable with
+            member this.Dispose() =
+                this.disposed <- true
+                this.al.DeleteSource(this.source)
+                this.al.DeleteBuffers(this.buffers)
+                this.alc.DestroyContext(this.context)
+                this.alc.CloseDevice(this.device) |> ignore
+                this.alc.Dispose()
+                this.al.Dispose()
+                
+#nowarn "9" //suppress native interop warning
+type Player() =
+    let p = lazy(PlayState.Create())   
     let channel = lazy(Channel.CreateBounded<byte[]>(30))
     let mutable _cancelToken : CancellationTokenSource option = None
-
-    let stop() = 
+    
+    let _dequeueBuffer() = 
+        let mutable bcount = -1
+        p.Value.al.GetSourceProperty(p.Value.source, GetSourceInteger.BuffersProcessed, &bcount)
+        p.Value.CheckError("buffer count")
+        if bcount > 0 then            
+            let ptr = NativePtr.stackalloc<uint> 1
+            NativePtr.set ptr 0 0u
+            p.Value.al.SourceUnqueueBuffers(p.Value.source,1,ptr)
+            p.Value.CheckError("unqueue buffer")
+            Some (NativePtr.get ptr 0)
+          else
+            None
+    
+    let dequeueBuffer() =
         match _cancelToken with
-        | Some p -> p.Cancel(); _cancelToken <-None; 
+        | Some _ -> _dequeueBuffer() 
+        | None   -> None
+                
+    let enqueueChunk(chunk:byte[],b:uint) =
+        p.Value.al.BufferData(b,BufferFormat.Mono16,chunk,22050)
+        p.Value.CheckError("buffer data")
+        let ptr = NativePtr.stackalloc<uint> 1
+        NativePtr.set ptr 0 b
+        p.Value.al.SourceQueueBuffers(p.Value.source,1,ptr)
+        p.Value.CheckError("queue buffer")
+        
+    let checkState() = 
+        let mutable state = 0
+        p.Value.al.GetSourceProperty(p.Value.source, GetSourceInteger.SourceState, &state)
+        let st = enum<SourceState> state
+        printfn $"%A{st}"
+        
+    let processChunk (chunk:byte[]) =
+        async{
+            let mutable go = true
+            while go && _cancelToken.IsSome do
+                match dequeueBuffer() with
+                | Some b -> go <- false; enqueueChunk (chunk,b)
+                | None -> checkState(); do! Async.Sleep 100
+        }
+        
+    let readChunk() =
+        task {
+            let mutable chunk = Unchecked.defaultof<_>
+            let! r =  channel.Value.Reader.WaitToReadAsync(_cancelToken.Value.Token)
+            let  _ = channel.Value.Reader.TryRead(&chunk) 
+            return chunk               
+        }
+        
+    let primeBuffers() =
+        task {
+            for b in p.Value.buffers do
+                let! chunk = readChunk()
+                enqueueChunk(chunk,b)
+        }
+            
+    let startPlayLoop() =
+        if _cancelToken.IsNone then
+            _cancelToken <- Some (new CancellationTokenSource())
+            let comp = 
+                async {
+                    //at startup just queue all available buffers first
+                    do! primeBuffers() |> Async.AwaitTask
+                    p.Value.al.SourcePlay(p.Value.source)
+                    p.Value.CheckError("play")
+                    //then queue buffers as they become available 
+                    do! 
+                        asyncSeq {
+                            let mutable chunk = [||]
+                            while _cancelToken.IsSome && not _cancelToken.Value.Token.IsCancellationRequested do
+                                let! r =  channel.Value.Reader.WaitToReadAsync(_cancelToken.Value.Token).AsTask() |> Async.AwaitTask
+                                if r then
+                                    let mutable buff : byte[] = Unchecked.defaultof<_>            
+                                    let _ = channel.Value.Reader.TryRead(&chunk) 
+                                    yield chunk
+                        }
+                        |> AsyncSeq.iterAsync processChunk
+                }                                        
+            async {
+                match! Async.Catch comp with
+                | Choice1Of2 _ -> printfn "play done"
+                | Choice2Of2 ex -> Log.exn(ex,"Player.startPlayLoop")
+            }
+            |> Async.Start
+        else
+            Log.info "playLoop alreadyStarted"
+              
+    let cleanup()=
+        if channel.IsValueCreated then channel.Value.Writer.TryComplete() |> ignore
+        if p.IsValueCreated then (p.Value :> IDisposable).Dispose()
+                
+    let cancel() =
+        match _cancelToken with
+        | Some cts -> cts.Cancel(); _cancelToken <-None 
         | None -> ()
 
-    let play (chunk:byte[]) = 
-        async {
-            try 
-                use str = new MemoryStream(chunk)
-                use player = audioManager.Value.CreateAsyncPlayer(str)
-                use tknSrc = new CancellationTokenSource()
-                _cancelToken <- Some tknSrc
-                do! player.PlayAsync(tknSrc.Token) |> Async.AwaitTask              
-                Utils.debug "Audio played"
-            with ex -> 
-                Utils.debug $"Failed to play audio: {ex.Message}"
-        }
-
-    let startLoop() = 
-        channel.Value.Reader.ReadAllAsync()
-        |> AsyncSeq.ofAsyncEnum
-        |> AsyncSeq.iterAsync play
-        |> Async.Start
-
-    member this.Stop() = stop()
-    member this.Dispose() = stop(); channel.Value.Writer.Complete()
+    let stop() =
+        cancel()
+        if p.IsValueCreated then p.Value.al.SourceStop(p.Value.source)
+        cleanup()
+    
+    let play() =
+        startPlayLoop()
+        
+    let pause() =
+        cancel()
+        if p.IsValueCreated then p.Value.al.SourcePause(p.Value.source)
+    
+    let check() = if p.IsValueCreated && p.Value.disposed then raise (ObjectDisposedException("Player"))
+       
+    member this.Stop = stop
+    member this.Pause()  = check(); pause()
+    member this.Play() = check(); play()
     member this.IsPlaying() = _cancelToken.IsSome
-    member this.Channel = 
-        if not channel.IsValueCreated then startLoop()
-        channel.Value
+    member this.Channel = channel.Value
+
+    interface IDisposable with
+        member _.Dispose() = stop()

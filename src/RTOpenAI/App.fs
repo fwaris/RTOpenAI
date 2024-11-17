@@ -9,12 +9,10 @@ open Microsoft.Maui.Graphics
 open Microsoft.Maui.Accessibility
 open Microsoft.Maui.Primitives
 open type Fabulous.Maui.View
-open Plugin.Maui.Audio
 open Microsoft.Maui.Storage
 open Microsoft.Maui.ApplicationModel
 open FSharp.Control
 open Microsoft.Maui.Storage
-open LibVLCSharp.Shared
 
 module App =
     open Utils
@@ -25,48 +23,16 @@ module App =
     let startStopRecording (model:Model) =
         task {
             match model.recorder with
-            | Some rcdr ->    
-                do! rcdr.StopPcmAsync()
-                //model.audioPipe |> Option.iter(fun p -> p.Writer.Complete())
-                do! Async.Sleep(100)
-                //model.stream |> Option.iter(fun s -> s.Dispose())
-                //let! s = rcdr.StopAsync()
-                //use ms = new MemoryStream()
-                //do! s.GetAudioStream().CopyToAsync(ms)
-                //model.player.Queue(ms.GetBuffer())
+            | Some rcdr ->
+                rcdr.Stop()
                 return None
             | None -> 
-                let rcdr = model.audioManager.Value.CreateRecorder()
                 let! permission = MainThread.InvokeOnMainThreadAsync<PermissionStatus>(fun () -> getRecordPermission())
                 debug $"Permission: {permission}"
                 if permission = PermissionStatus.Granted then
                     try 
-                        let fn = tempFile()
-                        debug $"Recording to: {fn}"                        
-                        let pipe = System.Threading.Channels.Channel.CreateBounded<byte[]>(5)
-                        let opts = AudioRecordingOptions()
-                        opts.Encoding <- Encoding.LinearPCM                        
-                        opts.BitDepth <- BitDepth.Pcm16bit   
-                        opts.Channels <- ChannelType.Mono
-                        opts.SampleRate <- 24000
-                        let str = fn |> File.Create :> Stream
-                        let loop = 
-                            pipe.Reader.ReadAllAsync()
-                            |> AsyncSeq.ofAsyncEnum
-                            |> AsyncSeq.iterAsync (fun bytes -> str.WriteAsync(bytes.AsMemory()).AsTask() |> Async.AwaitTask)
-                            |> Async.Catch
-                        async {
-                            match! loop with 
-                            | Choice1Of2 _ -> ()
-                            | Choice2Of2 ex -> debug ex.Message
-                        }
-                        |> Async.Start
-                        do! rcdr.StartPcmAsync(pipe)
-                        //do! File.Create(fn).DisposeAsync()
-                        //do! rcdr.StartAsync(fn, opts)
-                        debug $"Recording started"
-                        let player = model.audioManager.Value.CreateAsyncPlayer(pipe);
-                        return Some (rcdr,null,pipe)
+                        let rcdr = new Recorder()
+                        return Some (rcdr)
                     with ex ->
                         debug ex.Message
                         return None
@@ -74,78 +40,38 @@ module App =
                     return None
         }
 
-    let mediaOptions = [|
-        ":demux=rawaud"
-        ":rawaud-channels=1"
-        ":rawaud-samplerate=22050"
-        ":rawaud-fourcc=s16l"
-    |]
-
-    type UStream(str) =
-        inherit StreamMediaInput(str)
-        override _.Open(size) = 
-            let v = base.Open(&size)
-            size <- UInt64.MaxValue
-            v
-
-    let testPlay (model:Model) =
+    let play (model:Model) =
         task {
-            let libvlc = new LibVLC()
-            let player = new MediaPlayer(libvlc)
-            let copts = new System.Threading.Channels.BoundedChannelOptions(1000, SingleWriter = true, SingleReader = true)
-            let pipe = System.Threading.Channels.Channel.CreateBounded<byte[]>(copts)
-            let wav = File.ReadAllBytes(@"C:\Users\Faisa\Music\PinkPanther30 - Copy.pcm")
-            let str = new Plugin.Maui.Audio.PcmInputStream(pipe)
-            //let ms = new MemoryStream(wav)
-            let inp = new StreamMediaInput(str)
-            let media = new Media(libvlc,inp,mediaOptions)            
-            player.Stopped.Add(fun x -> model.mailbox.Writer.TryWrite Play_Stop |> ignore)
-            player.Play(media) |> ignore
-            let disp = 
-                {new IDisposable with
-                     member this.Dispose(): unit = 
-                         pipe.Writer.TryComplete() |> ignore                    
-                }
+            model.player |> Option.iter (fun p -> p.Stop())
+            let player = new Player()
+            let mfolder = Environment.GetFolderPath(Environment.SpecialFolder.MyMusic)
+            let wav = File.ReadAllBytes(mfolder @@ "PinkPanther30.wav").[44..]
+            let comp = 
+                wav
+                |> Seq.chunkBySize (22050 * 2)
+                |> Seq.indexed
+                |> AsyncSeq.ofSeq
+                |> AsyncSeq.iterAsync (fun (i,bytes) -> 
+                    task {
+                        do! player.Channel.Writer.WriteAsync(bytes)
+                    }
+                    |> Async.AwaitTask)
             async {
-                let comp = 
-                    wav
-                    |> Seq.chunkBySize (22050 * 2)
-                    |> Seq.indexed
-                    |> AsyncSeq.ofSeq
-                    |> AsyncSeq.iterAsync (fun (i,bytes) -> 
-                        task {
-                            debug $"wrote: {bytes.Length} {i}"
-                            do! pipe.Writer.WriteAsync(bytes)
-                        }
-                        |> Async.AwaitTask)
-                    |> Async.Catch
-                match! comp with
-                | Choice1Of2 _ -> debug "done pipe"; pipe.Writer.TryComplete() |> ignore
-                | Choice2Of2 ex -> pipe.Writer.TryComplete() |> ignore; debug ex.Message
+                match! Async.Catch comp with
+                | Choice1Of2 _ -> printfn "all data written to channel"
+                | Choice2Of2 ex -> Log.exn(ex,"App.play")
             }
             |> Async.Start
-            return {Lib=libvlc; Player=player; Resources=[str; disp]; Pipe=pipe}
+            player.Play()
+            return (Some player)
         }
 
     let playStop (model:Model) = 
-        model.player 
-        |> Option.iter(fun playState -> 
-            playState.Player.Stop()
-            playState.Lib.Dispose()
-            playState.Resources |> List.iter _.Dispose()
-            playState.Pipe.Writer.Complete |> ignore)
+        model.player |> Option.iter (fun p -> p.Stop())
         {model with player = None},[]
 
     let init () = 
-        let audioManager = lazy(IPlatformApplication.Current.Services.GetService(typeof<IAudioManager>) :?> IAudioManager)
-        let pipe = System.Threading.Channels.Channel.CreateBounded<byte[]>(5)
-       // pipe.Writer.WriteAsync(Plugin.Maui.Audio.IAudioRecorder.StreamWaveFileHeader((24000, 16, 1))) |> ignore
-        //let player = audioManager.Value.CreatePlayer()
-        
-        //player.Play();
-        //player.PlaybackEnded.Add(fun x -> debug $"play stopped")
         { 
-            audioManager=audioManager; 
             recorder = None
             player = None
             mailbox = System.Threading.Channels.Channel.CreateBounded<Msg>(30)
@@ -155,11 +81,11 @@ module App =
     let update msg model =
         match msg with
         | Export -> model, []
-        | Play_Start -> model,Cmd.OfTask.either testPlay model Play_Started EventError
-        | Play_Started playState -> { model with player = Some playState },[]
+        | Play_Start -> model,Cmd.OfTask.either play model Play_Started EventError
+        | Play_Started player -> { model with player = player },[]
         | Play_Stop -> playStop model
         | Recorder_StartStop -> model,Cmd.OfTask.either startStopRecording model Recorder_Set EventError
-        | Recorder_Set (Some (rcdr,str,pipe)) -> { model with recorder = Some rcdr},[]
+        | Recorder_Set (Some (rcdr)) -> { model with recorder = Some rcdr},[]
         | Recorder_Set None -> { model with recorder = None},[]
         | EventError exn -> debug exn.Message; model,[]
         | Log_Append s -> { model with log = s::model.log |> List.truncate C.MAX_LOG },[]
@@ -178,8 +104,10 @@ module App =
                 .background(Colors.Green)
             Button(Icons.play, Play_Start)
                 .font(48,fontFamily = "MaterialIconsTwoTone")
-                .semantics(hint = "Counts the number of times you click")
+                .semantics(hint = "Play audio")
                 .centerHorizontal()
+                //.textColor(light = Colors.DarkBlue, dark = FabColor. )
+                
             Button(Icons.cancel, Play_Stop)
                 .font(48,fontFamily = "MaterialIconsTwoTone")
                 .semantics(hint = "Counts the number of times you click")

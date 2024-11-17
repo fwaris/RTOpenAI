@@ -5,6 +5,7 @@ open System.Text.Json
 open System.Text.Json.Serialization
 open System.Security.Cryptography
 
+[<AutoOpen>]
 module Utils =
     let inline debug (s:'a) = System.Diagnostics.Debug.WriteLine(s)
 

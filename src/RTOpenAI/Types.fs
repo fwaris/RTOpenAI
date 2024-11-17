@@ -1,14 +1,10 @@
 ﻿namespace RTOpenAI
 open System
-open LibVLCSharp.Shared
-
-type PlayState = {Lib:LibVLC; Player:MediaPlayer; Resources:IDisposable list; Pipe:System.Threading.Channels.Channel<byte[]>}
 
 type Model = 
     {         
-        player : PlayState option
-        audioManager : Lazy<Plugin.Maui.Audio.IAudioManager>
-        recorder : Plugin.Maui.Audio.IAudioRecorder option
+        player : Player option
+        recorder : Recorder option
         mailbox : System.Threading.Channels.Channel<Msg>                
         log : string list
     }
@@ -16,7 +12,7 @@ type Model =
 and Msg = 
     | Export 
     | Play_Start
-    | Play_Started of PlayState
+    | Play_Started of Player option
     | Play_Stop  
     | EventError of exn    
     | Session_Created
@@ -24,5 +20,5 @@ and Msg =
     | Log_Append of string
     | Log_Clear
     | Recorder_StartStop
-    | Recorder_Set of (Plugin.Maui.Audio.IAudioRecorder*System.IO.Stream * System.Threading.Channels.Channel<byte[]>) option
+    | Recorder_Set of Recorder option 
 

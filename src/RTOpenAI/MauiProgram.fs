@@ -1,7 +1,10 @@
 ﻿namespace RTOpenAI
+open System
 open Microsoft.Maui.Hosting
 open Microsoft.Extensions.DependencyInjection
 open Fabulous.Maui
+open Microsoft.Extensions.Logging
+
 //open Fabulous.Maui.MediaElement
 
 type MauiProgram =
@@ -17,5 +20,5 @@ type MauiProgram =
                     .AddFont("MaterialIconsTwoTone-Regular.otf", "MaterialIconsTwoTone")
                 |> ignore)
                 |> ignore
-        builder.Services.AddSingleton<Plugin.Maui.Audio.IAudioManager>(Plugin.Maui.Audio.AudioManager.Current) |> ignore
+        builder.Services.AddLogging(fun x -> x.AddConsole() |> ignore) |> ignore
         builder.Build()
