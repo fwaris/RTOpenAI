@@ -7,71 +7,9 @@ open System.Threading.Channels
 open FSharp.Control
 open Silk.NET.OpenAL
 open FSharp.NativeInterop
-
-type internal PlayState =
-        {
-            alc : ALContext
-            al : AL
-            device : nativeptr<Device>
-            context : nativeptr<Context>
-            buffers : uint[]
-            source : uint
-            mutable disposed : bool
-        }
-    with
-        static member private _checkError(al:AL,src:string) =
-            let err = al.GetError();
-            if err <> AudioError.NoError then
-                let msg = $"Audio processing error in {src}: %A{err}"
-                Log.error msg                
-                failwith msg
-                
-        member this.CheckError(src:string) = PlayState._checkError(this.al,src)
-            
-        static member Create() =
-            let alc = ALContext.GetApi()
-            let al = AL.GetApi()
-            PlayState._checkError(al,"init")
-            let device = alc.OpenDevice(String.Empty)
-            PlayState._checkError(al,"open device")            
-            let context = alc.CreateContext(device, NativePtr.nullPtr)
-            PlayState._checkError(al,"create context")            
-            let _ = alc.MakeContextCurrent(context)
-            PlayState._checkError(al,"make context concurrent")            
-            let buffers = al.GenBuffers(2)
-            PlayState._checkError(al,"gen buffers")            
-            let source = al.GenSource()
-            PlayState._checkError(al,"gen source")            
-            let state = 
-                {
-                    alc = alc
-                    al = al
-                    device = device
-                    context = context
-                    buffers = buffers
-                    source = source
-                    disposed = false
-                }
-            al.SetSourceProperty(source, SourceBoolean.SourceRelative, true)
-            state.CheckError("relative source")
-            al.SetSourceProperty(source,  SourceFloat.Gain, 1.0f )
-            state.CheckError("gain")
-            al.SetSourceProperty(source, SourceVector3.Position, 0.f,0.f,0.f)
-            state.CheckError("position")
-            state
-            
-        interface IDisposable with
-            member this.Dispose() =
-                this.disposed <- true
-                this.al.DeleteSource(this.source)
-                this.al.DeleteBuffers(this.buffers)
-                this.alc.DestroyContext(this.context)
-                this.alc.CloseDevice(this.device) |> ignore
-                this.alc.Dispose()
-                this.al.Dispose()
-                
 #nowarn "9" //suppress native interop warning
-type Player() =
+
+type Player(audioFormat:AudioFormat) =
     let p = lazy(PlayState.Create())   
     let channel = lazy(Channel.CreateBounded<byte[]>(30))
     let mutable _cancelToken : CancellationTokenSource option = None
@@ -95,7 +33,7 @@ type Player() =
         | None   -> None
                 
     let enqueueChunk(chunk:byte[],b:uint) =
-        p.Value.al.BufferData(b,BufferFormat.Mono16,chunk,22050)
+        p.Value.al.BufferData(b,audioFormat.BufferFormat,chunk,audioFormat.Frequency)
         p.Value.CheckError("buffer data")
         let ptr = NativePtr.stackalloc<uint> 1
         NativePtr.set ptr 0 b
@@ -141,7 +79,7 @@ type Player() =
                     do! primeBuffers() |> Async.AwaitTask
                     p.Value.al.SourcePlay(p.Value.source)
                     p.Value.CheckError("play")
-                    //then queue buffers as they become available 
+                    //then queue buffers as they become available from input data stream
                     do! 
                         asyncSeq {
                             let mutable chunk = [||]

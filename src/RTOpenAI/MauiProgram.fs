@@ -17,7 +17,7 @@ type MauiProgram =
                 fonts
                     .AddFont("OpenSans-Regular.ttf", "OpenSansRegular")
                     .AddFont("OpenSans-Semibold.ttf", "OpenSansSemibold")
-                    .AddFont("MaterialIconsTwoTone-Regular.otf", "MaterialIconsTwoTone")
+                    .AddFont("MaterialSymbols.ttf", "MaterialSymbols")
                 |> ignore)
                 |> ignore
         builder.Services.AddLogging(fun x -> x.AddConsole() |> ignore) |> ignore

@@ -35,6 +35,7 @@
     <Compile Include="Utils.fs" />
     <Compile Include="Events.fs" />
     <Compile Include="Pipe.fs" />
+    <Compile Include="Audio.fs" />
     <Compile Include="Player.fs" />
     <Compile Include="Recorder.fs" />
     <Compile Include="Session.fs" />
