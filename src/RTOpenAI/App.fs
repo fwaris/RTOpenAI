@@ -61,11 +61,12 @@ module App =
 
     let play (model:Model) =
         task {
-            if model.outputFile.IsNone then failwith "Nothing recorded"
+            //if model.outputFile.IsNone then failwith "Nothing recorded"
             model.player |> Option.iter (fun p -> p.Stop())
             let player = new Player(model.audioFormat)
-            //let mfolder = Environment.GetFolderPath(Environment.SpecialFolder.MyMusic)
-            let wav = File.ReadAllBytes(model.outputFile.Value)
+            let mfolder = Environment.GetFolderPath(Environment.SpecialFolder.MyMusic)
+            let wav = mfolder @@ "PinkPanther30 - Copy.pcm" |> File.ReadAllBytes
+            //let wav = File.ReadAllBytes(model.outputFile.Value)
             let comp = 
                 wav
                 |> Seq.chunkBySize (model.audioFormat.ByteRate * 2)

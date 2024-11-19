@@ -1,131 +1,131 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
-  <PropertyGroup>
-    <TargetFrameworks>net8.0-android;net8.0-ios;net8.0-maccatalyst</TargetFrameworks>
-    <TargetFrameworks Condition="$([MSBuild]::IsOSPlatform('windows'))">$(TargetFrameworks);net8.0-windows10.0.19041.0</TargetFrameworks>
-    <!-- Uncomment to also build the tizen app. You will need to install tizen by following this: https://github.com/Samsung/Tizen.NET -->
-    <!-- <TargetFrameworks>$(TargetFrameworks);net8.0-tizen</TargetFrameworks> -->
-    <OutputType>Exe</OutputType>
-    <RootNamespace>RTOpenAI</RootNamespace>
-    <UseMaui>true</UseMaui>
-    <SingleProject>true</SingleProject>
-    <EnableDefaultItems>false</EnableDefaultItems>
-    <DisableImplicitFSharpCoreReference>true</DisableImplicitFSharpCoreReference>
-    <!-- Display name -->
-    <ApplicationTitle>RTOpenAI</ApplicationTitle>
-    <!-- App Identifier -->
-    <ApplicationId>com.companyname.RTOpenAI</ApplicationId>
-    <ApplicationIdGuid>5D26BACE-A3ED-4E42-ABDA-1B0C073F7763</ApplicationIdGuid>
-    <!-- Versions -->
-    <ApplicationDisplayVersion>1.0</ApplicationDisplayVersion>
-    <ApplicationVersion>1</ApplicationVersion>
-    <TargetPlatformIdentifier Condition=" $(TargetPlatformIdentifier) == '' ">$([MSBuild]::GetTargetPlatformIdentifier('$(TargetFramework)'))</TargetPlatformIdentifier>
-    <SupportedOSPlatformVersion Condition="$(TargetPlatformIdentifier) == 'ios'">14.2</SupportedOSPlatformVersion>
-    <SupportedOSPlatformVersion Condition="$(TargetPlatformIdentifier) == 'maccatalyst'">14.0</SupportedOSPlatformVersion>
-    <SupportedOSPlatformVersion Condition="$(TargetPlatformIdentifier) == 'android'">21.0</SupportedOSPlatformVersion>
-    <SupportedOSPlatformVersion Condition="$(TargetPlatformIdentifier) == 'windows'">10.0.17763.0</SupportedOSPlatformVersion>
-    <TargetPlatformMinVersion Condition="$(TargetPlatformIdentifier) == 'windows'">10.0.17763.0</TargetPlatformMinVersion>
-    <SupportedOSPlatformVersion Condition="$(TargetPlatformIdentifier) == 'tizen'">6.5</SupportedOSPlatformVersion>
-  </PropertyGroup>
-  <ItemGroup>
-    <!--<Compile Include="Platforms\Windows\App.fs" />-->
-    <None Include="scripts\AudioProps.fsx" />
-    <Compile Include="Constants.fs" />
-    <Compile Include="Icons.fs" />
-    <Compile Include="Log.fs" />
-    <Compile Include="Utils.fs" />
-    <Compile Include="Events.fs" />
-    <Compile Include="Pipe.fs" />
-    <Compile Include="Audio.fs" />
-    <Compile Include="Player.fs" />
-    <Compile Include="Recorder.fs" />
-    <Compile Include="Session.fs" />
-    <Compile Include="Types.fs" />
-    <Compile Include="Machine.fs" />
-    <Compile Include="App.fs" />
-    <Compile Include="MauiProgram.fs" />
-  </ItemGroup>
-  <ItemGroup>
-    <!-- App Icon -->
-    <MauiIcon Include="Resources\AppIcon\appicon.svg" ForegroundFile="Resources\AppIcon\appiconfg.svg" Color="#512BD4" />
-    <!-- Custom Fonts -->
-    <MauiFont Include="Resources\Fonts\*" />
-    <!-- Images -->
-    <MauiImage Include="Resources\Images\*" />
-    <MauiImage Update="Resources\Images\dotnet_bot.svg" BaseSize="168,208" />
-	  <!-- Raw Assets (also remove the "Resources\Raw" prefix) -->
-	  <MauiAsset Include="Resources\Raw\*" LogicalName="%(RecursiveDir)%(Filename)%(Extension)" />
-	  <!-- Splash Screen -->
-    <MauiSplashScreen Include="Resources\Splash\splash.svg" Color="#512BD4" BaseSize="128,128" />
-  </ItemGroup>
-  <ItemGroup Condition="$(TargetPlatformIdentifier) == 'android'">
-    <AndroidResource Include="$(AndroidProjectFolder)Resources/*/*" />
-    <AndroidResource Remove="$(AndroidProjectFolder)Resources/raw/.*" />
-    <AndroidResource Update="$(AndroidProjectFolder)Resources/raw/*" />
-    <AndroidAsset Include="$(AndroidProjectFolder)Assets/**/*" Exclude="$(AndroidProjectFolder)Assets/**/.*/**" />
-    <AndroidManifest Include="$(AndroidProjectFolder)AndroidManifest.xml" />
-    <Compile Include="$(AndroidProjectFolder)MainActivity.fs" />
-    <Compile Include="$(AndroidProjectFolder)MainApplication.fs" />
-  </ItemGroup>
-  <ItemGroup Condition="$(TargetPlatformIdentifier) == 'ios'">
-    <None Include="$(iOSProjectFolder)Info.plist" LogicalName="Info.plist" />
-    <Compile Include="$(iOSProjectFolder)AppDelegate.fs" />
-    <Compile Include="$(iOSProjectFolder)Program.fs" />
-  </ItemGroup>
-  <ItemGroup Condition="$(TargetPlatformIdentifier) == 'maccatalyst'">
-    <None Include="$(MacCatalystProjectFolder)Info.plist" LogicalName="Info.plist" />
-    <Compile Include="$(MacCatalystProjectFolder)AppDelegate.fs" />
-    <Compile Include="$(MacCatalystProjectFolder)Program.fs" />
-  </ItemGroup>
-  <ItemGroup Condition="$(TargetPlatformIdentifier) == 'windows'">
-    <Manifest Include="$(WindowsProjectFolder)app.manifest" />
-    <AppxManifest Include="$(WindowsProjectFolder)Package.appxmanifest" />
-    <Compile Include="$(WindowsProjectFolder)App.fs" />
-    <Compile Include="$(WindowsProjectFolder)Main.fs" />
-    <PackageReference Include="FSharp.Maui.WinUICompat" Version="1.1.0" />
-  </ItemGroup>
-  <ItemGroup Condition="$(TargetPlatformIdentifier) == 'tizen'">
-    <TizenManifestFile Include="$(TizenProjectFolder)tizen-manifest.xml" />
-    <Compile Include="$(TizenProjectFolder)Main.fs" />
-  </ItemGroup>
-  <ItemGroup>
-	  <!--<PackageReference Include="Fabulous" Version="3.0.0-pre6" />-->
-    <PackageReference Include="Fabulous" Version="2.5.0-pre8" />
-    <PackageReference Include="Fabulous.MauiControls" Version="8.1.0-pre9" />
-    <PackageReference Include="FSharp.Control.AsyncSeq" Version="3.2.1" />
-    <PackageReference Include="FSharp.Control.Websockets" Version="0.3.0" />
-	<PackageReference Include="FSharp.Core" Version="8.0.401" />
-    <PackageReference Include="FSharp.SystemTextJson" Version="1.3.13" />
-    <PackageReference Include="Microsoft.Extensions.Logging.Console" Version="8.0.1" />
-    <PackageReference Include="Microsoft.Maui.Controls" Version="8.0.92" />
-    <PackageReference Include="Microsoft.Maui.Controls.Compatibility" Version="8.0.92" />
-    <PackageReference Include="Silk.NET.OpenAL.Extensions.Enumeration" Version="2.22.0" />
-    <PackageReference Include="Silk.NET.OpenAL.Extensions.EXT" Version="2.22.0" />
-    <PackageReference Include="Silk.NET.OpenAL.Extensions.Soft" Version="2.22.0" />
-    <PackageReference Include="Silk.NET.OpenAL.Soft.Native" Version="1.23.1" />
-    <PackageReference Include="System.Net.Http" Version="4.3.4" />
-    <PackageReference Include="System.Text.Json" Version="8.0.5" />
-    <PackageReference Include="System.Text.RegularExpressions" Version="4.3.1" />
-  </ItemGroup>
-  <ItemGroup>
-    <Content Include="libs/armeabi-v7a/libopenal1.so" />
-    <Content Include="libs/arm64-v8a/libopenal.so" />
-    <Content Include="libs/x86/libopenal.so" />
-    <Content Include="libs/x86_64/libopenal.so" />
-  </ItemGroup>
+	<PropertyGroup>
+		<TargetFrameworks>net8.0-android;net8.0-ios;net8.0-maccatalyst</TargetFrameworks>
+		<TargetFrameworks Condition="$([MSBuild]::IsOSPlatform('windows'))">$(TargetFrameworks);net8.0-windows10.0.19041.0</TargetFrameworks>
+		<!-- Uncomment to also build the tizen app. You will need to install tizen by following this: https://github.com/Samsung/Tizen.NET -->
+		<!-- <TargetFrameworks>$(TargetFrameworks);net8.0-tizen</TargetFrameworks> -->
+		<OutputType>Exe</OutputType>
+		<RootNamespace>RTOpenAI</RootNamespace>
+		<UseMaui>true</UseMaui>
+		<SingleProject>true</SingleProject>
+		<EnableDefaultItems>false</EnableDefaultItems>
+		<DisableImplicitFSharpCoreReference>true</DisableImplicitFSharpCoreReference>
+		<!-- Display name -->
+		<ApplicationTitle>RTOpenAI</ApplicationTitle>
+		<!-- App Identifier -->
+		<ApplicationId>com.companyname.RTOpenAI</ApplicationId>
+		<ApplicationIdGuid>5D26BACE-A3ED-4E42-ABDA-1B0C073F7763</ApplicationIdGuid>
+		<!-- Versions -->
+		<ApplicationDisplayVersion>1.0</ApplicationDisplayVersion>
+		<ApplicationVersion>1</ApplicationVersion>
+		<TargetPlatformIdentifier Condition=" $(TargetPlatformIdentifier) == '' ">$([MSBuild]::GetTargetPlatformIdentifier('$(TargetFramework)'))</TargetPlatformIdentifier>
+		<SupportedOSPlatformVersion Condition="$(TargetPlatformIdentifier) == 'ios'">14.2</SupportedOSPlatformVersion>
+		<SupportedOSPlatformVersion Condition="$(TargetPlatformIdentifier) == 'maccatalyst'">14.0</SupportedOSPlatformVersion>
+		<SupportedOSPlatformVersion Condition="$(TargetPlatformIdentifier) == 'android'">21.0</SupportedOSPlatformVersion>
+		<SupportedOSPlatformVersion Condition="$(TargetPlatformIdentifier) == 'windows'">10.0.17763.0</SupportedOSPlatformVersion>
+		<TargetPlatformMinVersion Condition="$(TargetPlatformIdentifier) == 'windows'">10.0.17763.0</TargetPlatformMinVersion>
+		<SupportedOSPlatformVersion Condition="$(TargetPlatformIdentifier) == 'tizen'">6.5</SupportedOSPlatformVersion>
+	</PropertyGroup>
+	<ItemGroup>
+		<!--<Compile Include="Platforms\Windows\App.fs" />-->
+		<None Include="scripts\AudioProps.fsx" />
+		<Compile Include="Constants.fs" />
+		<Compile Include="Icons.fs" />
+		<Compile Include="Log.fs" />
+		<Compile Include="Utils.fs" />
+		<Compile Include="Events.fs" />
+		<Compile Include="Pipe.fs" />
+		<Compile Include="Audio.fs" />
+		<Compile Include="Player.fs" />
+		<Compile Include="Recorder.fs" />
+		<Compile Include="Session.fs" />
+		<Compile Include="Types.fs" />
+		<Compile Include="Machine.fs" />
+		<Compile Include="App.fs" />
+		<Compile Include="MauiProgram.fs" />
+	</ItemGroup>
+	<ItemGroup>
+		<!-- App Icon -->
+		<MauiIcon Include="Resources\AppIcon\appicon.svg" ForegroundFile="Resources\AppIcon\appiconfg.svg" Color="#512BD4" />
+		<!-- Custom Fonts -->
+		<MauiFont Include="Resources\Fonts\*" />
+		<!-- Images -->
+		<MauiImage Include="Resources\Images\*" />
+		<MauiImage Update="Resources\Images\dotnet_bot.svg" BaseSize="168,208" />
+		<!-- Raw Assets (also remove the "Resources\Raw" prefix) -->
+		<MauiAsset Include="Resources\Raw\*" LogicalName="%(RecursiveDir)%(Filename)%(Extension)" />
+		<!-- Splash Screen -->
+		<MauiSplashScreen Include="Resources\Splash\splash.svg" Color="#512BD4" BaseSize="128,128" />
+	</ItemGroup>
+	<ItemGroup Condition="$(TargetPlatformIdentifier) == 'android'">
+		<AndroidResource Include="$(AndroidProjectFolder)Resources/*/*" />
+		<AndroidResource Remove="$(AndroidProjectFolder)Resources/raw/.*" />
+		<AndroidResource Update="$(AndroidProjectFolder)Resources/raw/*" />
+		<AndroidAsset Include="$(AndroidProjectFolder)Assets/**/*" Exclude="$(AndroidProjectFolder)Assets/**/.*/**" />
+		<AndroidManifest Include="$(AndroidProjectFolder)AndroidManifest.xml" />
+		<Compile Include="$(AndroidProjectFolder)MainActivity.fs" />
+		<Compile Include="$(AndroidProjectFolder)MainApplication.fs" />
+	</ItemGroup>
+	<ItemGroup Condition="$(TargetPlatformIdentifier) == 'ios'">
+		<None Include="$(iOSProjectFolder)Info.plist" LogicalName="Info.plist" />
+		<Compile Include="$(iOSProjectFolder)AppDelegate.fs" />
+		<Compile Include="$(iOSProjectFolder)Program.fs" />
+	</ItemGroup>
+	<ItemGroup Condition="$(TargetPlatformIdentifier) == 'maccatalyst'">
+		<None Include="$(MacCatalystProjectFolder)Info.plist" LogicalName="Info.plist" />
+		<Compile Include="$(MacCatalystProjectFolder)AppDelegate.fs" />
+		<Compile Include="$(MacCatalystProjectFolder)Program.fs" />
+	</ItemGroup>
+	<ItemGroup Condition="$(TargetPlatformIdentifier) == 'windows'">
+		<Manifest Include="$(WindowsProjectFolder)app.manifest" />
+		<AppxManifest Include="$(WindowsProjectFolder)Package.appxmanifest" />
+		<Compile Include="$(WindowsProjectFolder)App.fs" />
+		<Compile Include="$(WindowsProjectFolder)Main.fs" />
+		<PackageReference Include="FSharp.Maui.WinUICompat" Version="1.1.0" />
+	</ItemGroup>
+	<ItemGroup Condition="$(TargetPlatformIdentifier) == 'tizen'">
+		<TizenManifestFile Include="$(TizenProjectFolder)tizen-manifest.xml" />
+		<Compile Include="$(TizenProjectFolder)Main.fs" />
+	</ItemGroup>
+	<ItemGroup>
+		<!--<PackageReference Include="Fabulous" Version="3.0.0-pre6" />-->
+		<PackageReference Include="Fabulous" Version="2.5.0-pre8" />
+		<PackageReference Include="Fabulous.MauiControls" Version="8.1.0-pre9" />
+		<PackageReference Include="FSharp.Control.AsyncSeq" Version="3.2.1" />
+		<PackageReference Include="FSharp.Control.Websockets" Version="0.3.0" />
+		<PackageReference Include="FSharp.Core" Version="8.0.401" />
+		<PackageReference Include="FSharp.SystemTextJson" Version="1.3.13" />
+		<PackageReference Include="Microsoft.Extensions.Logging.Console" Version="8.0.1" />
+		<PackageReference Include="Microsoft.Maui.Controls" Version="8.0.92" />
+		<PackageReference Include="Microsoft.Maui.Controls.Compatibility" Version="8.0.92" />
+		<PackageReference Include="Silk.NET.OpenAL.Extensions.Enumeration" Version="2.22.0" />
+		<PackageReference Include="Silk.NET.OpenAL.Extensions.EXT" Version="2.22.0" />
+		<PackageReference Include="Silk.NET.OpenAL.Extensions.Soft" Version="2.22.0" />
+		<PackageReference Include="System.Net.Http" Version="4.3.4" />
+		<PackageReference Include="System.Text.Json" Version="8.0.5" />
+		<PackageReference Include="System.Text.RegularExpressions" Version="4.3.1" />
+	</ItemGroup>
 
-  <ItemGroup>
-    <AndroidNativeLibrary Include="libs/armeabi-v7a/libopenal1.so">
-      <Abi>armeabi-v7a</Abi>
-    </AndroidNativeLibrary>
-    <AndroidNativeLibrary Include="libs/arm64-v8a/libopenal.so">
-      <Abi>arm64-v8a</Abi>
-  </AndroidNativeLibrary>
-    <AndroidNativeLibrary Include="libs/x86/libopenal.so">
-    <Abi>x86</Abi>
-  </AndroidNativeLibrary>
-    <AndroidNativeLibrary Include="libs/x86_64/libopenal.so">
-    <Abi>armeabi-v7a</Abi>
-  </AndroidNativeLibrary>
-  </ItemGroup>
-  
+	<ItemGroup Condition="$(TargetPlatformIdentifier) != 'android'">
+		<PackageReference Include="Silk.NET.OpenAL.Soft.Native" Version="1.23.1" />
+	</ItemGroup>
+
+	<ItemGroup>
+		<None Include="libs/armeabi-v7a/libopenal.so" />
+		<None Include="libs/arm64-v8a/libopenal.so" />
+		<None Include="libs/x86_64/libopenal.so" />
+	</ItemGroup>
+
+	<ItemGroup Condition="$(TargetPlatformIdentifier) == 'android'">
+		<AndroidNativeLibrary Include="libs/armeabi-v7a/libopenal.so">
+			<Abi>armeabi-v7a</Abi>
+		</AndroidNativeLibrary>
+		<AndroidNativeLibrary Include="libs/arm64-v8a/libopenal.so">
+			<Abi>arm64-v8a</Abi>
+		</AndroidNativeLibrary>
+		<AndroidNativeLibrary Include="libs/x86_64/libopenal.so">
+			<Abi>armeabi-v7a</Abi>
+		</AndroidNativeLibrary>
+	</ItemGroup>
+
 </Project>

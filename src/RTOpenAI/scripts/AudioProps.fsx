@@ -180,7 +180,6 @@ let record seconds (file:string) =
 
 (*
 let file = root @@ "recording.pcm"
-
 record 5 file
 playPcmFile (File.ReadAllBytes(file))
 *)
