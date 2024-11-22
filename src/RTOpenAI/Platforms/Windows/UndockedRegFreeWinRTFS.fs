@@ -11,5 +11,7 @@ module private NativeMethods =
 type Initializer =
 
     static member AccessWindowsAppSDK () =
-        NativeMethods.WindowsAppRuntime_EnsureIsLoaded ()
-        |> ignore // return value not required
+        let ret = NativeMethods.WindowsAppRuntime_EnsureIsLoaded ()
+        if ret <> 0 then
+            printfn "WindowsAppRuntime_EnsureIsLoaded failed with error code %d" ret
+        ()
