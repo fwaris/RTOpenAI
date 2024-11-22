@@ -25,7 +25,7 @@ type Recorder(audioFormat:AudioFormat) =
                         let ptr2 = NativeInterop.NativePtr.toVoidPtr ptr
                         r.Value.mic.CaptureSamples(ptr2, samples)
                         r.Value.CheckError("capture samples")
-                        printfn $"{samples} bytes {sz} %A{audioBuffer.[0..20]}" 
+                        Utils.debug $"{samples} bytes {sz} %A{audioBuffer.[0..20]}" 
                         let r = channel.Value.Writer.TryWrite(audioBuffer)
                         if not r then Log.warn $"record dropped {sz} bytes"
                      do! Async.Sleep(1000)

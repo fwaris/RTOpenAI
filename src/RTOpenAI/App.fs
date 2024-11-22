@@ -129,13 +129,13 @@ module App =
                 .background(Colors.Green)
                 
             ImageButton(
-                FontImageSource( Size=48, FontFamily="MaterialSymbols", Glyph = Icons.play, Color = ThemeAware.With(Colors.DarkMagenta, Colors.Magenta)),
+                FontImageSource( Size=48, FontFamily="MaterialSymbols", Glyph = Icons.play),
                 Play_Start)
                 .semantics(hint = "Play audio")
                 .centerHorizontal()                        
        
             ImageButton(
-                FontImageSource( Size=48, FontFamily="MaterialSymbols", Glyph = Icons.cancel, Color = ThemeAware.With(Colors.DarkMagenta, Colors.Magenta)),
+                FontImageSource( Size=48, FontFamily="MaterialSymbols", Glyph = Icons.cancel),
                 Play_Stop)
                 .semantics(hint = "Stop audio")
                 .centerHorizontal()                        
@@ -144,8 +144,7 @@ module App =
                 FontImageSource(
                         Size=48,
                         FontFamily="MaterialSymbols",
-                        Glyph = (if model.recorder.IsNone then Icons.mic else Icons.stop),
-                        Color = ThemeAware.With(Colors.DarkMagenta, Colors.Magenta)),
+                        Glyph = (if model.recorder.IsNone then Icons.mic else Icons.stop)),
                 Recorder_StartStop)
                 .semantics(hint = "Record audio")
                 .centerHorizontal()                        
@@ -155,17 +154,20 @@ module App =
             .gridColumn(0)
         
     let view model =
-        Application(
-            ContentPage(
-                ScrollView(
-                    Grid([Dimension.Star; Dimension.Star],[Dimension.Star]) {
-                        controlsView model
-                        logView model
-                    }
-                )
-                    .width(300)
-            )
-        )
+        Application() {
+            Window() {
+                ContentPage(
+                  
+                        Grid([Dimension.Star; Dimension.Star],[Dimension.Star]) {
+                            controlsView model
+                            logView model
+                        }
+                  )
+                 .padding(0., 0., 0., 0.)
+                 .width(300)
+                }            
+            }
+        
     
     let subscribe model : Sub<Msg> =
         let backgroundEvent dispatch =

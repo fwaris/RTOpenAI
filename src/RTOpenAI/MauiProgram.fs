@@ -8,6 +8,7 @@ open Microsoft.Extensions.Logging
 //open Fabulous.Maui.MediaElement
 
 type MauiProgram =
+
     static member CreateMauiApp() =
         let builder = MauiApp.CreateBuilder()
         builder

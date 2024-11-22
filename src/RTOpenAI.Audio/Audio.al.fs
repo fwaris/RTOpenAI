@@ -16,7 +16,7 @@ module Audio =
         if err <> AudioError.NoError then
             let msg = $"Audio processing error in {src}: %A{err}"
             Log.error msg                
-            failwith msg
+            //failwith msg
     
     let listInputDevices() = 
         use alc = ALContext.GetApi();
@@ -120,7 +120,7 @@ type internal RecordState =
             let alc = ALContext.GetApi()
             let al = AL.GetApi()
             Audio._checkError(al,"init")
-            
+           
             let enumerations : Extensions.Enumeration.Enumeration= 
                 match alc.TryGetExtension(nullPtr) with
                 | false, _ -> failwith "Failed to get extensions enumeration for audio input"
