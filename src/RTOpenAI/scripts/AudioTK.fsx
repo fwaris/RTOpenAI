@@ -1,7 +1,9 @@
-﻿#r "nuget: OpenTK.Audio.OpenAL"
+﻿#r "nuget: OpenToolkit.OpenAL, 4.0.0-pre9.3"
 open System
 open System.Threading
-open OpenTK.Audio.OpenAL
+open OpenToolkit.Audio.OpenAL
+Environment.SetEnvironmentVariable("PATH", Environment.GetEnvironmentVariable("PATH") + ";" + @"E:\s\rtapi")
+System.Runtime.InteropServices.NativeLibrary.Load("openal32.dll")
 let devices = ALC.GetStringList(GetEnumerationStringList.DeviceSpecifier);
 let mutable recording : int16[] = Array.zeroCreate (44100 * 4)
 let captureDevice = ALC.CaptureOpenDevice(null, 44100, ALFormat.Mono16, 1024);

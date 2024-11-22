@@ -4,6 +4,7 @@ open System.IO
 open System.Text.Json
 open System.Text.Json.Serialization
 open System.Security.Cryptography
+open RTOpenAI.Audio
 
 [<AutoOpen>]
 module Utils =
@@ -67,3 +68,6 @@ module Utils =
         for i in 0..buff.Length-1 do
             let short = BitConverter.ToInt16(bytes,i*2)
             buff.[i] <- short
+
+
+    let audioManager = AudioManager() :> IAudioManager

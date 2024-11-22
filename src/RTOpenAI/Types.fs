@@ -1,11 +1,12 @@
 ﻿namespace RTOpenAI
+open RTOpenAI.Audio
 open System
 
 type Model = 
     {
         audioFormat : AudioFormat
-        player : Player option
-        recorder : Recorder option
+        player : IPlayer option
+        recorder : IRecorder option
         outputFile : string option
         mailbox : System.Threading.Channels.Channel<Msg>                
         log : string list
@@ -14,7 +15,7 @@ type Model =
 and Msg = 
     | Export 
     | Play_Start
-    | Play_Started of Player option
+    | Play_Started of IPlayer option
     | Play_Stop  
     | EventError of exn    
     | Session_Created
@@ -22,5 +23,5 @@ and Msg =
     | Log_Append of string
     | Log_Clear
     | Recorder_StartStop
-    | Recorder_Set of (Recorder * string) option 
+    | Recorder_Set of (IRecorder * string) option 
 

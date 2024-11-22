@@ -1,5 +1,6 @@
-﻿namespace RTOpenAI
+﻿namespace RTOpenAI.Audio.Al
 open System
+open RTOpenAI.Audio
 open System.IO
 open System.Diagnostics
 open System.Threading
@@ -123,12 +124,13 @@ type Player(audioFormat:AudioFormat) =
         if p.IsValueCreated then p.Value.al.SourcePause(p.Value.source)
     
     let check() = if p.IsValueCreated && p.Value.disposed then raise (ObjectDisposedException("Player"))
-       
-    member this.Stop = stop
-    member this.Pause()  = check(); pause()
-    member this.Play() = check(); play()
-    member this.IsPlaying() = _cancelToken.IsSome
-    member this.Channel = channel.Value
+
+    interface IPlayer with        
+        member this.Stop() = stop()
+        member this.Pause()  = check(); pause()
+        member this.Play() = check(); play()
+        member this.IsPlaying() = _cancelToken.IsSome
+        member this.Channel = channel.Value
 
     interface IDisposable with
         member _.Dispose() = stop()

@@ -1,0 +1,85 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+	<PropertyGroup>
+		<TargetFrameworks>net8.0-android;net8.0-ios;net8.0-maccatalyst</TargetFrameworks>
+		<TargetFrameworks Condition="$([MSBuild]::IsOSPlatform('windows'))">$(TargetFrameworks);net8.0-windows10.0.19041.0</TargetFrameworks>
+		<!-- Uncomment to also build the tizen app. You will need to install tizen by following this: https://github.com/Samsung/Tizen.NET -->
+		<!-- <TargetFrameworks>$(TargetFrameworks);net8.0-tizen</TargetFrameworks> -->
+		<RootNamespace>RTOpenAI.Audio</RootNamespace>
+		<UseMaui>true</UseMaui>
+		<SingleProject>true</SingleProject>
+		<EnableDefaultItems>false</EnableDefaultItems>
+		<DisableImplicitFSharpCoreReference>true</DisableImplicitFSharpCoreReference>
+
+		<OtherFlags>$(OtherFlags) --test:GraphBasedChecking</OtherFlags>
+
+		<!-- Display name -->
+		<ApplicationTitle>RTOpenAI.Audio</ApplicationTitle>
+
+		<!-- App Identifier -->
+		<ApplicationId>com.companyname.RTOpenAI.Audio</ApplicationId>
+		<ApplicationIdGuid>A36F0AF9-645C-447B-AC38-01698FF7C6DE</ApplicationIdGuid>
+
+		<!-- Versions -->
+		<ApplicationDisplayVersion>1.0</ApplicationDisplayVersion>
+		<ApplicationVersion>1</ApplicationVersion>
+
+		<TargetPlatformIdentifier Condition=" $(TargetPlatformIdentifier) == '' ">$([MSBuild]::GetTargetPlatformIdentifier('$(TargetFramework)'))</TargetPlatformIdentifier>
+
+		<SupportedOSPlatformVersion Condition="$(TargetPlatformIdentifier) == 'ios'">14.2</SupportedOSPlatformVersion>
+		<SupportedOSPlatformVersion Condition="$(TargetPlatformIdentifier) == 'maccatalyst'">14.0</SupportedOSPlatformVersion>
+		<SupportedOSPlatformVersion Condition="$(TargetPlatformIdentifier) == 'android'">21.0</SupportedOSPlatformVersion>
+		<SupportedOSPlatformVersion Condition="$(TargetPlatformIdentifier) == 'windows'">10.0.17763.0</SupportedOSPlatformVersion>
+		<TargetPlatformMinVersion Condition="$(TargetPlatformIdentifier) == 'windows'">10.0.17763.0</TargetPlatformMinVersion>
+		<SupportedOSPlatformVersion Condition="$(TargetPlatformIdentifier) == 'tizen'">6.5</SupportedOSPlatformVersion>
+	</PropertyGroup>
+
+	<ItemGroup />
+
+	<ItemGroup>
+		<Compile Include="Log.fs" />
+		<Compile Include="Types.shared.fs" />
+		<Compile Include="Audio.al.fs" />
+		<Compile Include="Player.al.fs" />
+		<Compile Include="Recorder.al.fs" />
+		<Compile Include="Player.android.fs" />
+		<Compile Include="Recorder.android.fs" />
+	</ItemGroup>
+
+	<!-- if not android 
+	<ItemGroup Condition="$(TargetFramework.StartsWith('net')) == true AND $(TargetFramework.Contains('-android')) != true">
+		<Compile Remove="**\**\*.android.fs" />
+		<None Include="**\**\*.android.fs" Exclude="$(DefaultItemExcludes);$(DefaultExcludesInProjectFolder)" />
+	</ItemGroup>
+-->
+	<!-- if android 
+	<ItemGroup Condition="$(TargetFramework.StartsWith('net')) == true AND $(TargetFramework.Contains('-android')) == true">
+		<Compile Remove="**\**\*.al.fs" />
+		<None Include="**\**\*.al.fs" Exclude="$(DefaultItemExcludes);$(DefaultExcludesInProjectFolder)" />
+	</ItemGroup>
+-->
+	<ItemGroup>
+		<Compile Include="AudioManager.fs" />		
+	</ItemGroup>
+	
+	<ItemGroup Condition="$(TargetPlatformIdentifier) == 'windows'">
+		<PackageReference Include="FSharp.Maui.WinUICompat" Version="1.1.0" />
+	</ItemGroup>
+	
+	<ItemGroup>
+		<PackageReference Include="FSharp.Control.AsyncSeq" Version="3.2.1" />
+		<PackageReference Include="Microsoft.Extensions.Logging.Console" Version="8.0.1" />
+		<PackageReference Include="FSharp.Core" Version="8.0.100" />
+		<PackageReference Include="Microsoft.Maui.Controls" Version="8.0.3" />
+		<PackageReference Include="Microsoft.Maui.Controls.Compatibility" Version="8.0.3" />
+		<PackageReference Include="Silk.NET.OpenAL.Extensions.Enumeration" Version="2.22.0" />
+		<PackageReference Include="Silk.NET.OpenAL.Extensions.EXT" Version="2.22.0" />
+		<PackageReference Include="Silk.NET.OpenAL.Extensions.Soft" Version="2.22.0" />
+		<PackageReference Include="Silk.NET.OpenAL" Version="2.22.0" />
+	</ItemGroup>
+
+	<ItemGroup Condition="$(TargetPlatformIdentifier) != 'android'">
+		<PackageReference Include="Silk.NET.OpenAL.Soft.Native" Version="1.23.1" />
+	</ItemGroup>
+
+</Project>

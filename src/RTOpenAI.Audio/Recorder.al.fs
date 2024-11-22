@@ -1,4 +1,5 @@
-namespace RTOpenAI
+﻿namespace RTOpenAI.Audio.Al
+open RTOpenAI.Audio
 open System
 open System.Threading
 open System.Threading.Channels
@@ -52,10 +53,12 @@ type Recorder(audioFormat:AudioFormat) =
         if r.IsValueCreated then
             r.Value.mic.Start()
             r.Value.CheckError("mic start")
-            
-    member this.Record() = startRecordLoop()
-    member this.Mute =  mute                
-    member this.Unmute() = unmute()
-    member this.Stop() = stop()    
-    member this.Channel = channel.Value
+
+    interface IRecorder with             
+        member this.Record() = startRecordLoop()
+        member this.Mute() =  mute()
+        member this.Unmute() = unmute()
+        member this.Stop() = stop()    
+        member this.Channel = channel.Value
+
     interface IDisposable with member _.Dispose() = stop()

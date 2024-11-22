@@ -1,10 +1,11 @@
-namespace RTOpenAI
+namespace RTOpenAI.Audio.Al
 open System
 open System.IO
 open System.Diagnostics
 open System.Threading
 open System.Threading.Channels
 open FSharp.Control
+open RTOpenAI.Audio
 open Silk.NET.OpenAL
 open FSharp.NativeInterop
 #nowarn "9" //suppress native interop warning
@@ -36,33 +37,6 @@ module Audio =
         |> Seq.map (fun x -> x, (x=defaultInputName))
         |> Seq.toList    
 
-type AudioFormat = {
-    Frequency: int
-    BitsPerSample: int
-    Channels : int
-}
-    with
-        member x.FrameSize = x.BitsPerSample * x.Channels / 8
-        member x.ByteRate = x.Frequency * x.FrameSize
-        member x.BufferFormat = 
-            match x.Channels, x.BitsPerSample with
-            | 1,8   -> BufferFormat.Mono8
-            | 1,16  -> BufferFormat.Mono16
-            | 2,8   -> BufferFormat.Stereo8
-            | 2,16  -> BufferFormat.Stereo16
-            | _     -> failwith "Unsupported audio format"
-        static member Default =
-            {
-                Frequency = 22050   //44.1KHz
-                BitsPerSample = 16
-                Channels = 1                
-            }
-        static member RTApi =
-            {
-                Frequency = 12000   //24KHz
-                BitsPerSample = 16
-                Channels = 1                
-            }        
 
 type internal PlayState =
         {

@@ -28,6 +28,7 @@
 	</PropertyGroup>
 	<ItemGroup>
 		<!--<Compile Include="Platforms\Windows\App.fs" />-->
+		<None Include="scripts\AudioTK.fsx" />
 		<None Include="scripts\AudioProps.fsx" />
 		<Compile Include="Constants.fs" />
 		<Compile Include="Icons.fs" />
@@ -35,9 +36,6 @@
 		<Compile Include="Utils.fs" />
 		<Compile Include="Events.fs" />
 		<Compile Include="Pipe.fs" />
-		<Compile Include="Audio.fs" />
-		<Compile Include="Player.fs" />
-		<Compile Include="Recorder.fs" />
 		<Compile Include="Session.fs" />
 		<Compile Include="Types.fs" />
 		<Compile Include="Machine.fs" />
@@ -98,34 +96,13 @@
 		<PackageReference Include="Microsoft.Extensions.Logging.Console" Version="8.0.1" />
 		<PackageReference Include="Microsoft.Maui.Controls" Version="8.0.92" />
 		<PackageReference Include="Microsoft.Maui.Controls.Compatibility" Version="8.0.92" />
-		<PackageReference Include="Silk.NET.OpenAL.Extensions.Enumeration" Version="2.22.0" />
-		<PackageReference Include="Silk.NET.OpenAL.Extensions.EXT" Version="2.22.0" />
-		<PackageReference Include="Silk.NET.OpenAL.Extensions.Soft" Version="2.22.0" />
 		<PackageReference Include="System.Net.Http" Version="4.3.4" />
 		<PackageReference Include="System.Text.Json" Version="8.0.5" />
 		<PackageReference Include="System.Text.RegularExpressions" Version="4.3.1" />
 	</ItemGroup>
 
-	<ItemGroup Condition="$(TargetPlatformIdentifier) != 'android'">
-		<PackageReference Include="Silk.NET.OpenAL.Soft.Native" Version="1.23.1" />
-	</ItemGroup>
-
 	<ItemGroup>
-		<None Include="libs/armeabi-v7a/libopenal.so" />
-		<None Include="libs/arm64-v8a/libopenal.so" />
-		<None Include="libs/x86_64/libopenal.so" />
-	</ItemGroup>
-
-	<ItemGroup Condition="$(TargetPlatformIdentifier) == 'android'">
-		<AndroidNativeLibrary Include="libs/armeabi-v7a/libopenal.so">
-			<Abi>armeabi-v7a</Abi>
-		</AndroidNativeLibrary>
-		<AndroidNativeLibrary Include="libs/arm64-v8a/libopenal.so">
-			<Abi>arm64-v8a</Abi>
-		</AndroidNativeLibrary>
-		<AndroidNativeLibrary Include="libs/x86_64/libopenal.so">
-			<Abi>armeabi-v7a</Abi>
-		</AndroidNativeLibrary>
+	  <ProjectReference Include="..\RTOpenAI.Audio\RTOpenAI.Audio.fsproj" />
 	</ItemGroup>
 
 </Project>

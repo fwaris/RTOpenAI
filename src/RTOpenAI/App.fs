@@ -16,6 +16,7 @@ open Microsoft.Maui.ApplicationModel
 open FSharp.Control
 open Microsoft.Maui.Storage
 open Microsoft.Win32.SafeHandles
+open RTOpenAI.Audio
 
 module App =
     open Utils
@@ -34,7 +35,7 @@ module App =
                 if permission = PermissionStatus.Granted then
                     try
                         let fn = tempFile()
-                        let rcdr = new Recorder(model.audioFormat)
+                        let rcdr = Utils.audioManager.CreateRecorder(model.audioFormat)
                         let comp =
                             asyncSeq {
                                 use str = File.Create fn
@@ -63,7 +64,7 @@ module App =
         task {
             //if model.outputFile.IsNone then failwith "Nothing recorded"
             model.player |> Option.iter (fun p -> p.Stop())
-            let player = new Player(model.audioFormat)
+            let player = Utils.audioManager.CreatePlayer(model.audioFormat)
             let mfolder = Environment.GetFolderPath(Environment.SpecialFolder.MyMusic)
             let wav = mfolder @@ "PinkPanther30 - Copy.pcm" |> File.ReadAllBytes
             //let wav = File.ReadAllBytes(model.outputFile.Value)
