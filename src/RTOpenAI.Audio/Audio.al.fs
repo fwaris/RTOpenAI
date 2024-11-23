@@ -16,6 +16,7 @@ module Audio =
         if err <> AudioError.NoError then
             let msg = $"Audio processing error in {src}: %A{err}"
             Log.error msg                
+            Utils.debug msg
             //failwith msg
     
     let listInputDevices() = 
