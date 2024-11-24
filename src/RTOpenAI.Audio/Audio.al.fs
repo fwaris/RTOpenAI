@@ -8,6 +8,7 @@ open FSharp.Control
 open RTOpenAI.Audio
 open Silk.NET.OpenAL
 open FSharp.NativeInterop
+open Silk.NET.OpenAL.Extensions.EXT
 #nowarn "9" //suppress native interop warning
 
 module Audio =
@@ -116,7 +117,8 @@ type internal RecordState =
             
         member this.CheckError(src) = Audio._checkError(this.al,src)
         
-        static member Create(format:AudioFormat) =
+        static member Create(format:AudioFormat,activate:(unit->unit) option) =
+            activate |> Option.iter (fun f -> f())
             let nullPtr = NativePtr.nullPtr
             let alc = ALContext.GetApi()
             let al = AL.GetApi()
@@ -135,13 +137,17 @@ type internal RecordState =
             let audioBuffer : byte[] = Array.zeroCreate (bufferSize)
             let cap = new Extensions.EXT.Capture(alc.Context)
             Audio._checkError(al,"create capture")
-            let mic = cap.CreateCapture(defaultInputName, uint format.Frequency, Nullable format.BufferFormat, format.Frequency * 2 )
+            let cap = new Capture(alc.Context)
+            Thread.Sleep(1000)
+            let audio = new AudioCapture<BufferFormat>(cap,defaultInputName, uint format.Frequency, Nullable format.BufferFormat, format.Frequency * 2 )
+            
+            //let mic = cap.CreateCapture(defaultInputName, uint format.Frequency, Nullable format.BufferFormat, format.Frequency * 2 )
             Audio._checkError(al,"mic")            
             {
                 al = al
                 alc = alc
                 capture = cap
-                mic = mic
+                mic = audio
                 buffer = audioBuffer
                 disposed = false
             }

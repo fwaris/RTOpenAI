@@ -27,8 +27,8 @@
 
 		<TargetPlatformIdentifier Condition=" $(TargetPlatformIdentifier) == '' ">$([MSBuild]::GetTargetPlatformIdentifier('$(TargetFramework)'))</TargetPlatformIdentifier>
 
-		<SupportedOSPlatformVersion Condition="$(TargetPlatformIdentifier) == 'ios'">14.2</SupportedOSPlatformVersion>
-		<SupportedOSPlatformVersion Condition="$(TargetPlatformIdentifier) == 'maccatalyst'">14.0</SupportedOSPlatformVersion>
+		<SupportedOSPlatformVersion Condition="$(TargetPlatformIdentifier) == 'ios'">15.0</SupportedOSPlatformVersion>
+		<SupportedOSPlatformVersion Condition="$(TargetPlatformIdentifier) == 'maccatalyst'">15.0</SupportedOSPlatformVersion>
 		<SupportedOSPlatformVersion Condition="$(TargetPlatformIdentifier) == 'android'">21.0</SupportedOSPlatformVersion>
 		<SupportedOSPlatformVersion Condition="$(TargetPlatformIdentifier) == 'windows'">10.0.17763.0</SupportedOSPlatformVersion>
 		<TargetPlatformMinVersion Condition="$(TargetPlatformIdentifier) == 'windows'">10.0.17763.0</TargetPlatformMinVersion>
@@ -42,8 +42,10 @@
 		<Compile Include="Audio.al.fs" />
 		<Compile Include="Player.al.fs" />
 		<Compile Include="Recorder.al.fs" />
+		<Compile Include="RecordingSession.ios.fs" />
 		<Compile Include="Player.android.fs" />
 		<Compile Include="Recorder.android.fs" />
+		<Compile Include="AudioManager.fs" />
 	</ItemGroup>
 
 	<!-- if not android 
@@ -58,10 +60,6 @@
 		<None Include="**\**\*.al.fs" Exclude="$(DefaultItemExcludes);$(DefaultExcludesInProjectFolder)" />
 	</ItemGroup>
 -->
-	<ItemGroup>
-		<Compile Include="AudioManager.fs" />		
-	</ItemGroup>
-	
 	<ItemGroup Condition="$(TargetPlatformIdentifier) == 'windows'">
 		<PackageReference Include="FSharp.Maui.WinUICompat" Version="1.1.0" />
 	</ItemGroup>

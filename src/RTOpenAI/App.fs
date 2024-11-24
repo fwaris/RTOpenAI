@@ -1,21 +1,15 @@
 namespace RTOpenAI
 open System
 open System.IO
-open System.Text.Json.Serialization.TypeCache
-open FSharp.Control.Websockets
 open Fabulous
 open Fabulous.Maui
 open Microsoft.Maui.Controls
 open Microsoft.Maui
 open Microsoft.Maui.Graphics
-open Microsoft.Maui.Accessibility
-open Microsoft.Maui.Primitives
 open type Fabulous.Maui.View
 open Microsoft.Maui.Storage
 open Microsoft.Maui.ApplicationModel
 open FSharp.Control
-open Microsoft.Maui.Storage
-open Microsoft.Win32.SafeHandles
 open RTOpenAI.Audio
 
 module App =
@@ -62,11 +56,15 @@ module App =
 
     let play (model:Model) =
         task {
+            use! testFile = FileSystem.Current.OpenAppPackageFileAsync("PinkPanther30.wav")
+            use ms = new MemoryStream()
+            do! testFile.CopyToAsync(ms)
+            let wav = ms.GetBuffer().[44..]
             //if model.outputFile.IsNone then failwith "Nothing recorded"
             model.player |> Option.iter (fun p -> p.Stop())
             let player = Utils.audioManager.CreatePlayer(model.audioFormat)
-            let mfolder = Environment.GetFolderPath(Environment.SpecialFolder.MyMusic)
-            let wav = mfolder @@ "PinkPanther30 - Copy.pcm" |> File.ReadAllBytes
+            //let mfolder = Environment.GetFolderPath(Environment.SpecialFolder.MyMusic)
+            //let wav = mfolder @@ "PinkPanther30 - Copy.pcm" |> File.ReadAllBytes
             //let wav = File.ReadAllBytes(model.outputFile.Value)
             let comp = 
                 wav
@@ -94,7 +92,7 @@ module App =
 
     let init () = 
         {
-            audioFormat = AudioFormat.RTApi
+            audioFormat = AudioFormat.Default
             recorder = None
             outputFile = None
             player = None
@@ -129,13 +127,13 @@ module App =
                 .background(Colors.Green)
                 
             ImageButton(
-                FontImageSource( Size=48, FontFamily="MaterialSymbols", Glyph = Icons.play),
+                FontImageSource( Size=48, FontFamily="MaterialSymbols", Glyph = Icons.play, Color = Colors.Lime),
                 Play_Start)
                 .semantics(hint = "Play audio")
                 .centerHorizontal()                        
        
             ImageButton(
-                FontImageSource( Size=48, FontFamily="MaterialSymbols", Glyph = Icons.cancel),
+                FontImageSource( Size=48, FontFamily="MaterialSymbols", Glyph = Icons.cancel, Color=Colors.Lime),
                 Play_Stop)
                 .semantics(hint = "Stop audio")
                 .centerHorizontal()                        
@@ -144,7 +142,8 @@ module App =
                 FontImageSource(
                         Size=48,
                         FontFamily="MaterialSymbols",
-                        Glyph = (if model.recorder.IsNone then Icons.mic else Icons.stop)),
+                        Glyph = (if model.recorder.IsNone then Icons.mic else Icons.stop),
+                        Color = Colors.Lime),
                 Recorder_StartStop)
                 .semantics(hint = "Record audio")
                 .centerHorizontal()                        
