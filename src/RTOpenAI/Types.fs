@@ -14,9 +14,8 @@ type Model =
 
 and Msg = 
     | Export 
-    | Play_Start
+    | Play_StartStop
     | Play_Started of IPlayer option
-    | Play_Stop  
     | EventError of exn    
     | Session_Created
     | Session_Ended

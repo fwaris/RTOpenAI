@@ -54,41 +54,42 @@ module App =
                     return None
         }
 
-    let play (model:Model) =
+    let playStartStop (model:Model) =
         task {
-            use! testFile = FileSystem.Current.OpenAppPackageFileAsync("PinkPanther30.wav")
-            use ms = new MemoryStream()
-            do! testFile.CopyToAsync(ms)
-            let wav = ms.GetBuffer().[44..]
-            //if model.outputFile.IsNone then failwith "Nothing recorded"
-            model.player |> Option.iter (fun p -> p.Stop())
-            let player = Utils.audioManager.CreatePlayer(model.audioFormat)
-            //let mfolder = Environment.GetFolderPath(Environment.SpecialFolder.MyMusic)
-            //let wav = mfolder @@ "PinkPanther30 - Copy.pcm" |> File.ReadAllBytes
-            //let wav = File.ReadAllBytes(model.outputFile.Value)
-            let comp = 
-                wav
-                |> Seq.chunkBySize (model.audioFormat.ByteRate * 2)
-                |> Seq.indexed
-                |> AsyncSeq.ofSeq
-                |> AsyncSeq.iterAsync (fun (i,bytes) -> 
-                    task {
-                        do! player.Channel.Writer.WriteAsync(bytes)
-                    }
-                    |> Async.AwaitTask)
-            async {
-                match! Async.Catch comp with
-                | Choice1Of2 _ -> printfn "all data written to channel"
-                | Choice2Of2 ex -> Log.exn(ex,"App.play")
-            }
-            |> Async.Start
-            player.Play()
-            return (Some player)
+            match model.player with
+            | Some p ->
+                p.Stop()
+                return None
+            | None -> 
+                use! testFile = FileSystem.Current.OpenAppPackageFileAsync("PinkPanther30.wav")
+                use ms = new MemoryStream()
+                do! testFile.CopyToAsync(ms)
+                let wav = ms.GetBuffer().[44..]
+                //if model.outputFile.IsNone then failwith "Nothing recorded"
+                model.player |> Option.iter (fun p -> p.Stop())
+                let player = Utils.audioManager.CreatePlayer(model.audioFormat)
+                //let mfolder = Environment.GetFolderPath(Environment.SpecialFolder.MyMusic)
+                //let wav = mfolder @@ "PinkPanther30 - Copy.pcm" |> File.ReadAllBytes
+                //let wav = File.ReadAllBytes(model.outputFile.Value)
+                let comp = 
+                    wav
+                    |> Seq.chunkBySize (model.audioFormat.ByteRate * 2)
+                    |> Seq.indexed
+                    |> AsyncSeq.ofSeq
+                    |> AsyncSeq.iterAsync (fun (i,bytes) -> 
+                        task {
+                            do! player.Channel.Writer.WriteAsync(bytes)
+                        }
+                        |> Async.AwaitTask)
+                async {
+                    match! Async.Catch comp with
+                    | Choice1Of2 _ -> printfn "all data written to channel"
+                    | Choice2Of2 ex -> Log.exn(ex,"App.play")
+                }
+                |> Async.Start
+                player.Play()
+                return (Some player)
         }
-
-    let playStop (model:Model) = 
-        model.player |> Option.iter (fun p -> p.Stop())
-        {model with player = None},[]
 
     let init () = 
         {
@@ -103,9 +104,8 @@ module App =
     let update msg model =
         match msg with
         | Export -> model, []
-        | Play_Start -> model,Cmd.OfTask.either play model Play_Started EventError
+        | Play_StartStop -> model,Cmd.OfTask.either playStartStop model Play_Started EventError
         | Play_Started player -> { model with player = player },[]
-        | Play_Stop -> playStop model
         | Recorder_StartStop -> model,Cmd.OfTask.either startStopRecording model Recorder_Set EventError
         | Recorder_Set (Some (rcdr,fn)) -> { model with recorder = Some rcdr; outputFile= Some fn},[]
         | Recorder_Set None -> { model with recorder = None},[]
@@ -118,33 +118,22 @@ module App =
             .gridColumn(1)
             .header(Label("Log"))
             .horizontalScrollBarVisibility(ScrollBarVisibility.Never)
+    let bPlay = FontImageSource( Size=48, FontFamily="MaterialSymbols", Glyph = Icons.play, Color = Colors.Lime)
+    let bCancel =  FontImageSource( Size=48, FontFamily="MaterialSymbols", Glyph = Icons.cancel, Color=Colors.Lime)
+    let bMic =  FontImageSource(Size=48,FontFamily="MaterialSymbols",Glyph = Icons.mic, Color = Colors.Lime)
+    let bStop = FontImageSource(Size=48,FontFamily="MaterialSymbols",Glyph = Icons.stop, Color = Colors.Lime)
 
     let controlsView (model:Model) =
-        let f1 = FontImageSource( FontFamily="MaterialSymbols", Glyph = Icons.play, Color = Colors.Red)
-        (VStack(spacing = 25.) {
+         (VStack(spacing = 25.) {
             Ellipse()
                 .size(10., 10.)
                 .background(Colors.Green)
                 
-            ImageButton(
-                FontImageSource( Size=48, FontFamily="MaterialSymbols", Glyph = Icons.play, Color = Colors.Lime),
-                Play_Start)
+            ImageButton((if model.player.IsSome then bStop else bPlay),Play_StartStop)
                 .semantics(hint = "Play audio")
-                .centerHorizontal()                        
-       
-            ImageButton(
-                FontImageSource( Size=48, FontFamily="MaterialSymbols", Glyph = Icons.cancel, Color=Colors.Lime),
-                Play_Stop)
-                .semantics(hint = "Stop audio")
-                .centerHorizontal()                        
+                .centerHorizontal()                                           
 
-            ImageButton(
-                FontImageSource(
-                        Size=48,
-                        FontFamily="MaterialSymbols",
-                        Glyph = (if model.recorder.IsNone then Icons.mic else Icons.stop),
-                        Color = Colors.Lime),
-                Recorder_StartStop)
+            ImageButton((if model.recorder.IsSome then bStop else bMic),Recorder_StartStop)
                 .semantics(hint = "Record audio")
                 .centerHorizontal()                        
         })

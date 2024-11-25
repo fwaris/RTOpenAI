@@ -104,12 +104,15 @@ type internal RecordState =
         mic : Extensions.EXT.AudioCapture<BufferFormat>
         buffer : byte[]
         mutable disposed : bool
+        deactivate : (unit->unit) option
     }
     with
         interface IDisposable with
             member this.Dispose() =
                 if not this.disposed then
+                    this.disposed <- true
                     this.mic.Stop()
+                    try this.deactivate |> Option.iter(fun f -> f()) with ex -> Log.exn (ex,"deactivate recording")
                     this.mic.Dispose()
                     this.capture.Dispose()
                     this.alc.Dispose()
@@ -117,7 +120,7 @@ type internal RecordState =
             
         member this.CheckError(src) = Audio._checkError(this.al,src)
         
-        static member Create(format:AudioFormat,activate:(unit->unit) option) =
+        static member Create(format:AudioFormat, activate:(unit->unit) option, dectivate:(unit->unit) option) =
             activate |> Option.iter (fun f -> f())
             let nullPtr = NativePtr.nullPtr
             let alc = ALContext.GetApi()
@@ -150,5 +153,6 @@ type internal RecordState =
                 mic = audio
                 buffer = audioBuffer
                 disposed = false
+                deactivate = dectivate 
             }
             

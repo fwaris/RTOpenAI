@@ -7,7 +7,7 @@ open FSharp.Control
 
 #nowarn "9" //suppress native interop warning
 type Recorder(audioFormat:AudioFormat,activate,deactivate)  =
-    let r = lazy(RecordState.Create(audioFormat,activate))   
+    let r = lazy(RecordState.Create(audioFormat,activate,deactivate))   
     let channel = lazy(Channel.CreateBounded<byte[]>(30))
     let mutable _cancelToken : CancellationTokenSource option = None
     
@@ -41,9 +41,9 @@ type Recorder(audioFormat:AudioFormat,activate,deactivate)  =
         if _cancelToken.IsSome then
                 _cancelToken.Value.Cancel()
                 _cancelToken <- None
-                r.Value.mic.Stop()
-                deactivate |> Option.iter (fun f -> f())
-                if r.IsValueCreated then (r.Value :> IDisposable).Dispose()
+                if r.IsValueCreated then 
+                    r.Value.mic.Stop()
+                    (r.Value :> IDisposable).Dispose()
                 if channel.IsValueCreated then channel.Value.Writer.Complete()
                     
     let mute() =

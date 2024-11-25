@@ -1,8 +1,8 @@
 ﻿namespace RTOpenAI.Audio.Android
 open RTOpenAI.Audio
 
-#if ANDROID
-
+#if ANDROID 
+open Android.Media
 type Recorder(audioFormat) = 
     interface IRecorder with
         member this.Channel: System.Threading.Channels.Channel<byte array> = 
