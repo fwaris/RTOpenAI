@@ -94,7 +94,7 @@
 	</ItemGroup>
 	<ItemGroup>
 		<!--<PackageReference Include="Fabulous" Version="3.0.0-pre6" />-->
-		<PackageReference Include="Fabulous.MauiControls" Version="9.0.0-pre4" />
+		<PackageReference Include="Fabulous.MauiControls" Version="9.0.0-pre5" />
 		<PackageReference Include="FSharp.Control.AsyncSeq" Version="3.2.1" />
 		<PackageReference Include="FSharp.Control.Websockets" Version="0.3.0" />
 		<PackageReference Include="FSharp.Core" Version="9.0.100" />

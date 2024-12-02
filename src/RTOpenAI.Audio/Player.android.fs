@@ -9,7 +9,8 @@ open RTOpenAI.Audio
 #if ANDROID
 open Android.Media
 type Player(audioFormat:RTOpenAI.Audio.AudioFormat) =
-    let channel = lazy(Channel.CreateBounded<byte[]>(30))
+    let mutable channel  = None
+    let initChannel() = match channel with None -> channel <- Some(Channel.CreateBounded<byte[]>(30)) | _ -> ()
     
     let mutable _cancelToken : CancellationTokenSource option = None
     
@@ -30,36 +31,40 @@ type Player(audioFormat:RTOpenAI.Audio.AudioFormat) =
          
     let enqueueChunk(chunk:byte[]) =
         let mutable written = 0
-        while written < chunk.Length do 
+        while audioTrack.Value.PlayState = PlayState.Playing &&  written < chunk.Length do 
             written <- audioTrack.Value.Write(chunk,written,chunk.Length-written)
-    let rec startPlayLoop() =
+            
+    let rec startPlayLoop() =         
         if _cancelToken.IsNone then
             _cancelToken <- Some (new CancellationTokenSource())
-            let comp = 
-                async {
-                    do! 
-                        asyncSeq {
-                            let mutable chunk = [||]
-                            audioTrack.Value.Play()
-                            while _cancelToken.IsSome && not _cancelToken.Value.Token.IsCancellationRequested do
-                                let! r =  channel.Value.Reader.WaitToReadAsync(_cancelToken.Value.Token).AsTask() |> Async.AwaitTask
-                                if r then         
-                                    let _ = channel.Value.Reader.TryRead(&chunk) 
-                                    yield chunk
-                        }
-                        |> AsyncSeq.iter enqueueChunk
-                }                                        
+            initChannel()
+            let comp =
+                task {
+                    let mutable chunk = [||]
+                    audioTrack.Value.Play()
+                    while _cancelToken.IsSome && not _cancelToken.Value.Token.IsCancellationRequested do
+                        let! r =  channel.Value.Reader.WaitToReadAsync(_cancelToken.Value.Token)
+                        if r then         
+                            let _ = channel.Value.Reader.TryRead(&chunk) 
+                            enqueueChunk chunk
+                        else
+                            chunk <- null                    
+                }
             async {
-                match! Async.Catch comp with
+                match! Async.Catch (Async.AwaitTask comp) with
                 | Choice1Of2 _ -> printfn "android play done"
                 | Choice2Of2 ex -> RTOpenAI.Audio.Log.exn(ex,"android Player.startPlayLoop")
             }
             |> Async.Start
         else
-            RTOpenAI.Audio.Log.info "androig playLoop alreadyStarted"
+            RTOpenAI.Audio.Log.info "android playLoop alreadyStarted"
               
-    let cleanup()=
-        if channel.IsValueCreated then channel.Value.Writer.TryComplete() |> ignore        
+    let cleanup() =
+        match channel with
+        | Some c ->
+            c.Writer.TryComplete() |> ignore
+            channel <- None
+        | None -> ()
                 
     let cancel() =
         match _cancelToken with

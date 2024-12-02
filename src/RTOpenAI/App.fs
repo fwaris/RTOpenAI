@@ -129,13 +129,17 @@ module App =
                 .size(10., 10.)
                 .background(Colors.Green)
                 
-            ImageButton((if model.player.IsSome then bStop else bPlay),Play_StartStop)
-                .semantics(hint = "Play audio")
-                .centerHorizontal()                                           
-
-            ImageButton((if model.recorder.IsSome then bStop else bMic),Recorder_StartStop)
-                .semantics(hint = "Record audio")
-                .centerHorizontal()                        
+            Button((if model.player.IsNone then Icons.play else Icons.stop),Play_StartStop)
+                .font(size=48.0, fontFamily="MaterialSymbols")
+                .background(Colors.Transparent)
+                .textColor(Colors.Lime)
+                .centerHorizontal()
+                
+            Button((if model.recorder.IsSome then Icons.stop else Icons.mic),Recorder_StartStop)
+                .font(size=48.0, fontFamily="MaterialSymbols")
+                .background(Colors.Transparent)
+                .textColor(Colors.Lime)
+                .centerHorizontal()                             
         })
             .padding(30., 0., 30., 0.)
             .centerVertical()
@@ -143,9 +147,8 @@ module App =
         
     let view model =
         Application() {
-            Window() {
+            Window(
                 ContentPage(
-                  
                         Grid([Dimension.Star; Dimension.Star],[Dimension.Star]) {
                             controlsView model
                             logView model
@@ -153,10 +156,8 @@ module App =
                   )
                  .padding(0., 0., 0., 0.)
                  .width(300)
-                }            
+                )            
             }
-        
-    
     let subscribe model : Sub<Msg> =
         let backgroundEvent dispatch =
             async{

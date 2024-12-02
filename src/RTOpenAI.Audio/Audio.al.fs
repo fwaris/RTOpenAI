@@ -13,8 +13,14 @@ open Silk.NET.OpenAL.Extensions.EXT
 
 module Audio =
     let _checkError(al:AL,src:string) =
-        let err = al.GetError();
-        if err <> AudioError.NoError then
+        let err = al.GetError()
+        let platformError =
+#if IOS || ANDROID || MACCATALYST
+            AudioError.NoError
+#else
+            AudioError.IllegalCommand //on Windows this value is returned even if there is no apparent error
+#endif
+        if err <> platformError then
             let msg = $"Audio processing error in {src}: %A{err}"
             Log.error msg                
             Utils.debug msg
