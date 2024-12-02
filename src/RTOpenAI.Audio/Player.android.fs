@@ -9,8 +9,7 @@ open RTOpenAI.Audio
 #if ANDROID
 open Android.Media
 type Player(audioFormat:RTOpenAI.Audio.AudioFormat) =
-    let mutable channel  = None
-    let initChannel() = match channel with None -> channel <- Some(Channel.CreateBounded<byte[]>(30)) | _ -> ()
+    let channel  = lazy(Channel.CreateBounded<byte[]>(30))
     
     let mutable _cancelToken : CancellationTokenSource option = None
     
@@ -37,7 +36,6 @@ type Player(audioFormat:RTOpenAI.Audio.AudioFormat) =
     let rec startPlayLoop() =         
         if _cancelToken.IsNone then
             _cancelToken <- Some (new CancellationTokenSource())
-            initChannel()
             let comp =
                 task {
                     let mutable chunk = [||]
@@ -60,11 +58,8 @@ type Player(audioFormat:RTOpenAI.Audio.AudioFormat) =
             RTOpenAI.Audio.Log.info "android playLoop alreadyStarted"
               
     let cleanup() =
-        match channel with
-        | Some c ->
-            c.Writer.TryComplete() |> ignore
-            channel <- None
-        | None -> ()
+        if channel.IsValueCreated then
+            channel.Value.Writer.TryComplete() |> ignore
                 
     let cancel() =
         match _cancelToken with
