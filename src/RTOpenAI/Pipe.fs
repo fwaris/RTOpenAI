@@ -21,6 +21,13 @@ module Pipe =
         let json = JsonSerializer.Serialize(message)
         return! sendRaw client json
     }
+    
+    let sendSilent<'t> ws msg =
+        async {
+            match! send<'t> ws msg with
+            | Result.Ok _ -> ()
+            | Result.Error e -> Log.exn(e.SourceException,"sendSilent")            
+        }
 
     let receive<'t> (client:ThreadSafeWebSocket.ThreadSafeWebSocket) = async {
         let! rslt = receiveRaw client
@@ -33,33 +40,24 @@ module Pipe =
 
     let sendEvent (client:ThreadSafeWebSocket.ThreadSafeWebSocket) (event: Events.ClientEvent) = async {
         match event with
-        | Events.ClientEvent.SessionUpdate session -> 
-            let message = JsonSerializer.Serialize(session)
-            return! sendRaw client message
-        | Events.ClientEvent.ConversationItemCreate item -> 
-            let message = JsonSerializer.Serialize(item)
-            return! sendRaw client message
+        | Events.ClientEvent.SessionUpdate session ->             
+            return! send client session
+        | Events.ClientEvent.ConversationItemCreate item ->          
+            return! send client item
         | Events.ClientEvent.ConversationItemDelete item -> 
-            let message = JsonSerializer.Serialize(item)
-            return! sendRaw client message
+            return! send client item
         | Events.ClientEvent.ConversationItemTruncate item -> 
-            let message = JsonSerializer.Serialize(item)
-            return! sendRaw client message
+            return! send client item
         | Events.ClientEvent.InputAudioBufferAppend buffer -> 
-            let message = JsonSerializer.Serialize(buffer)
-            return! sendRaw client message
+            return! send client buffer
         | Events.ClientEvent.InputAudioBufferClear buffer -> 
-            let message = JsonSerializer.Serialize(buffer)
-            return! sendRaw client message
+            return! send client buffer
         | Events.ClientEvent.InputAudioBufferCommit buffer -> 
-            let message = JsonSerializer.Serialize(buffer)
-            return! sendRaw client message
+            return! send client buffer
         | Events.ClientEvent.ResponseCancel response -> 
-            let message = JsonSerializer.Serialize(response)
-            return! sendRaw client message
+            return! send client response
         | Events.ClientEvent.ResponseCreate response -> 
-            let message = JsonSerializer.Serialize(response)
-            return! sendRaw client message
+            return! send client response
     }
 
     let toEvent (j: JsonDocument) =

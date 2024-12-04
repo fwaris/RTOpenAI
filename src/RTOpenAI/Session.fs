@@ -1,16 +1,21 @@
 ﻿namespace RTOpenAI
 open System
-open System.Buffers
 open System.Threading
+open System.Threading.Channels
 open System.Net.WebSockets
 open FSharp.Control.Websockets
+open FSharp.Control
+open RTOpenAI.Events
 
 type Session = {
-        Ws : ThreadSafeWebSocket.ThreadSafeWebSocket
+        WsWrapper : ThreadSafeWebSocket.ThreadSafeWebSocket
+        Ws : ClientWebSocket
         RTSession: Events.Session
         Conversation: Events.ConversationItem list
         InputAudioBuffer: int16[] list
         Response: Events.ServerEvent list
+        AudioInput : Channel<byte[]>
+        AudioOutput : Channel<byte[]>
     }
 
 module ContentItem = 
@@ -82,22 +87,25 @@ module Session =
                     return raise ex
         }
 
-    let create key =
-        async {
-            let uri = new Uri(url)        
-            let ws = new ClientWebSocket()
-            ws.Options.SetRequestHeader("Authorization", $"Bearer {key}")
-            ws.Options.SetRequestHeader("OpenAI-Beta", "realtime=v1")
-            do! ws.ConnectAsync(uri, CancellationToken.None) |> Async.AwaitTask
-            return 
-                {
-                    Ws=ThreadSafeWebSocket.createFromWebSocket(ws)
-                    RTSession=Events.Session.Default
-                    Conversation=[]
-                    Response=[]
-                    InputAudioBuffer=[]
-                }
+    let create key audioInput audioOutput =
+        let uri = new Uri(url)        
+        let ws = new ClientWebSocket()
+        ws.Options.SetRequestHeader("Authorization", $"Bearer {key}")
+        ws.Options.SetRequestHeader("OpenAI-Beta", "realtime=v1")  
+        {
+            WsWrapper=ThreadSafeWebSocket.createFromWebSocket(ws)
+            Ws = ws
+            RTSession=Events.Session.Default
+            Conversation=[]
+            Response=[]
+            InputAudioBuffer=[]
+            AudioInput = audioInput
+            AudioOutput  = audioOutput
         }
+                
+    let close (sess:Session) =
+        sess.WsWrapper.websocket.CloseAsync(WebSocketCloseStatus.NormalClosure, "done", CancellationToken.None)
+        |> Async.AwaitTask
 
     let nextEvent (ws:ThreadSafeWebSocket.ThreadSafeWebSocket) (state:'t) (stateMachine:('t * Events.ServerEvent) -> 't) =
       async {
@@ -106,5 +114,21 @@ module Session =
                 match result with
                 | Ok (Some message) -> stateMachine (state, message)
                 | Ok None -> failwith "websocket closed"
-                | Error x -> raise x.SourceException
+                | Result.Error x -> raise x.SourceException
         }
+
+    type SessionEvent = SE_Server of ServerEvent | SE_InputAudio of byte[] | SE_Tick of DateTime
+    let serverEvents (ws:ThreadSafeWebSocket.ThreadSafeWebSocket) =
+        asyncSeq {
+            let mutable go = true
+            while go do 
+                match! Pipe.receiveEvent ws with
+                | Result.Ok (Some message) -> yield (SE_Server message)
+                | Result.Ok None -> go <- false
+                | Result.Error x -> raise x.SourceException
+        }
+        
+    let micEvents (audio:Channel<byte[]>) = audio.Reader.ReadAllAsync() |> AsyncSeq.ofAsyncEnum |> AsyncSeq.map SE_InputAudio
+    
+    let ticks() = AsyncSeq.intervalMs 1000 |> AsyncSeq.map SE_Tick
+    

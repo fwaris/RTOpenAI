@@ -302,17 +302,6 @@ type Response =
             tool_choice = "auto"; temperature = None; max_output_tokens = None 
         }
 
-type ClientEvent =
-    | SessionUpdate of SessionUpdateEvent
-    | InputAudioBufferAppend of InputAudioBufferAppendEvent
-    | InputAudioBufferCommit of InputAudioBufferCommitEvent
-    | InputAudioBufferClear of InputAudioBufferClearEvent
-    | ConversationItemCreate of ConversationItemCreateEvent
-    | ConversationItemTruncate of ConversationItemTruncateEvent
-    | ConversationItemDelete of ConversationItemDeleteEvent
-    | ResponseCreate of ResponseCreateEvent
-    | ResponseCancel of ResponseCancelEvent
-
 // Server Event Record Types
 
 ///These are events emitted from the OpenAI Realtime WebSocket server to the client.
@@ -663,3 +652,15 @@ type ServerEvent =
     | ResponseFunctionCallArgumentsDelta of ResponseFunctionCallArgumentsDeltaEvent
     | ResponseFunctionCallArgumentsDone of ResponseFunctionCallArgumentsDoneEvent
     | RateLimitsUpdated of RateLimitsUpdatedEvent
+
+
+type ClientEvent =
+    | SessionUpdate of SessionUpdateEvent
+    | InputAudioBufferAppend of InputAudioBufferAppendEvent
+    | InputAudioBufferCommit of InputAudioBufferCommitEvent
+    | InputAudioBufferClear of InputAudioBufferClearEvent
+    | ConversationItemCreate of ConversationItemCreateEvent
+    | ConversationItemTruncate of ConversationItemTruncateEvent
+    | ConversationItemDelete of ConversationItemDeleteEvent
+    | ResponseCreate of ResponseCreateEvent
+    | ResponseCancel of ResponseCancelEvent

@@ -1,19 +1,28 @@
 ﻿namespace RTOpenAI
 open System
 open System.Net.WebSockets
+open System.Threading.Channels
+open FSharp.Control
+open RTOpenAI.Events
+open RTOpenAI.Session
+
+type MachineMsg =
+    | MM_Session_Created
+    | MM_Session_Ended
+    | MM_EventError of ErrorDetail
+    | MM_Audio of byte[]
+    | MM_Text of string
+    | MM_ClientEvent of  ClientEvent
 
 module Machine =
-
-    let defaultMachine log dispatch (session: Session, event: Events.ServerEvent) : Session =
-        log event
+    let processServerEvent (session: RTOpenAI.Session) (event: Events.ServerEvent) : (MachineMsg list * RTOpenAI.Session) =        
         match event with
-        | Events.ServerEvent.Error e ->
+        | Events.ServerEvent.Error e -> 
             // Handle error event (you might want to log the error or update the session state)
-            session
+            [MM_EventError e.error],session
 
-        | Events.ServerEvent.SessionCreated e -> 
-            dispatch Session_Created
-            {session with RTSession=e.session}
+        | Events.ServerEvent.SessionCreated e ->             
+            [MM_Session_Created],{session with RTSession=e.session}
 
         | Events.ServerEvent.SessionUpdated e ->            
             // Update session with updated session data
@@ -28,94 +37,87 @@ module Machine =
                     input_audio_transcription = e.session.input_audio_transcription |> Option.orElse session.RTSession.input_audio_transcription
                     turn_detection = e.session.turn_detection |> Option.orElse session.RTSession.turn_detection
                 }
-            {session with RTSession=rtSession}
-
+            [],{session with RTSession=rtSession}
         | Events.ServerEvent.ConversationCreated e ->
-            session
-
+            [],session
         | Events.ServerEvent.ConversationItemCreated e ->
-            {session with Conversation = Conversation.insertItem e session.Conversation}
-
+            [],{session with Conversation = Conversation.insertItem e session.Conversation}
         | Events.ServerEvent.ConversationItemInputAudioTranscriptionCompleted e ->
-            {session with Conversation=Conversation.updateAudioTranscription e session.Conversation}
-
+            [],{session with Conversation=Conversation.updateAudioTranscription e session.Conversation}
         | Events.ServerEvent.ConversationItemInputAudioTranscriptionFailed e ->
-            {session with Conversation=[]}
-
+            [],{session with Conversation=[]}
         | Events.ServerEvent.ConversationItemTruncated e ->
-            session
-
+            [],session
         | Events.ServerEvent.ConversationItemDeleted e ->
-            {session with Conversation = Conversation.deleteItem e session.Conversation}
-
+            [],{session with Conversation = Conversation.deleteItem e session.Conversation}
         | Events.ServerEvent.InputAudioBufferCommitted e ->
-            session
-
+            [MM_Audio [||]],session  
         | Events.ServerEvent.InputAudioBufferCleared e ->
-            session
-
+            [],session
         | Events.ServerEvent.InputAudioBufferSpeechStarted e ->
-            session
-
+            [],session
         | Events.ServerEvent.InputAudioBufferSpeechStopped e ->
-            session
-
+            [],session
         | Events.ServerEvent.ResponseCreated e ->
-            session
-
+            [],session
         | Events.ServerEvent.ResponseDone e ->
-            session
-
+            [],session
         | Events.ServerEvent.ResponseOutputItemAdded e ->
-            session
-
+            [],session
         | Events.ServerEvent.ResponseOutputItemDone e ->
-            session
-
+            [],session
         | Events.ServerEvent.ResponseContentPartAdded e ->
-            session
-
+            [],session
         | Events.ServerEvent.ResponseContentPartDone e ->
-            session
-
+            [],session
         | Events.ServerEvent.ResponseTextDelta e ->
-            session
-
+            [],session
         | Events.ServerEvent.ResponseTextDone e ->
-            session
-
+            [],session
         | Events.ServerEvent.ResponseAudioDelta e ->
-            session
-
+            [],session
         | Events.ServerEvent.ResponseAudioDone e ->
-            session
-
+            [],session
         | Events.ServerEvent.ResponseAudioTranscriptDelta e ->
-            session
-
+            [],session
         | Events.ServerEvent.ResponseAudioTranscriptDone e ->
-            session
-
+            [],session
         | Events.ServerEvent.ResponseFunctionCallArgumentsDelta e ->
-            session
-
+            [],session
         | Events.ServerEvent.ResponseFunctionCallArgumentsDone e ->
-            session
-
+            [],session
         | Events.ServerEvent.RateLimitsUpdated e ->
-            session
+            [],session
 
-    let run (state:Ref<Session>) machine dispatch = 
-        let comp = 
-            async {
-                while state.Value.Ws.State = WebSocketState.Open do
-                    let! s' = Session.nextEvent state.Value.Ws state.Value machine
-                    state.Value <- s'
-            }
+    let logIfFalse msg r = if not r then Log.info msg
+    
+    ///handle events generated by machine
+    let publishEvent (audioOutput:Channel<byte[]>) ws dispatch event =
         async {
-            match! Async.Catch(comp) with
-            | Choice1Of2 _ -> dispatch Session_Ended
-            | Choice2Of2 ex -> dispatch (EventError ex)
+            try 
+                match event with 
+                | MM_Audio chunk -> audioOutput.Writer.TryWrite(chunk) |> logIfFalse "dropped speaker audio" 
+                | MM_Text text -> dispatch (MM_Text text)
+                | MM_ClientEvent ev -> do! Pipe.sendSilent ws ev
+                | MM_EventError err -> Log.error err.message
+                | MM_Session_Created -> dispatch MM_Session_Created
+                | MM_Session_Ended -> dispatch MM_Session_Ended
+            with ex ->
+                Log.exn (ex, "publishEvent")
         }
-        |> Async.Start
-        
+       
+    let defaultMachine (_,session:RTOpenAI.Session) (event:SessionEvent) =
+        match event with
+        | SE_Server serverEvent -> processServerEvent session serverEvent
+        | _ -> [],session
+   
+    let run machine dispatch (initSession:RTOpenAI.Session) =
+        Session.serverEvents initSession.WsWrapper
+        |> AsyncSeq.merge (Session.micEvents initSession.AudioInput)
+        |> AsyncSeq.merge (Session.ticks())
+        |> AsyncSeq.scan machine ([],initSession)
+        |> AsyncSeq.collect(fst>>AsyncSeq.ofSeq)
+        |> AsyncSeq.iterAsync (publishEvent initSession.AudioOutput initSession.WsWrapper dispatch)           
+
+    let runDefault = run defaultMachine
+    

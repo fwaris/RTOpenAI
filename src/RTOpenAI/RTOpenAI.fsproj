@@ -43,8 +43,10 @@
 		<Compile Include="Events.fs" />
 		<Compile Include="Pipe.fs" />
 		<Compile Include="Session.fs" />
-		<Compile Include="Types.fs" />
 		<Compile Include="Machine.fs" />
+		<Compile Include="Types.fs" />
+		<Compile Include="Update.fs" />
+		<Compile Include="View.fs" />
 		<Compile Include="App.fs" />
 		<Compile Include="MauiProgram.fs" />
 	</ItemGroup>
