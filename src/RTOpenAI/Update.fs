@@ -6,6 +6,7 @@ open FSharp.Control.Websockets
 open Fabulous
 open type Fabulous.Maui.View
 open Microsoft.Maui.Controls
+open Microsoft.Maui.Dispatching
 open Microsoft.Maui.Storage
 open Microsoft.Maui.ApplicationModel
 open FSharp.Control
@@ -36,16 +37,20 @@ module Connect =
         match model.session with
         | Some sess -> sess.WsWrapper.websocket.State = Net.WebSockets.WebSocketState.Connecting
         | None -> false
-        
-    let promptKey() =
+
+    let promptForKey() =
+        Application.Current.Windows.[0].Page
+            .DisplayPromptAsync("Key","Input OpenAI Real-time API key")
+    let tryGetKeyUser() =
         task {
-            let app = Application.Current
-            let wins = app.Windows
-            let page = wins.[0].Page
-            let! result = page.DisplayPromptAsync("Key","Input OpenAI Real-time API key")
-            match result with
-            | null -> ()
-            | s -> do! SecureStorage.Default.SetAsync(C.API_KEY,s)
+            try
+                let! result = MainThread.InvokeOnMainThreadAsync<string>(promptForKey)
+                match result with
+                | null -> ()
+                | s -> do! SecureStorage.Default.SetAsync(C.API_KEY,s)
+            with ex ->
+                Log.exn (ex,"tryGetKeyUser")
+                return raise ex
         }
         
     let getKey() =
@@ -53,7 +58,7 @@ module Connect =
             let! key = SecureStorage.Default.GetAsync(C.API_KEY)
             match key with
             | null ->
-                do! promptKey()
+                do! tryGetKeyUser()
                 let! key = SecureStorage.Default.GetAsync(C.API_KEY)
                 return match key with null -> None | s -> Some s
             | s -> return Some s
@@ -106,7 +111,7 @@ module Update =
         | Session_Set (Some(sess,rcdr,plyr)) -> {model with session = Some sess; recorder = Some rcdr; player = Some plyr }, Cmd.ofMsg (Session_Connect sess)
         | Session_Set None -> {model with session = None; recorder = None; player = None }, Cmd.none
         | Session_Connect sess -> model, Cmd.OfTask.attempt Connect.connect sess EventError
-        | Key_Set -> model, Cmd.OfTask.attempt Connect.promptKey () EventError
+        | Key_Set -> model, Cmd.OfTask.attempt Connect.tryGetKeyUser () EventError
         | Key_Get -> model, Cmd.OfAsync.either Connect.getKey () Key_Value EventError
         | Key_Value str -> model, Cmd.none
         

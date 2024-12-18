@@ -74,14 +74,22 @@
 	</ItemGroup>
 	<ItemGroup Condition="$(TargetPlatformIdentifier) == 'ios'">
 		<None Include="$(iOSProjectFolder)Info.plist" LogicalName="Info.plist" />
+		<None Include="$(iOSProjectFolder)Entitlements.plist" LogicalName="Entitlements.plist" />
 		<Compile Include="$(iOSProjectFolder)AppDelegate.fs" />
 		<Compile Include="$(iOSProjectFolder)Program.fs" />
 	</ItemGroup>
 	<ItemGroup Condition="$(TargetPlatformIdentifier) == 'maccatalyst'">
 		<None Include="$(MacCatalystProjectFolder)Info.plist" LogicalName="Info.plist" />
+		<None Include="$(MacCatalystProjectFolder)Entitlements.plist" LogicalName="Entitlements.plist" />
 		<Compile Include="$(MacCatalystProjectFolder)AppDelegate.fs" />
 		<Compile Include="$(MacCatalystProjectFolder)Program.fs" />
 	</ItemGroup>
+	<PropertyGroup Condition="'$(Configuration)|$(TargetFramework)|$(Platform)'=='Debug|net8.0-maccatalyst|AnyCPU'">
+		<EnableCodeSigning>True</EnableCodeSigning>
+		<CodesignKey>Faisal Waris</CodesignKey>
+		<CodesignProvision>RTOpenAI</CodesignProvision>
+		<CodesignEntitlements>Entitlements.plist</CodesignEntitlements>
+	</PropertyGroup>
 	<ItemGroup Condition="$(TargetPlatformIdentifier) == 'windows'">
 		<Manifest Include="$(WindowsProjectFolder)app.manifest" />
 		<AppxManifest Include="$(WindowsProjectFolder)Package.appxmanifest" />
@@ -94,16 +102,16 @@
 		<TizenManifestFile Include="$(TizenProjectFolder)tizen-manifest.xml" />
 		<Compile Include="$(TizenProjectFolder)Main.fs" />
 	</ItemGroup>
+	
 	<ItemGroup>
-		<!--<PackageReference Include="Fabulous" Version="3.0.0-pre6" />-->
 		<PackageReference Include="Fabulous.MauiControls" Version="9.0.0-pre5" />
 		<PackageReference Include="FSharp.Control.AsyncSeq" Version="3.2.1" />
 		<PackageReference Include="FSharp.Control.Websockets" Version="0.3.0" />
 		<PackageReference Include="FSharp.Core" Version="9.0.100" />
 		<PackageReference Include="FSharp.SystemTextJson" Version="1.3.13" />
 		<PackageReference Include="Microsoft.Extensions.Logging.Console" Version="9.0.0" />
-		<PackageReference Include="Microsoft.Maui.Controls" Version="9.0.10" />
-		<PackageReference Include="Microsoft.Maui.Controls.Compatibility" Version="9.0.10" />
+		<PackageReference Include="Microsoft.Maui.Controls" Version="9.0.21" />
+		<PackageReference Include="Microsoft.Maui.Controls.Compatibility" Version="9.0.21" />
 		<PackageReference Include="System.Net.Http" Version="4.3.4" />
 		<PackageReference Include="System.Private.Uri" Version="4.3.2" />
 		<PackageReference Include="System.Text.Json" Version="9.0.0" />
