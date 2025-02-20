@@ -1,0 +1,43 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <TargetFrameworks>net9.0-ios;net9.0-maccatalyst</TargetFrameworks>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>true</ImplicitUsings>
+    <IsBindingProject>true</IsBindingProject>
+    <GeneratePackageOnBuild>False</GeneratePackageOnBuild>
+    <SupportedOSPlatformVersion Condition="$(TargetPlatformIdentifier) == 'ios'">15.0</SupportedOSPlatformVersion>
+    <SupportedOSPlatformVersion Condition="$(TargetPlatformIdentifier) == 'maccatalyst'">15.0</SupportedOSPlatformVersion>
+    <NoBindingEmbedding>true</NoBindingEmbedding>
+  </PropertyGroup>
+  
+  <!--
+  <PropertyGroup Condition=" '$(Configuration)' == 'Debug' ">
+    <CodesignKey>iPhone Developer</CodesignKey>
+  </PropertyGroup>
+  -->
+  
+  <ItemGroup>
+    <ObjcBindingApiDefinition Include="ApiDefinitions.cs" />
+    <ObjcBindingCoreSource Include="StructsAndEnums.cs" />
+  </ItemGroup>
+
+  <ItemGroup>
+<!--    
+    <NativeReference Include="WebRTC.xcframework">
+      <Kind>Framework</Kind>
+      <Frameworks></Frameworks>
+      <LinkerFlags></LinkerFlags>
+      <WeakFrameworks></WeakFrameworks>
+      <ForceLoad>False</ForceLoad>
+      <NeedsGccExceptionHandling>False</NeedsGccExceptionHandling>
+      <IsCxx>False</IsCxx>
+      <SmartLink>False</SmartLink>
+    </NativeReference>
+-->
+    <NativeReference Include="WebRTC.xcframework">
+      <Kind>Framework</Kind>
+      <Frameworks></Frameworks>
+      <LinkerFlags></LinkerFlags>
+    </NativeReference>
+  </ItemGroup>
+</Project>

@@ -1,0 +1,132 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+	<PropertyGroup>
+		<TargetFrameworks>net9.0-android;net9.0-ios;net9.0-maccatalyst</TargetFrameworks>
+		<!--<TargetFrameworks Condition="$([MSBuild]::IsOSPlatform('windows'))">$(TargetFrameworks);net9.0-windows10.0.19041.0</TargetFrameworks>-->
+		<!-- Uncomment to also build the tizen app. You will need to install tizen by following this: https://github.com/Samsung/Tizen.NET -->
+		<!-- <TargetFrameworks>$(TargetFrameworks);net8.0-tizen</TargetFrameworks> -->
+		<OutputType>Exe</OutputType>
+		<RootNamespace>RT.Assistant</RootNamespace>
+		<AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+		<!-- Windows packaging -->
+		<!--<WindowsPackageType>None</WindowsPackageType>
+		<WindowsAppSdkUndockedRegFreeWinRTInitialize>false</WindowsAppSdkUndockedRegFreeWinRTInitialize>
+		<UseWinUI>true</UseWinUI>-->
+		
+		<UseMaui>true</UseMaui>
+		<SingleProject>true</SingleProject>
+		<EnableDefaultItems>false</EnableDefaultItems>
+		<DisableImplicitFSharpCoreReference>true</DisableImplicitFSharpCoreReference>
+		<!-- Display name -->
+		<ApplicationTitle>Plan Selection Assistant</ApplicationTitle>
+		<!-- App Identifier -->
+		<ApplicationId>com.companyname.PlanSelectionAssistant</ApplicationId>
+		<ApplicationIdGuid>5D26BACE-A3ED-4E42-ABDA-1B0C073F7764</ApplicationIdGuid>
+		<!-- Versions -->
+		<ApplicationDisplayVersion>1.0</ApplicationDisplayVersion>
+		<ApplicationVersion>1</ApplicationVersion>
+		<TargetPlatformIdentifier Condition=" $(TargetPlatformIdentifier) == '' ">$([MSBuild]::GetTargetPlatformIdentifier('$(TargetFramework)'))</TargetPlatformIdentifier>
+		<SupportedOSPlatformVersion Condition="$(TargetPlatformIdentifier) == 'ios'">15.0</SupportedOSPlatformVersion>
+		<SupportedOSPlatformVersion Condition="$(TargetPlatformIdentifier) == 'maccatalyst'">15.0</SupportedOSPlatformVersion>
+		<SupportedOSPlatformVersion Condition="$(TargetPlatformIdentifier) == 'android'">21.0</SupportedOSPlatformVersion>
+		<SupportedOSPlatformVersion Condition="$(TargetPlatformIdentifier) == 'windows'">10.0.17763.0</SupportedOSPlatformVersion>
+		<TargetPlatformMinVersion Condition="$(TargetPlatformIdentifier) == 'windows'">10.0.17763.0</TargetPlatformMinVersion>
+		<SupportedOSPlatformVersion Condition="$(TargetPlatformIdentifier) == 'tizen'">6.5</SupportedOSPlatformVersion>
+	</PropertyGroup>
+	<ItemGroup>
+		<Content Include="readme.md" />
+		<Content Include="Resources\Raw\plan_schema.pl" />
+		<Content Include="scripts\PLANS.json" />
+		<None Include="scripts\AICore.fsx" />
+		<Content Include="scripts\BasePlanStructure.pl" />
+		<None Include="scripts\sandbox.fsx" />
+		<None Include="scripts\ExtractStructure.fsx" />
+		<None Include="scripts\SeliniumTest.fsx" />
+		<None Include="scripts\JintTest.fsx" />
+		<Compile Include="Constants.fs" />
+		<Compile Include="Icons.fs" />
+		<Compile Include="Log.fs" />
+		<Compile Include="Utils.fs" />
+		<Compile Include="Settings.fs" />
+		<Compile Include="Plan\AICore.fs" />
+		<Compile Include="Plan\PlanPrompts.fs" />
+		<Compile Include="Model\AppMsg.fs" />
+		<Compile Include="Model\Navigation.fs" />
+		<Compile Include="Model\Model.fs" />
+		<Compile Include="Model\Audio.fs" />
+		<Compile Include="Model\PlanQuery.fs" />
+		<Compile Include="Model\PlanFunctions.fs" />
+		<Compile Include="Model\PlanMachine.fs" />
+		<Compile Include="Model\Connect.fs" />
+		<Compile Include="Model\Update.fs" />
+		<Compile Include="Views\Settings.fs" />
+		<Compile Include="Views\ViewExtensions.fs" />
+		<Compile Include="Views\Chat.fs" />
+		<Compile Include="App\App.fs" />
+		<Compile Include="App\MauiProgram.fs" />
+	</ItemGroup>
+	<ItemGroup>
+		<!-- App Icon -->
+		<MauiIcon Include="Resources\AppIcon\appicon.svg" ForegroundFile="Resources\AppIcon\appiconfg.svg" Color="#512BD4" />
+		<!-- Custom Fonts -->
+		<MauiFont Include="Resources\Fonts\*" />
+		<!-- Images -->
+		<MauiImage Include="Resources\Images\*" />
+		<MauiImage Update="Resources\Images\dotnet_bot.svg" BaseSize="168,208" />
+		<!-- Raw Assets (also remove the "Resources\Raw" prefix) -->
+		<MauiAsset Include="Resources\Raw\**" LogicalName="%(RecursiveDir)%(Filename)%(Extension)" />
+		<!-- Splash Screen -->
+		<MauiSplashScreen Include="Resources\Splash\splash.svg" Color="#512BD4" BaseSize="128,128" />
+	</ItemGroup>
+	<ItemGroup Condition="$(TargetPlatformIdentifier) == 'android'">
+		<AndroidResource Include="$(AndroidProjectFolder)Resources/*/*" />
+		<AndroidResource Remove="$(AndroidProjectFolder)Resources/raw/.*" />
+		<AndroidResource Update="$(AndroidProjectFolder)Resources/raw/*" />
+		<AndroidAsset Include="$(AndroidProjectFolder)Assets/**/*" Exclude="$(AndroidProjectFolder)Assets/**/.*/**" />
+		<AndroidManifest Include="$(AndroidProjectFolder)AndroidManifest.xml" />
+		<Compile Include="$(AndroidProjectFolder)MainActivity.fs" />
+		<Compile Include="$(AndroidProjectFolder)MainApplication.fs" />
+	</ItemGroup>
+	<ItemGroup Condition="$(TargetPlatformIdentifier) == 'ios'">
+		<None Include="$(iOSProjectFolder)Info.plist" LogicalName="Info.plist" />
+		<None Include="$(iOSProjectFolder)Entitlements.plist" LogicalName="Entitlements.plist" />
+		<Compile Include="$(iOSProjectFolder)AppDelegate.fs" />
+		<Compile Include="$(iOSProjectFolder)Program.fs" />
+	</ItemGroup>
+	<ItemGroup Condition="$(TargetPlatformIdentifier) == 'maccatalyst'">
+		<None Include="$(MacCatalystProjectFolder)Info.plist" LogicalName="Info.plist" />
+		<None Include="Platforms\MacCatalyst\Entitlements._plist" LogicalName="Entitlements.plist" />
+		<Compile Include="$(MacCatalystProjectFolder)AppDelegate.fs" />
+		<Compile Include="$(MacCatalystProjectFolder)Program.fs" />
+	</ItemGroup>
+	<ItemGroup Condition="$(TargetPlatformIdentifier) == 'windows'">
+		<Manifest Include="$(WindowsProjectFolder)app.manifest" />
+		<AppxManifest Include="$(WindowsProjectFolder)Package.appxmanifest" />
+		<Compile Include="Platforms\Windows\UndockedRegFreeWinRTFS.fs" />
+		<Compile Include="$(WindowsProjectFolder)App.fs" />
+		<Compile Include="$(WindowsProjectFolder)Main.fs" />
+		<PackageReference Include="FSharp.Maui.WinUICompat" Version="1.1.0" />
+	</ItemGroup>
+	<ItemGroup Condition="$(TargetPlatformIdentifier) == 'tizen'">
+		<TizenManifestFile Include="$(TizenProjectFolder)tizen-manifest.xml" />
+		<Compile Include="$(TizenProjectFolder)Main.fs" />
+	</ItemGroup>
+	
+	<ItemGroup>
+		<PackageReference Include="Fabulous.MauiControls" Version="9.0.0-pre6" />
+		<PackageReference Include="FSharp.Control.AsyncSeq" Version="3.2.1" />
+		<PackageReference Include="Microsoft.Extensions.Logging.Console" Version="9.0.2" />
+		<PackageReference Include="Microsoft.Maui.Controls" Version="9.0.40" />
+		<PackageReference Include="Microsoft.Maui.Controls.Compatibility" Version="9.0.40" />
+		<PackageReference Include="Microsoft.SemanticKernel" Version="1.37.0" />
+		<PackageReference Include="System.Net.Http" Version="4.3.4" />
+		<PackageReference Include="System.Net.Primitives" Version="4.3.1" />
+		<PackageReference Include="System.Net.Security" Version="4.3.2" />
+		<PackageReference Include="System.Private.Uri" Version="4.3.2" />
+		<PackageReference Include="System.Text.RegularExpressions" Version="4.3.1" />
+		<PackageReference Update="FSharp.Core" Version="9.0.100" />
+	</ItemGroup>
+	
+	<ItemGroup>
+	  <ProjectReference Include="..\..\..\RTOpenAI.Api\RTOpenAI.Api.fsproj" />
+	</ItemGroup>
+</Project>

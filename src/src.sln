@@ -1,0 +1,48 @@
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 17
+VisualStudioVersion = 17.5.2.0
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "WebCme", "WebCme", "{5CA1D4FA-83EA-4934-49D7-0D98D0F03C8D}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Samples", "Samples", "{5D20AA90-6969-D8BD-9DCD-8634F4692FDA}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "WebRTCme.Bindings.Maui.iOS", "WebCme\WebRTCme.Bindings.Maui.iOS\WebRTCme.Bindings.Maui.iOS.csproj", "{1D61C99A-6EFF-E4C3-B711-9342DAF511BF}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "WebRTCme.Bindings.Maui.Android", "WebCme\WebRTCme.Bindings.Maui.Android\WebRTCme.Bindings.Maui.Android.csproj", "{EE868DCE-F363-4135-E7D6-190CBA78B5B7}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "PlanSelection", "PlanSelection", "{DCBF1A13-D63B-36B5-BEE4-49533C76455A}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "RT.Assistant.CodeGen", "Samples\PlanSelection\RT.Assistant.CodeGen\RT.Assistant.CodeGen.csproj", "{912A8CA7-0998-7FE0-C7C5-2C09726CA004}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{1D61C99A-6EFF-E4C3-B711-9342DAF511BF}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{1D61C99A-6EFF-E4C3-B711-9342DAF511BF}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{1D61C99A-6EFF-E4C3-B711-9342DAF511BF}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{1D61C99A-6EFF-E4C3-B711-9342DAF511BF}.Release|Any CPU.Build.0 = Release|Any CPU
+		{EE868DCE-F363-4135-E7D6-190CBA78B5B7}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{EE868DCE-F363-4135-E7D6-190CBA78B5B7}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{EE868DCE-F363-4135-E7D6-190CBA78B5B7}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{EE868DCE-F363-4135-E7D6-190CBA78B5B7}.Release|Any CPU.Build.0 = Release|Any CPU
+		{912A8CA7-0998-7FE0-C7C5-2C09726CA004}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{912A8CA7-0998-7FE0-C7C5-2C09726CA004}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{912A8CA7-0998-7FE0-C7C5-2C09726CA004}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{912A8CA7-0998-7FE0-C7C5-2C09726CA004}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(NestedProjects) = preSolution
+		{1D61C99A-6EFF-E4C3-B711-9342DAF511BF} = {5CA1D4FA-83EA-4934-49D7-0D98D0F03C8D}
+		{EE868DCE-F363-4135-E7D6-190CBA78B5B7} = {5CA1D4FA-83EA-4934-49D7-0D98D0F03C8D}
+		{DCBF1A13-D63B-36B5-BEE4-49533C76455A} = {5D20AA90-6969-D8BD-9DCD-8634F4692FDA}
+		{912A8CA7-0998-7FE0-C7C5-2C09726CA004} = {DCBF1A13-D63B-36B5-BEE4-49533C76455A}
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {DE40D6FD-0FBD-400E-B868-BA1CA469DC25}
+	EndGlobalSection
+EndGlobal
