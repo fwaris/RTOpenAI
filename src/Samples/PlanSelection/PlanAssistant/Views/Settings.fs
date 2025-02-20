@@ -43,7 +43,7 @@ module Settings =
             let! settings = EnvironmentObject(Settings.Environment.settingsKey)
             let! model = Context.Mvu(program nav appMsDispatcher, settings) 
             (ContentPage(
-                Grid([Dimension.Absolute 100.0; Dimension.Star; Dimension.Absolute 50.0],[Dimension.Absolute 50.0;]) {
+                Grid([Dimension.Absolute 100.0; Dimension.Star; Dimension.Absolute 55.0],[Dimension.Absolute 50.0;]) {
                     Label($"OpenAI Key:")
                         .gridColumn(0)
                         .alignEndHorizontal()

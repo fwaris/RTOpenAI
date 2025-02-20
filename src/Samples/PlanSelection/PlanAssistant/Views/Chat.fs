@@ -53,18 +53,17 @@ module Chat =
         |> Program.withSubscription(subscriptions appMsgDispatcher)
         
     let headerView (model:Model) =
-        (Grid([Dimension.Star; Dimension.Star; Dimension.Star],[Dimension.Star]) {
+        (Grid([Dimension.Star; Dimension.Star; Dimension.Star],[Dimension.Absolute 50.0]) {
             Button(Icons.settings,Settings_Show)
                 .isEnabled(not (model.sessionState = RTOpenAI.WebRTC.State.Connecting))
                 .font(size=30.0, fontFamily=C.FONT_SYMBOLS)
                 .background(Colors.Transparent)
                 .textColor(Colors.Magenta)
-                .centerVertical()
                 .alignStartHorizontal()
                 .gridColumn(0)
             (HStack() {
-                Button("+",FontLarger).background(Colors.Transparent).font(size=25.0, fontFamily=C.FONT_REG).margin(2.).textColor(Colors.Magenta)
-                Button("-",FontSmaller).background(Colors.Transparent).font(size=25.0, fontFamily=C.FONT_REG).margin(2.).textColor(Colors.Magenta)
+                Button("+",FontLarger).background(Colors.Transparent).font(size=25.0, fontFamily=C.FONT_REG).textColor(Colors.Magenta)
+                Button("-",FontSmaller).background(Colors.Transparent).font(size=25.0, fontFamily=C.FONT_REG).textColor(Colors.Magenta)
             })
                 .gridColumn(1)
                 .centerHorizontal()
@@ -84,9 +83,7 @@ module Chat =
                 .gridColumn(2)               
 
         })
-            .gridRow(0)
-            .height(45.)
-            .centerVertical()
+            .gridRow(0)            
             .gridColumnSpan(2)
                         
     let logView (model:Model) =
@@ -113,10 +110,11 @@ module Chat =
                 .reference(model.hybridView)
                 .margin(5.)
             Button("Submit",SubmitCode)
-                .font(size=11.0, fontFamily=C.FONT_SYMBOLS)
-                .centerVertical()
-                .alignEndHorizontal()
-                .gridRow(1)                
+                .font(size=15.0)
+                .margin(1)
+                .centerVertical()               
+                .gridRow(1)
+                
             (Editor(model.code.Predicates,SetConsult))                                
                 .font(size=model.fontSize)
                 .gridRow(2)
@@ -137,10 +135,10 @@ module Chat =
         Component("Chat") {
             let! model = Context.Mvu(program nav appMsgDispatcher)            
             ContentPage(
-                    (Grid([Dimension.Star; Dimension.Star],[Dimension.Absolute 35.0; Dimension.Star]) {
-                        headerView model
+                    (Grid([Dimension.Star; Dimension.Star],[Dimension.Absolute 53.0; Dimension.Star]) {
                         controlsView model
                         logView model
+                        headerView model //needed for android
                     })
                         .margin(5.)
               )

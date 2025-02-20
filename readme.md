@@ -105,6 +105,8 @@ The solution works for Android, iOS and MacOS (maccatalyst). Windows requires a 
 WebRTC for Windows is available from [SipSorcery](https://www.nuget.org/packages/SIPSorcery) 
 but it has not been integrated yet.
 
+There is some quirkiness in building the WebRTC Android and IOS binding project (under WebCme). Sometimes need to clean and re-build the solution.
+
 ### Acknowledgements
 
 - Tim Lariviere for [Fabulous Maui](https://github.com/fabulous-dev/Fabulous.MauiControls)  
