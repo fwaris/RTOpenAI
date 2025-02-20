@@ -16,14 +16,14 @@ The sample demonstrates the use of *function calling* with the realtime API. The
 calling flow is as follows:
 
 - The realtime API's 'session' object is updated (soon after its creation) to include
-the description of available functions that the LLM may call (here there is only one).
-  - Note there other client events where function descriptions may also be included (see realtime API documentation)
+the description of available functions that the LLM may call.
+  - Note that there are some other client event types where function descriptions may also be included (see realtime API documentation)
 - User asks question
 - Depending on the context, the server LLM may decide to call a function
   - If so, it will create any required parameters for the function to be called.
 - Client receives a server event to actually call the function with the given parameters
-- Client invokes the function and sends the function response to the server asynchronously.
-- Server sends the function results back to the client. The client know that server has seen the response,
+- Client invokes the function and sends the function response to the server asynchronously
+- Server sends the function results back to the client. The client knows that server has seen the response,
 it may or may not do something with that (like update the UI).
 
 Understand that the user can continue conversing with the model while the function call processing is occuring.
@@ -55,7 +55,7 @@ the chat history (if any).
 - Client receives the function call message with query.
 - Client converts the natural language query to a Prolog query by invoking another LLM (4o with fallback to o3-mini, for now) to
 perform the code generation.
-- Client executes the generated Prolog code via the Tau Prolog interpreter which runs in the javßascript engine inside a Maui
+- Client executes the generated Prolog code via the Tau Prolog interpreter which runs in the javascript engine inside a Maui
 HybridWebView control. The javascript code loads the plan 'database', which is just a set of Prolog 'facts' in a file, and then finds solutions to the query.
 All of this happens locally in the mobile app.
 - Client sends the query results to server which then generates a speech response from the results.
@@ -70,7 +70,7 @@ revenue / cost equations.
 To enable a virtual assistant to answer product/pricing questions more precisely, the Prolog strategy
 was adopted. To be clear, this is still experimental and unproven - more study is needed. The rationale here is
 that it may be easier for an LLM to generate a precise formal query to answer the question than to answer the
-same question directly from the text description of prodcuts/pricing.
+same question directly from the text descriptions of products/pricing.
 
 There are 17 plans with 1 to 5 lines possible for each and about 20 or so 'features'. While 
 these number look small, the possible combinations can become quite large. And there
@@ -102,12 +102,12 @@ The app works as intended. The user can query for plans and ask follow up questi
 
 Still there are code generation issues that need to be further addressed. 
 
-The generated Prolog code is logged (for intorspection) and also posted to the UI.
+The generated Prolog code is logged (for introspection) and also posted to the UI.
 The user can modify the code and test it from the UI and use this feedback to 
 improve the code generation prompt.
 
 In general, its better to fail than to produce an inaccurate answer. The Prolog-based approach
-thus reduces halucinations over 'normal' RAG.
+thus reduces hallucinations over 'normal' RAG.
 
 
 

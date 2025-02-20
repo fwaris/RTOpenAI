@@ -1,8 +1,6 @@
 namespace RT.Assistant.Views
 open System
-open System.Text.Json.Serialization.Metadata
 open Fabulous
-open Fabulous.Maui.Shadow
 open Microsoft.Maui
 open Microsoft.Maui.Graphics
 open FSharp.Control
@@ -10,7 +8,6 @@ open Fabulous.Maui
 open type Fabulous.Maui.View
 open type Fabulous.Context
 open RT.Assistant
-open RT.Assistant.Icons
 open RT.Assistant.Navigation
 
 module Chat =
