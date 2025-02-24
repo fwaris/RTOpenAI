@@ -1,4 +1,4 @@
-#load "AICore.fsx"
+#load "packages.fsx"
 (*
 This script loads the json document that contains the available plans
 and converts them to the plan(Title,category(Category),lines(Lines),features(Features)) structures.
@@ -7,6 +7,7 @@ This is a multistep processes that involves several LLM invocations to accomplis
 open System
 open System.IO
 open FSharp.Data
+open RT.Assistant.Plan
 
 let ignoreCase = StringComparison.CurrentCultureIgnoreCase
 
@@ -159,7 +160,7 @@ hulu
 netflix
 """
 
-let featureNames = lazy(AICore.lines false propertiesList)
+let featureNames = lazy(RT.Assistant.Plan.AICore.lines false propertiesList)
 
 let templatePlanStructure = lazy(File.ReadAllText(__SOURCE_DIRECTORY__ + "../../Resources/Raw/plan_schema.pl"))
 templatePlanStructure.Value
@@ -271,23 +272,12 @@ printfn "%s" testFeatureStr
 
 let folder = Environment.GetFolderPath(Environment.SpecialFolder.UserProfile) + "/temp"
 
-open System.Diagnostics
-
-//run swi-prolog process in batch mode with the given script
-let runSwipl args =
-  let pi = ProcessStartInfo()
-  pi.FileName <- "swipl"
-  pi.WorkingDirectory <- folder
-  pi.Arguments <- args
-  let pf = Process.Start(pi)
-  pf.WaitForExit() 
-
 //generate prolog for each of the features of the plan group
 let planFeatures planGroup =    
     featureNames.Value
     |> List.map(fun feature ->
       printfn $"feature {feature}"
-      let rslt = AICore.run03Mini "You are an expert Prolog programmer" (mapToFeatureStructurePrompt feature planGroup)
+      let rslt = Packages.run03Mini "You are an expert Prolog programmer" (mapToFeatureStructurePrompt feature planGroup)
       printfn $"{rslt}"
       rslt)
 
@@ -319,7 +309,7 @@ let generatePlan (planName:string,planGroup) =
   let planFileName = planName.Replace(" ","_")
   printfn $"running {planName}"
   let ftrs = planFeatures planGroup
-  let baseStructure = AICore.run03Mini "You are an expert Prolog programmer" (mapToStructurePrompt planGroup) |> AICore.extractCode
+  let baseStructure = Packages.run03Mini "You are an expert Prolog programmer" (mapToStructurePrompt planGroup) |> AICore.extractCode
   let newFeatures = $"""newFeatures([
     {ftrs |> List.map (AICore.extractCode>>AICore.removeDot) |> String.concat ",\n"}  
     ])."""
@@ -327,7 +317,7 @@ let generatePlan (planName:string,planGroup) =
   let scriptFile = folder + $"/input_{planFileName}.pl"
   File.WriteAllText(scriptFile, planScript)
   let args = $"-q -f {scriptFile} -g addFeatures -g savePlan -t halt"
-  runSwipl args
+  Packages.runSwipl folder args |> ignore
   
 let missedPlans folder =
     let expected = byPlan |> List.map fst |> List.map(fun t-> $"export_{t}.pl".ToLower(),t)

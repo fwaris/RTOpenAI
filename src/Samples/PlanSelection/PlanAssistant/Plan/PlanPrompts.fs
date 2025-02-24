@@ -9,9 +9,14 @@ type CodeGenResp =
 
 module PlanPrompts =
 
+  //code shared with interactive scripts for consistency
   let planTemplate = lazy(
     (task {
+#if INTERACTIVE
+      use str = System.IO.File.OpenRead(__SOURCE_DIRECTORY__ + "/../Resources/Raw/plan_schema.pl")
+#else    
       use! str = Microsoft.Maui.Storage.FileSystem.OpenAppPackageFileAsync("plan_schema.pl")
+#endif
       use strr = new StreamReader(str)
       return! strr.ReadToEndAsync()            
     })
@@ -69,12 +74,19 @@ Likewise, unless specified, assume a given price is the maximum price. Other rul
 - Do not use writeln in Proloq queries.
 - Refer to PLAN_TEMPLATE for description of Features as the structure of each feature type is different
 - Remember that the list of lines is under 'lines', e.g. lines([(line(...), ...])
-- NOTE ARITY feature/2, e.g. feature(Feature,AppliesToLines). 
+- NOTE ARITY feature/2, e.g. feature(Feature,AppliesToLines). Also Feature can have different arities. Look at the PLAN_STRUCTURE to correctly generate code for a particular feature.
+- For most queries, ensure that the plan Title(s) is/are retrieved in the query.
 - Ensure there are no singleton variables in generated Prolog
+- For maximum and minimum queries, don't put a fixed value in the query. Find the value and also return it. 
 - Assume Prolog engine to be the ISO compliant tau prolog with the list module loaded
 - Optionally generate predicates (i.e. `consult` code) to make queries less complex and to avoid retrieving intermediate variable values.
+- To find the price for a number lines use monthly_price for that number of lines. No accumulation is needed. 
 
-Respond according the the JSON structure specified.
+Respond with the following JSON structure:
+```{{
+  "Query" : "...",
+  "Predicates" : "..."
+}}```
 Ensure any predicates are returned int Predicates field and the query is return in Query. 
 """)
   

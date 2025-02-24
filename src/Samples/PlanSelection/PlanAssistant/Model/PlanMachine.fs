@@ -94,20 +94,6 @@ module Machine =
     let  isPlanDetailsResult (ev:ResponseOutputItemDoneEvent) =
         ev.item.``type`` = FUNCTION_CALL_OUTPUT && ev.item.name = Some PLAN_DETAILS_FUNCTION
         
-    let extractAns dispatch (ev:ResponseOutputItemDoneEvent) =
-        ev.item.output
-        |> Option.map(fun s -> JsonSerializer.Deserialize<Answer>(s))
-        |> Option.map(fun a -> [SetAnswer a; Log_Append $"{a}"]|> List.iter dispatch)
-        |> Option.defaultWith (fun _ -> dispatch (Log_Append "answer not found"))        
-        
-    let formatAnswer (ans:Answer) =
-        ans.Results
-        |> List.map(fun a ->
-            a.Plan  
-            |> Map.toSeq
-            |> Seq.filter (fun (k,_) -> k.Equals("unique_plan_id",System.StringComparison.CurrentCultureIgnoreCase))
-            |> Seq.map(fun (k,v) -> $"{k}: {v}")
-            |> String.concat "\n")
        
     // accepts old state and next event - returns new state
     let update dispatch hybridWebView conn (st:State) ev =
@@ -117,7 +103,7 @@ module Machine =
             | SessionCreated s -> return {st with currentSession = s.session }
             | SessionUpdated s -> return {st with currentSession = s.session }
             | ResponseOutputItemDone ev when isRunQuery ev  -> Functions.runQuery 1 dispatch hybridWebView conn ev None |> Async.Start; dispatch (Log_Append(getQuery ev)); return st
-            | ResponseOutputItemDone ev when isQueryResult ev  -> extractAns dispatch ev; return  st            
+            | ResponseOutputItemDone ev when isQueryResult ev  -> return  st            
             | ResponseOutputItemDone ev when isGetPlanDetails ev -> Functions.getPlanDetails dispatch hybridWebView conn ev; return st
             | ResponseOutputItemDone ev when isPlanDetailsResult ev -> return st
             | ResponseCreated ev -> return dispatch ItemStarted; return {st with responses = Set.add ev.response.id st.responses}

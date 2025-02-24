@@ -71,7 +71,6 @@ valid_plan_for_military_veteran(Title, Lines, Features) :-
         | InActive -> {model with isActive = false},Cmd.none
         | ItemStarted -> {model with item=""}, Cmd.none
         | ItemAdded txt -> {model with item = model.item + txt}, Cmd.none
-        | SetAnswer ans -> {model with conversation = Plan.Machine.formatAnswer ans}, Cmd.none
         | SubmitCode -> model,Cmd.OfAsync.either submitCode (model.code,model.hybridView) Log_Append EventError
         | SetQuery q -> {model with code = {model.code with Query=q}}, Cmd.none
         | SetConsult q -> {model with code = {model.code with Predicates=q}}, Cmd.none

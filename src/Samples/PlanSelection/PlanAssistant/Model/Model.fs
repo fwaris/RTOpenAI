@@ -41,7 +41,6 @@ and Msg =
     | InputKey of exn
     | ItemStarted
     | ItemAdded of string
-    | SetAnswer of Answer
     | SubmitCode
     | SetQuery of string
     | SetConsult of string

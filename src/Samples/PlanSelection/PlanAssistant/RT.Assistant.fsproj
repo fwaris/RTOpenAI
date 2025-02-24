@@ -36,10 +36,12 @@
 		<Content Include="readme.md" />
 		<Content Include="Resources\Raw\plan_schema.pl" />
 		<Content Include="scripts\PLANS.json" />
-		<None Include="scripts\AICore.fsx" />
+		<None Include="scripts\packages.fsx" />
 		<Content Include="scripts\BasePlanStructure.pl" />
 		<None Include="scripts\sandbox.fsx" />
 		<None Include="scripts\ExtractStructure.fsx" />
+		<None Include="scripts\Experiment.fsx" />
+		<Content Include="scripts\TestSet.xlsx" />
 		<None Include="scripts\SeliniumTest.fsx" />
 		<None Include="scripts\JintTest.fsx" />
 		<Compile Include="Constants.fs" />
@@ -48,6 +50,7 @@
 		<Compile Include="Utils.fs" />
 		<Compile Include="Settings.fs" />
 		<Compile Include="Plan\AICore.fs" />
+		<Compile Include="Plan\AsyncExt.fs" />
 		<Compile Include="Plan\PlanPrompts.fs" />
 		<Compile Include="Model\AppMsg.fs" />
 		<Compile Include="Model\Navigation.fs" />
@@ -118,6 +121,7 @@
 		<PackageReference Include="Microsoft.Maui.Controls" Version="9.0.40" />
 		<PackageReference Include="Microsoft.Maui.Controls.Compatibility" Version="9.0.40" />
 		<PackageReference Include="Microsoft.SemanticKernel" Version="1.37.0" />
+		<PackageReference Include="Microsoft.SemanticKernel.Connectors.Google" Version="1.38.0-alpha" />
 		<PackageReference Include="System.Net.Http" Version="4.3.4" />
 		<PackageReference Include="System.Net.Primitives" Version="4.3.1" />
 		<PackageReference Include="System.Net.Security" Version="4.3.2" />

@@ -2,6 +2,7 @@ namespace RT.Assistant.Plan
 open System.Text.Json
 open System.Text.Json.Nodes
 open FSharp.Control
+open Fabulous.Maui.KeyboardAccelerator
 open RTOpenAI
 open RTOpenAI.Api.Events
 open Microsoft.Maui.ApplicationModel
@@ -62,11 +63,13 @@ module Functions =
     let rec runQuery count dispatch hybridWebView conn (ev:ResponseOutputItemDoneEvent) (prologError:PrologParseError option)=
         async {
             try 
-                let query = ev.item.arguments |> Option.map (getArg "query") |> Option.defaultWith (fun _ -> failwith "function call argument not found")                
+                let query = ev.item.arguments |> Option.map (getArg "query") |> Option.defaultWith (fun _ -> failwith "function call argument not found")
+                let key = RT.Assistant.Settings.Environment.apiKey()
+                let parms = {Model=AICore.models.gpt_4o; Key=key}
                 let! ans =
                     match prologError with
-                    | None -> AICore.getOutput AICore.models.gpt_4o PlanPrompts.sysMsg.Value query typeof<CodeGenResp>
-                    | Some err -> AICore.getOutput AICore.models.o3_mini (PlanPrompts.fixCodePrompt err.Code err.Error) query typeof<CodeGenResp>
+                    | None -> AICore.getOutput parms PlanPrompts.sysMsg.Value query typeof<CodeGenResp>
+                    | Some err -> AICore.getOutput {parms with Model=AICore.models.o3_mini} (PlanPrompts.fixCodePrompt err.Code err.Error) query typeof<CodeGenResp>
                 let codeGen = JsonSerializer.Deserialize<CodeGenResp>(ans)                
                 dispatch (SetCode codeGen)
                 dispatch (Log_Append $"Code: {codeGen}")

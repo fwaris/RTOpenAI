@@ -1,7 +1,5 @@
 namespace RT.Assistant.Settings
 open Fabulous
-open type Fabulous.Maui.View
-open type Fabulous.Context
 open Microsoft.Maui.Storage
 open RT.Assistant
 
