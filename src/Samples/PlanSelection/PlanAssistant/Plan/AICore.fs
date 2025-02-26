@@ -1,7 +1,9 @@
 namespace RT.Assistant.Plan
 open System
 open System.IO
+open Microsoft.SemanticKernel
 open Microsoft.SemanticKernel.ChatCompletion
+open Microsoft.SemanticKernel.Connectors.Anthropic
 open Microsoft.SemanticKernel.Connectors.OpenAI
 open RT.Assistant
 
@@ -11,10 +13,11 @@ module AICore =
     module models =
         let gpt_4o = "gpt-4o"
         let gpt_4o_mini = "gpt-4o-mini"
+        let sonnet_37 = "claude-3-7-sonnet-20250219"
         let o3_mini = "o3-mini"
         let gemini_think = "gemini-2.0-flash-thinking-exp"
         let gemini_flash = "gemini-2.0-flash"
-        let isReasoning model = model = gemini_think || model = o3_mini
+        let isReasoning model = model = gemini_think || model = o3_mini || model = sonnet_37
 
     let skipLineComment (s:string) = let i = s.IndexOf('%') in if i >= 0 then s.Substring(0,i) else s
 
@@ -83,9 +86,11 @@ module AICore =
         if model = models.gpt_4o then None
         elif model = models.o3_mini then None
         elif model = models.gemini_think || model = models.gemini_flash then Some("google")
+        elif model = models.sonnet_37 then Some("anthropic")
         else None            
         
-    let callApi parms (sysMsg:string) (prompt:string) opts =
+    let MAX_RETRY = 2
+    let rec callApi retryCount parms (sysMsg:string) (prompt:string) (opts:OpenAIPromptExecutionSettings) =
         async {
             if Utils.isEmpty parms.Key then failwith "openai key not found"
             let ch = ChatHistory(sysMsg)
@@ -94,15 +99,25 @@ module AICore =
                 match endpoint parms.Model with
                 | None -> OpenAIChatCompletionService(parms.Model, parms.Key) 
                 | Some "google" -> Microsoft.SemanticKernel.Connectors.Google.GoogleAIGeminiChatCompletionService(parms.Model,parms.Key)
-                | Some x -> failwith $"not configure to call api {x}"                    
-            let! rslt = svc.GetChatMessageContentsAsync(ch,opts) |> Async.AwaitTask
-            return rslt.[0]            
+                | Some "anthropic" -> Microsoft.SemanticKernel.Connectors.Anthropic.AnthropicChatCompletionService(parms.Model,parms.Key)
+                | Some x -> failwith $"not configure to call api {x}"
+            try
+                let opts : PromptExecutionSettings = if parms.Model = models.sonnet_37 then AnthropicPromptExecutionSettings(MaxTokens=3000) else opts
+                let! rslt = svc.GetChatMessageContentsAsync(ch,opts) |> Async.AwaitTask
+                return rslt.[0]
+            with ex ->
+                printfn $"callApi error: {ex.Message}"             
+                if retryCount > MAX_RETRY then
+                    return raise ex
+                else
+                    do! Async.Sleep (int (2.0**(float retryCount) * 1000.0))
+                    return! callApi (retryCount + 1) parms sysMsg prompt opts                    
         }    
     
     let runModelWithOptions parms (sysMsg:string) (prompt:string) opts =        
         async {
-            let! r = callApi parms sysMsg prompt opts
-            return r.Content
+            let! r = callApi 1 parms sysMsg prompt opts
+            return r
         }    
                       
     let runModel parms (sysMsg:string) (prompt:string) =
@@ -125,7 +140,7 @@ module AICore =
         opts.ResponseFormat <- outputFormat
         if not (models.isReasoning parms.Model) then 
             opts.Temperature <- 0.1
-        callApi parms sysMsg prompt opts
+        callApi 1 parms sysMsg prompt opts
                     
     let runO1Mini (key:string) (sysMsg:string) (prompt:string) =
         let msg = $"{sysMsg}\n\n{prompt}" //o1-mini does not seem to like receiving a sys. msg.

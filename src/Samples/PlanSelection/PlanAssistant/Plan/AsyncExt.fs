@@ -55,50 +55,41 @@ module AsyncSeq =
           |> mapAsync id }
 *)
 
-    let private _mapAsyncParallelUnits (units:string) (unitsPerMinute:float) (f:'a -> Async<'b>) (s:AsyncSeq<uint64*'a>) : AsyncSeq<'b> = asyncSeq {
+    let private _mapAsyncParallelUnits (units:string) (unitsPerMinute:float) (f:'a -> Async<'b>) (s:AsyncSeq<int64*'a>) : AsyncSeq<'b> = asyncSeq {
         use mb = MailboxProcessor.Start (ignore >> async.Return)
-        let resolution = 0.5 //minutes
+        let resolution = 0.01 //minutes
         let mutable markTime = DateTime.Now.Ticks
-        let mutable unitCount = 0uL
+        let mutable unitCount = 0L
 
         let incrUnits i = Interlocked.Add(&unitCount,i)
+        let getUnits() = Interlocked.Read(&unitCount)
 
         let reset i t =
             Interlocked.Exchange(&unitCount,i) |> ignore
             Interlocked.Exchange(&markTime,t) |> ignore
-
-        //some randomness to stagger calls
-        let rand5Pct() =
-            let rng = Random()
-            (rng.Next(0,5) |> float) / 100.0
+            
+        let currentRate() =
+            let load = getUnits() |> float
+            let elapsed = (DateTime.Now - DateTime(markTime)).TotalMinutes
+            let rate =
+                if load = 0.0 || elapsed = 0.001 then 
+                    0.0
+                else 
+                    load / elapsed
+            printfn $"rate %0.02f{rate}"
+            rate
 
         let! err =
             s
-            |> AsyncSeq.iterAsync (fun (t,a) -> async {
-                let unitCountF = incrUnits t |> float
-                let elapsed = (DateTime.Now - DateTime(markTime)).TotalMinutes
-                if elapsed > resolution then
-                    //use a sliding rate
-                    let t = DateTime.Now.AddMinutes (-resolution / 2.0)
-                    let i = (uint64 (unitCountF / 2.0))
-                    reset i t.Ticks
-                let rate =
-                    if elapsed < 0.001 then
-                        let overagePct = rand5Pct()
-                        unitsPerMinute * (1.0 + overagePct) //initially (elapsed ~= 0) assume small random overage so initial calls are staggered
-                    else
-                        unitCountF / elapsed |> min (unitsPerMinute * 2.0)  //cap rate to 2x
-                printfn $"{units}/min: %0.0f{rate} [per sec %0.1f{rate/60.0}]"
-                let overage = rate - unitsPerMinute
-                if overage > 0.0 then
-                    //how much of next resolution period we should wait?
-                    //scale based on overage as %age of base rate
-                    let overagePct = overage / unitsPerMinute + (rand5Pct())
-                    let wait = resolution * overagePct * 60000.0 |> int
-                    printfn $"wait sec %0.1f{float wait/1000.0}"
-                    do! Async.Sleep wait
+            |> AsyncSeq.iterAsync (fun (load,a) -> async {
+                while currentRate() > unitsPerMinute do
+                    do! Async.Sleep (int (resolution * 60000.0))
+                incrUnits load |> ignore
                 let! b = Async.StartChild (async {
-                    try return! f a
+                    try
+                        let! b = f a
+                        incrUnits -load |> ignore
+                        return b
                     finally () })
                 mb.Post (Some b) })
             |> Async.map (fun _ -> mb.Post None)
@@ -121,11 +112,11 @@ module AsyncSeq =
     ///Invoke f in parallel while maintaining the tokens per minute rate.
     ///Input is a sequence of (tokens:unint64 *'a) where the tokens is the number of input tokens associated with value 'a.
     ///Note: ordering is not maintained
-    let mapAsyncParallelTokenLimit (tokensPerMinute:float) (f:'a -> Async<'b>) (s:AsyncSeq<uint64*'a>) : AsyncSeq<'b> = 
+    let mapAsyncParallelTokenLimit (tokensPerMinute:float) (f:'a -> Async<'b>) (s:AsyncSeq<int64*'a>) : AsyncSeq<'b> = 
         _mapAsyncParallelUnits "tokens" tokensPerMinute f s
 
     ///Invoke f in parallel while maintaining opsPerSecond rate.
     ///Note: ordering is not maintained
     let mapAsyncParallelRateLimit (opsPerSecond:float) (f:'a -> Async<'b>) (s:AsyncSeq<'a>) : AsyncSeq<'b> =
-        _mapAsyncParallelUnits "ops" (opsPerSecond * 60.0) f (s |> AsyncSeq.map (fun a -> 1UL,a))
+        _mapAsyncParallelUnits "ops" (opsPerSecond * 60.0) f (s |> AsyncSeq.map (fun a -> 1L,a))
 

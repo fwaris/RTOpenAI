@@ -5,7 +5,8 @@ Load requires packages code files for running 'assistant' related F# scripts
 #r "nuget: Microsoft.DeepDev.TokenizerLib"
 #r "nuget: Azure.Search.Documents"
 #r "nuget: Microsoft.SemanticKernel"
-#r "nuget: Microsoft.SemanticKernel.Connectors.Google, 1.38.0-alpha"
+#r "nuget: Microsoft.SemanticKernel.Connectors.Google, *-*"
+#r "nuget: Lost.SemanticKernel.Connectors.Anthropic, *-*"
 #r "nuget: FSharp.SystemTextJson"
 #r "nuget: FSharp.Data"
 #r "nuget: FSharp.Collections.ParallelSeq"
@@ -14,6 +15,7 @@ Load requires packages code files for running 'assistant' related F# scripts
 #r "nuget: F23.StringSimilarity"
 #r "nuget: FsExcel"
 #r "nuget: ExcelProvider"
+#r "nuget: Plotly.NET"
 
 //transient packages. update to remove vulnerability warnings
 #r "nuget: Newtonsoft.Json"
@@ -28,9 +30,12 @@ Load requires packages code files for running 'assistant' related F# scripts
 open System
 open System.Diagnostics
 open System.IO
+open System.Text.Json
+open Microsoft.DeepDev
 open Microsoft.SemanticKernel
 open Microsoft.SemanticKernel.ChatCompletion
 open Microsoft.SemanticKernel.Connectors.OpenAI
+open RT.Assistant
 
 let runA = Async.RunSynchronously
 
@@ -81,3 +86,60 @@ let runSwipl (workikngDir:string) (args:string) =
   pf.WaitForExit()
   pf.StandardOutput.ReadToEnd()
   
+let tokenSize (s:string) =
+    let tokenizer = TokenizerBuilder.CreateByModelNameAsync("gpt-4").GetAwaiter().GetResult();
+    let tokens = tokenizer.Encode(s, new System.Collections.Generic.HashSet<string>());
+    float tokens.Count
+
+type TestCase = {
+    Index : int
+    Query : string
+    Answer : string
+    AnswerPredicates: string
+    AnswerQuery : string    
+}
+
+type EvalCodeResp = NotEvaluated | CodeError of string | EvalOutput of string  //result of code evaluation
+type EvaluatedCode = {Code:RT.Assistant.Plan.CodeGenResp; Resp:EvalCodeResp}      //pair generated code with its eval result
+
+type TestAttempt = Direct of string | CodeGen of EvaluatedCode     //test attempt answer from LLM 'direct' or via coden gen
+
+type TokenUsage =
+    {
+        InputTokens : float
+        OutputTokens : float
+        TotalTokens : float
+    }
+
+//answer attempt with stats 
+type TestAttemptWithStats  = {
+    Attempt : TestAttempt
+    Usage : TokenUsage
+    Time : TimeSpan
+}
+
+type Judgement = {
+    Pass : bool       
+    Comments : string 
+}
+
+//test case paired with attempted answer and its evaluation
+type TestResult =
+    {
+        TestCase : TestCase
+        Run : int
+        Model : string
+        Attempt : TestAttemptWithStats
+        Judgement : Judgement option
+    }
+
+let saveTestResults (path:string) (testResults:TestResult list) =
+    use str = File.Create path
+    let opts = Utils.serOptionsFSharp
+    JsonSerializer.Serialize(str,testResults,options=opts)
+    
+let loadTestResults (path:string) : TestResult list =
+    let opts = Utils.serOptionsFSharp
+    use str = File.OpenRead path
+    JsonSerializer.Deserialize(str,options=opts)
+   

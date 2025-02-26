@@ -70,7 +70,7 @@ module Functions =
                     match prologError with
                     | None -> AICore.getOutput parms PlanPrompts.sysMsg.Value query typeof<CodeGenResp>
                     | Some err -> AICore.getOutput {parms with Model=AICore.models.o3_mini} (PlanPrompts.fixCodePrompt err.Code err.Error) query typeof<CodeGenResp>
-                let codeGen = JsonSerializer.Deserialize<CodeGenResp>(ans)                
+                let codeGen = JsonSerializer.Deserialize<CodeGenResp>(ans.Content)                
                 dispatch (SetCode codeGen)
                 dispatch (Log_Append $"Code: {codeGen}")
                 try 
@@ -89,7 +89,7 @@ Evaluation Results:
                 | TimeoutException -> sendFunctionResponse conn ev "query timed out"
                 | PrologError ex when count < MAX_RETRY ->
                     Log.info $"Prolog err: {ex}. Regenerating code."
-                    return! runQuery (count+1) dispatch hybridWebView conn ev (Some {Error=ex; Code=ans})
+                    return! runQuery (count+1) dispatch hybridWebView conn ev (Some {Error=ex; Code=ans.Content})
                 | ex -> raise ex
             with exn ->
                 dispatch (Log_Append exn.Message)

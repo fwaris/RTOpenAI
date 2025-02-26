@@ -35,8 +35,6 @@ type NullConverter< 'T >() =
         | Some t -> 
             let json = JsonSerializer.Serialize(t, options)
             writer.WriteStringValue(json)
-            
-                        
 
 [<AutoOpen>]
 module Utils =
@@ -99,6 +97,7 @@ module Utils =
         o.ReadCommentHandling <- JsonCommentHandling.Skip        
         let opts = JsonFSharpOptions.Default()
         opts
-            .WithSkippableOptionFields(true)            
+            .WithSkippableOptionFields(true)
+            .WithAllowNullFields(true)
             .AddToJsonSerializerOptions(o)        
         o
