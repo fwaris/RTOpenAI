@@ -82,9 +82,12 @@ let runSwipl (workikngDir:string) (args:string) =
   pi.FileName <- "swipl"
   pi.WorkingDirectory <- workikngDir
   pi.Arguments <- args
+  pi.UseShellExecute <- false
+  pi.RedirectStandardError <- true
+  pi.RedirectStandardOutput <- true
   use pf = Process.Start(pi)
   pf.WaitForExit()
-  pf.StandardOutput.ReadToEnd()
+  pf.StandardOutput.ReadToEnd() + "\n" + pf.StandardError.ReadToEnd()
   
 let tokenSize (s:string) =
     let tokenizer = TokenizerBuilder.CreateByModelNameAsync("gpt-4").GetAwaiter().GetResult();

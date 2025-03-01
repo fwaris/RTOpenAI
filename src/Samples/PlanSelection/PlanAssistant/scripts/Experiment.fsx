@@ -14,7 +14,6 @@ let parmsGpt40 = Packages.parms AICore.models.gpt_4o
 let parmsO3Mini = Packages.parms AICore.models.o3_mini
 let parmsGemini = {Packages.parms AICore.models.gemini_think with Key = Environment.GetEnvironmentVariable("GOOGLE_API_KEY")}
 let parmsClaude = {Packages.parms AICore.models.sonnet_37 with Key = Environment.GetEnvironmentVariable("CLAUDE_API_KEY")}
-
  
 (*
 conduct accuracy experiments
@@ -85,19 +84,6 @@ let genCode parms prompt =
         Usage = usage
         Time = time
     }
-
-//run swi-prolog process in batch mode with the given script
-let runSwipl2 (workikngDir:string) (args:string) =
-  let pi = ProcessStartInfo()
-  pi.FileName <- "swipl"
-  pi.WorkingDirectory <- workikngDir
-  pi.Arguments <- args
-  pi.UseShellExecute <- false
-  pi.RedirectStandardError <- true
-  pi.RedirectStandardOutput <- true
-  use pf = Process.Start(pi)
-  pf.WaitForExit()
-  pf.StandardOutput.ReadToEnd() + "\n" + pf.StandardError.ReadToEnd()
     
 let evalCode (id:string) (code:CodeGenResp) =
     let scriptFile = folder + $"/eval_{id}.pl"
@@ -114,7 +100,7 @@ goal :-
         + goal
     File.WriteAllText(scriptFile,cls)
     let args = $""" -f {scriptFile} -g goal -t halt"""
-    let rslt = runSwipl2 folder args
+    let rslt = Packages.runSwipl folder args
     if rslt.Contains("Error:") then
         CodeError rslt
     else
