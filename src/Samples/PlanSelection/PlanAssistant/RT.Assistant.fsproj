@@ -41,7 +41,6 @@
 		<None Include="scripts\sandbox.fsx" />
 		<None Include="scripts\ExtractStructure.fsx" />
 		<None Include="scripts\Experiment.fsx" />
-		<None Include="scripts\SwiplEmb.fsx" />
 		<None Include="scripts\ExperimenEval.fsx" />
 		<Content Include="scripts\TestSet.xlsx" />
 		<None Include="scripts\TestSetSandbox.fsx" />

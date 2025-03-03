@@ -44,8 +44,6 @@ let genCode parms prompt =
 
 open SbsSW.SwiPlCs
 
-PlEngine.Initialize([|"-q"|])
-
 let evalProlog (file:string) (query:string) = 
     try 
         let r = PlQuery.PlCall($"consult('{file}').")
@@ -77,7 +75,7 @@ let evalCode (code:CodeGenResp) =
         let outfile = $"outfile_{id}.txt"
         let text = addPredicates code.Predicates
         File.WriteAllText(scriptFile,text)
-        let rslt = evalProlog scriptFile code.Query
+        let rslt = Packages.evalProlog scriptFile code.Query
         EvalOutput rslt
     with ex -> 
         CodeError ex.Message
@@ -89,14 +87,24 @@ let testRun() =
     printfn $"{code.Query}"
     match rslt with EvalOutput c -> printfn $"{c}" | CodeError s -> printfn $"Error: {s}"
 
+
+let json = Packages.loadTestResults @"C:\Users\Faisa\eval\tests\gemini_flash_code.json"
+
+let cs = json |> List.filter (fun x-> match x.Attempt.Attempt with CodeGen _ -> true | _ -> false)
+
+let cs2 = cs |> List.filter(fun x -> match x.Attempt.Attempt with CodeGen g -> match g.Resp with EvalOutput s -> s.Contains("Mailbox"))
+
+match cs.[0].Attempt.Attempt with CodeGen c -> c.Code.Predicates |> printfn "%s"; c.Code.Query |> printfn "%s"
+
 (*
+
 let testCode = 
     {
       Predicates = ""
-      Query = "setof(Category, Title^Lines^Features^(plan(Title, category(Category), Lines, Features)), Categories)."
+      Query = "plan(Title, category(first_responder), lines([line(4, monthly_price(Price), _)|_]), _)."
     }
 
-let r = evalCode testCode
+let r = async{ return evalCode testCode } |> Packages.runA
 
 let fn = (Path.GetFullPath(folder @@ "eval_2.pl")).Replace("\\","/")
 File.WriteAllText(fn,addPredicates testCode.Predicates)

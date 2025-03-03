@@ -30,24 +30,6 @@ let TestOutput = __SOURCE_DIRECTORY__ + "/TestOutput.xlsx"
 let clauses = lazy(File.ReadAllText(__SOURCE_DIRECTORY__ + "/../Resources/Raw/wwwroot/plan_clauses.pl"))
 let plans_json = lazy(File.ReadAllText(__SOURCE_DIRECTORY__ + "/PLANS.json"))
 
-let metaQuery (outfile:string) = $"""
-write_query_output(Query) :-
-    open('{outfile}', append, Stream),
-    current_output(Old),
-    set_output(Stream),
-    %% For each solution, decompose the term and write just the arguments
-    forall(
-        (call(Query), Query =.. [_|Args]),
-        writeln(Args)
-    ),
-    set_output(Old),
-    close(Stream).
-
-delete_if_exists(File) :-
-    catch(delete_file(File),
-          error(existence_error(file, File), _),
-          writeln('File does not exist or cannot be deleted.')).
-"""
 
 let outTyp= typeof<CodeGenResp>
 
@@ -85,37 +67,48 @@ let genCode parms prompt =
         Time = time
     }
     
-let evalCode (id:string) (code:CodeGenResp) =
-    let scriptFile = folder + $"/eval_{id}.pl"
+let addPredicates (predicates:string) = 
+    clauses.Value + "\n\n" + predicates
+
+    
+let evalCodeSync (id:string) (code:CodeGenResp) =    
+    let scriptFile = Path.GetFullPath(folder + $"/eval_{id}.pl").Replace("\\","/")
     let outfile = $"outfile_{id}.txt"
-    let goal = $"""
-goal :-
-    delete_if_exists('{outfile}'),
-    write_query_output(({AICore.removeDot code.Query})).
-"""
-    let cls =
-        clauses.Value + "\n"
-        + metaQuery(outfile) + "\n"
-        + code.Predicates + "\n\n"
-        + goal
-    File.WriteAllText(scriptFile,cls)
-    let args = $""" -f {scriptFile} -g goal -t halt"""
-    let rslt = Packages.runSwipl folder args
-    if rslt.Contains("Error:") then
-        CodeError rslt
-    else
-        let file = Path.Combine(folder,outfile)
-        if File.Exists(file) then
-            EvalOutput (File.ReadAllText(file))
-        else
-            CodeError "no output produced"
+    try         
+        let scriptFile = Path.GetFullPath(folder + $"/eval_{id}.pl").Replace("\\","/")
+        let outfile = $"outfile_{id}.txt"
+        let text = addPredicates code.Predicates
+        File.WriteAllText(scriptFile,text)
+        let rslt = Packages.evalProlog scriptFile code.Query
+        File.WriteAllText(outfile,rslt)
+        EvalOutput rslt
+    with ex -> 
+        File.WriteAllText(outfile,$"Error: {ex.Message}")
+        CodeError ex.Message
+
+let evalCodeAsync (id:string) (code:CodeGenResp) =    
+    async {
+    let scriptFile = Path.GetFullPath(folder + $"/eval_{id}.pl").Replace("\\","/")
+    let outfile = folder @@  $"outfile_{id}.txt"
+    try         
+        let scriptFile = Path.GetFullPath(folder + $"/eval_{id}.pl").Replace("\\","/")
+        let outfile = $"outfile_{id}.txt"
+        let text = addPredicates code.Predicates
+        File.WriteAllText(scriptFile,text)
+        let! rslt = Packages.evalPrologAsync scriptFile code.Query
+        File.WriteAllText(outfile,rslt)
+        return EvalOutput rslt
+    with ex -> 
+        File.WriteAllText(outfile,$"Error: {ex.Message}")
+        return CodeError ex.Message
+    }
     
 let runTestCodeGen parms (run,id:string,test:TestCase) =
     async {
         let stats = genCode parms test.Query
         match stats.Attempt with
         | CodeGen c ->
-            let resp = evalCode id c.Code
+            let! resp = evalCodeAsync id c.Code
             let attempt = {stats with Attempt = CodeGen {c with Resp=resp}}
             return 
                 {
@@ -128,12 +121,12 @@ let runTestCodeGen parms (run,id:string,test:TestCase) =
         | _ -> return failwith "not expected" 
     }   
 
-let runTestSetCodeGen tpm parms tests run  =
+let runTestSetCodeGen maxCnrnt tpm parms tests run  =
     tests
     |> Seq.map (fun t -> run,$"{run}_{t.Index}",t)     
     |> AsyncSeq.ofSeq
     |> AsyncSeq.map (fun (a,b,c) -> int64 (tokenSize (Plan.PlanPrompts.sysMsg.Value + c.Query)) ,(a,b,c))
-    |> AsyncSeq.mapAsyncParallelTokenLimit tpm (runTestCodeGen parms)
+    |> AsyncSeq.mapAsyncParallelTokenLimit maxCnrnt tpm (runTestCodeGen parms)
     |> AsyncSeq.toBlockingSeq
     |> Seq.toList    
         
@@ -191,12 +184,12 @@ let runTestDirect parms (run,id:string,test:TestCase) =
             }
     }
 
-let runTestSetDirect tpm parms tests run  =
+let runTestSetDirect maxCnrnt tpm parms tests run  =
     tests
     |> Seq.map (fun t -> run,$"{run}_{t.Index}",t)     
     |> AsyncSeq.ofSeq
     |> AsyncSeq.map (fun (a,b,c) -> int64 (tokenSize (directQueryPrompt.Value + c.Query)) ,(a,b,c))
-    |> AsyncSeq.mapAsyncParallelTokenLimit tpm (runTestDirect parms)
+    |> AsyncSeq.mapAsyncParallelTokenLimit maxCnrnt tpm (runTestDirect parms)
     |> AsyncSeq.toBlockingSeq
     |> Seq.toList
     
@@ -221,25 +214,27 @@ ensureDir outfolder
 
 
 (*
-let testEvalsGpt4 = [1 .. 2] |> List.map (runTestSetCodeGen 500000 parmsGpt40 testSet) |> List.collect id
+*)
+let testEvalsGpt4 = [1 .. 2] |> List.map (runTestSetCodeGen 10 500000 parmsGpt40 testSet) |> List.collect id
 testEvalsGpt4 |> saveTestResults (outfolder @@ "gpt4o_code.json")
-let testEvalsGpt4D = [1 .. 2] |> List.map (runTestSetDirect 500000 parmsGpt40 testSet) |> List.collect id
+let testEvalsGpt4D = [1 .. 2] |> List.map (runTestSetDirect 10 500000 parmsGpt40 testSet) |> List.collect id
 testEvalsGpt4D |> saveTestResults (outfolder @@ "gpt4o_direct.json")
 
-let testEvalsO3mini = [1 .. 2] |> List.map (runTestSetCodeGen 500000 parmsO3Mini testSet) |> List.collect id
+let testEvalsO3mini = [1 .. 2] |> List.map (runTestSetCodeGen 10 500000 parmsO3Mini testSet) |> List.collect id
 testEvalsO3mini |> saveTestResults (outfolder @@ "o3mini_code.json")
-let testEvalsO3miniD = [1 .. 2] |> List.map (runTestSetDirect 500000 parmsO3Mini testSet) |> List.collect id
+let testEvalsO3miniD = [1 .. 2] |> List.map (runTestSetDirect 10 500000 parmsO3Mini testSet) |> List.collect id
 testEvalsO3miniD |> saveTestResults (outfolder @@ "o3mini_direct.json")
 
 
-let testEvalsGemini = [1 .. 2] |> List.map (runTestSetCodeGen 500000 parmsGemini testSet) |> List.collect id
+let testEvalsGemini = [1 .. 2] |> List.map (runTestSetCodeGen 3 5000 parmsGemini testSet) |> List.collect id
 testEvalsGemini |>  saveTestResults (outfolder @@ "gemini_flash_code.json")
-let testEvalsGeminiD = [1 .. 2] |> List.map (runTestSetDirect 100000 parmsGemini testSet) |> List.collect id
+
+let testEvalsGeminiD = [1 .. 2] |> List.map (runTestSetDirect 3 10000 parmsGemini testSet) |> List.collect id
 testEvalsGeminiD |> saveTestResults (outfolder @@ "gemini_flash_direct.json")
 
 
-let testEvalsSonnet37D = [1 .. 2] |> List.map (runTestSetDirect 2000 parmsClaude testSet) |> List.collect id
-testEvalsSonnet37D |> saveTestResults (outfolder @@ "sonnet_37_direct.json")
-let testEvalsSonnet37 = [1 .. 1] |> List.map (runTestSetCodeGen 2000 parmsClaude testSet) |> List.collect id
+let testEvalsSonnet37 = [1 .. 1] |> List.map (runTestSetCodeGen 1 500 parmsClaude testSet) |> List.collect id
+
 testEvalsSonnet37 |> saveTestResults (outfolder @@ "sonnet_37_code.json")
-*)
+let testEvalsSonnet37D = [1 .. 2] |> List.map (runTestSetDirect 1  500 parmsClaude testSet) |> List.collect id
+testEvalsSonnet37D |> saveTestResults (outfolder @@ "sonnet_37_direct.json")

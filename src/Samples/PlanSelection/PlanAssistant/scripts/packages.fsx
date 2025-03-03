@@ -151,28 +151,48 @@ let loadTestResults (path:string) : TestResult list =
 
 open SbsSW.SwiPlCs
    
-let evalProlog (file:string) (predicates:string) (query:string) = 
+let evalProlog (file:string) (query:string) = 
+    printfn $"running: {query}"
+    if not (PlEngine.IsInitialized) then 
+        PlEngine.Initialize([|"-q"|])
+    use mple1 = new PlMtEngine()
+    mple1.PlSetEngine()
     try 
-        if not PlEngine.IsInitialized then  PlEngine.Initialize([|"-q"|])
-
-        //use frame = new PlFrame() //new terms are valid only for the lifetime of the frame    
         let r = PlQuery.PlCall($"consult('{file}').")
-        if Utils.notEmpty predicates then 
-            let a = PlQuery.PlCall($"assert(({predicates})).")
-            printfn "%A" a
-        use q = new PlQuery(query)
-        q.VariableNames |> Seq.toList |> printfn "%A"    
-        let mutable c = 1
-        seq {
-            while q.NextSolution() do
-                for i in 0 .. q.VariableNames.Count - 1 do
-                    yield $"{c}:; {q.VariableNames.[i]}={q.Args.[i].ToString()}, "                
-                c <- c + 1
-        }
-        |> Seq.toList
-        |> String.concat "\n"        
-        
-    finally        
-        PlEngine.PlCleanup()
+        if not r then failwith $"unable to compile prediciate"
+        use q = new PlQuery(query)        
+        let rslt = 
+            q.ToList()
+            |> Seq.indexed
+            |> Seq.map(fun (i,vars) ->
+                let varVals =
+                    q.VariableNames 
+                    |> Seq.map(fun v ->v, vars.[v].ToString())
+                    |> Seq.filter(fun (v,vs) -> vs <> "_")
+                    |> Seq.map (fun (v,vs) -> $"{v}={vs}") 
+                    |> String.concat "; "
+                $"{i}: {varVals}"
+            )
+            |> String.concat "\n"        
+        q.Dispose()
+        rslt
+    finally                
+        mple1.PlDetachEngine()
+        mple1.Dispose()
+        ()
 
-    
+let private evalAgent = MailboxProcessor.Start (fun inbox -> 
+    async {
+        while true do             
+            let! (file,query,rc:AsyncReplyChannel<string>) = inbox.Receive()
+            let rslt = evalProlog file query
+            rc.Reply(rslt)
+    })
+
+let evalPrologAsync file query = async {
+    try 
+        let! rs = evalAgent.PostAndAsyncReply((fun rc -> file,query,rc), timeout=60000)
+        return rs
+    with ex ->
+        return $"Error: {ex.Message}"
+}

@@ -74,12 +74,17 @@ let test1() =
     let ts1 = fn |> Packages.loadTestResults
     let resp = ts1.Head |> judgeTest |> runA
     printfn "%A" (resp.Judgement)
-    
 
-let evalTestResults() =
-    testFiles
-    |> Array.map (fun fn -> printfn "%s" fn; fn,Packages.loadTestResults fn)
-    |> Array.map (fun (fn,tests) -> let ts = judgeTestSet tests in Packages.saveTestResults fn ts; ts)
+
+let evalResults fn = 
+     printfn "%s" fn
+     let tests = Packages.loadTestResults fn
+     let judged = judgeTestSet tests
+     Packages.saveTestResults fn judged
+     judged
+
+
+let evalTestResults() = testFiles |> Array.map evalResults
     
 let loadResults() =
     testFiles
@@ -128,8 +133,11 @@ let plotTokens() =
     |> Chart.Bar
     |> Chart.show
 
+
 (*
 evalTestResults()
+let file = testFiles.[2]
+let rt = evalResults file
 
 plotCorrectVsTime()
 
