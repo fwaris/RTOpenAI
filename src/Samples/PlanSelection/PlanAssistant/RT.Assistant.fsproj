@@ -47,7 +47,7 @@
 		<None Include="scripts\TestSetSandbox.fsx" />
 		<None Include="scripts\SeliniumTest.fsx" />
 		<None Include="scripts\JintTest.fsx" />
-		<None Include="scripts\TestSwipllib.fsx" />
+		<None Include="scripts\TestSwiplCS.fsx" />
 		<Compile Include="Constants.fs" />
 		<Compile Include="Icons.fs" />
 		<Compile Include="Log.fs" />

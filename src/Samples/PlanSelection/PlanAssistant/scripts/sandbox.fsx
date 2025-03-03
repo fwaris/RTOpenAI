@@ -1,4 +1,4 @@
-#r "nuget: FSharp.Data.Mutator, 0.1.1-beta"
+#r "nuget: FSharp.Data.Mutator, 0.1.1-beta" //local package built from source with latest FSharp.Data
 #load "AICore.fsx"
 
 (* for quick testing of code snippets. Loads packages and code files typically required for 'assistant' related tasks *)

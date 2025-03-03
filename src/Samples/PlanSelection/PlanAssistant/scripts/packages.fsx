@@ -17,6 +17,9 @@ Load requires packages code files for running 'assistant' related F# scripts
 #r "nuget: ExcelProvider"
 #r "nuget: Plotly.NET"
 
+#r @"..\..\SwiPlcsCore\bin\Debug\net9.0\SwiPlcsCore.dll"
+
+
 //transient packages. update to remove vulnerability warnings
 #r "nuget: Newtonsoft.Json"
 #r "nuget: System.Text.RegularExpressions"
@@ -145,4 +148,31 @@ let loadTestResults (path:string) : TestResult list =
     let opts = Utils.serOptionsFSharp
     use str = File.OpenRead path
     JsonSerializer.Deserialize(str,options=opts)
+
+open SbsSW.SwiPlCs
    
+let evalProlog (file:string) (predicates:string) (query:string) = 
+    try 
+        if not PlEngine.IsInitialized then  PlEngine.Initialize([|"-q"|])
+
+        //use frame = new PlFrame() //new terms are valid only for the lifetime of the frame    
+        let r = PlQuery.PlCall($"consult('{file}').")
+        if Utils.notEmpty predicates then 
+            let a = PlQuery.PlCall($"assert(({predicates})).")
+            printfn "%A" a
+        use q = new PlQuery(query)
+        q.VariableNames |> Seq.toList |> printfn "%A"    
+        let mutable c = 1
+        seq {
+            while q.NextSolution() do
+                for i in 0 .. q.VariableNames.Count - 1 do
+                    yield $"{c}:; {q.VariableNames.[i]}={q.Args.[i].ToString()}, "                
+                c <- c + 1
+        }
+        |> Seq.toList
+        |> String.concat "\n"        
+        
+    finally        
+        PlEngine.PlCleanup()
+
+    

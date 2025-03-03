@@ -24,26 +24,10 @@ let runA = Packages.runA
 let folder = Environment.GetFolderPath(Environment.SpecialFolder.UserProfile) + "/eval/sandbox"
 Packages.ensureDir folder
 
-let clauses = lazy(File.ReadAllText(__SOURCE_DIRECTORY__ + "/../Resources/Raw/wwwroot/plan_clauses.pl"))
-
-let metaQuery (outfile:string) = $"""
-write_query_output(Query) :-
-    open('{outfile}', append, Stream),
-    current_output(Old),
-    set_output(Stream),
-    %% For each solution, decompose the term and write just the arguments
-    forall(
-        (call(Query), Query =.. [_|Args]),
-        writeln(Args)
-    ),
-    set_output(Old),
-    close(Stream).
-
-delete_if_exists(File) :-
-    catch(delete_file(File),
-          error(existence_error(file, File), _),
-          writeln('File does not exist or cannot be deleted.')).
-"""
+let clausesFile_ = __SOURCE_DIRECTORY__ + "/../Resources/Raw/wwwroot/plan_clauses.pl"
+let clausesFile = Path.GetFullPath(clausesFile_).Replace("\\","/") //forward slashes needed
+printfn "%s" clausesFile
+let clauses = lazy(File.ReadAllText clausesFile)
 
 let outTyp= typeof<CodeGenResp>
 
@@ -57,35 +41,143 @@ let genCode parms prompt =
     let json = AICore.extractCode cntnt
     let code = JsonSerializer.Deserialize<CodeGenResp>(json)
     code
+
+open SbsSW.SwiPlCs
+
+PlEngine.Initialize([|"-q"|])
+
+let evalProlog (file:string) (query:string) = 
+    try 
+        let r = PlQuery.PlCall($"consult('{file}').")
+        if not r then failwith $"unable to compile prediciate"
+        use q = new PlQuery(query)        
+        q.ToList()
+        |> Seq.indexed
+        |> Seq.map(fun (i,vars) ->
+            let varVals =
+                q.VariableNames 
+                |> Seq.map(fun v ->v, vars.[v].ToString())
+                |> Seq.filter(fun (v,vs) -> vs <> "_")
+                |> Seq.map (fun (v,vs) -> $"{v}={vs}") 
+                |> String.concat "; "
+            $"{i}: {varVals}"
+        )
+        |> String.concat "\n"        
+    finally                
+        ()
+
+let addPredicates (predicates:string) = 
+    clauses.Value + "\n\n" + predicates
+
     
 let evalCode (code:CodeGenResp) =
-    let scriptFile = folder + $"/eval.pl"
-    let outfile = $"outfile.txt"
-    let goal = $"""
-goal :-
-    delete_if_exists('{outfile}'),
-    write_query_output(({AICore.removeDot code.Query})).
+    try 
+        let id = "sb"
+        let scriptFile = Path.GetFullPath(folder + $"/eval_{id}.pl").Replace("\\","/")
+        let outfile = $"outfile_{id}.txt"
+        let text = addPredicates code.Predicates
+        File.WriteAllText(scriptFile,text)
+        let rslt = evalProlog scriptFile code.Query
+        EvalOutput rslt
+    with ex -> 
+        CodeError ex.Message
+
+let testRun() =
+    let code = genCode parmsO3Mini "I am over 55 and am looking for the cheapest plan where netflix is included. Give the price and the number of lines"
+    let rslt = evalCode code
+    printfn $"{code.Predicates}"
+    printfn $"{code.Query}"
+    match rslt with EvalOutput c -> printfn $"{c}" | CodeError s -> printfn $"Error: {s}"
+
+(*
+let testCode = 
+    {
+      Predicates = ""
+      Query = "setof(Category, Title^Lines^Features^(plan(Title, category(Category), Lines, Features)), Categories)."
+    }
+
+let r = evalCode testCode
+
+let fn = (Path.GetFullPath(folder @@ "eval_2.pl")).Replace("\\","/")
+File.WriteAllText(fn,addPredicates testCode.Predicates)
+PlQuery.PlCall($"consult('{fn}').")
+let q = PlQuery(testCode.Query)
+let sol = q.ToList()
+sol.Count
+let sol0 = sol.[0]
+let vs = q.VariableNames |> Seq.map(fun x -> sol0.[x]) |> Seq.toList
+vs |> List.map _.PlType
+let vsVals = vs |> List.map _.ToString()
+t.ToString()
+let vTerms = q.VariableNames |> Seq.toList |> List.map(fun n -> q.Variables.[n])
+let vTs = vTerms |> List.map(fun x->x.ToStringCanonical())
+let vars = [for i in 0 .. q.Args.Size-1 -> if q.Args[i].IsVar then Some i else None] |> List.choose id
+let args = [for i in 0 .. q.Args.Size-1 -> q.Args.[i]]
+let vars = args |> List.map _.IsVar
+let comp = args |> List.map _.IsCompound
+let vals = args |> List.map _.ToString()
+let grnd = args |> List.map _.IsGround
+let x1 = args |> List.map _.IsInitialized
+let x2 = args |> List.map _.PlType
+let arity = args |> List.map (fun x -> if x.IsCompound then x.Arity else 0)
+
+
+let vn = q.VariableNames.[2]
+q.NextSolution()
+let n0 = q.VariableNames.[vars[0]]
+let a0 = q.Args.[vars[0]]
+a0.ToString()
+$"{n0}={a0}"
+let mutable c = 0
+let ms = 
+    seq {
+        while q.NextSolution() do
+            let vars =
+                seq {
+                    for i in 0 .. vars.Length - 1 do                                                       
+                        let n = q.VariableNames.[i]
+                        let arg = q.Args.[i]
+                        yield $"{n}={arg.ToString()}"
+                }
+                |> Seq.toList
+                |> String.concat "; "
+            c <- c + 1
+            $"{c}: {vars}"
+    }
+    |> Seq.toList
+    |> String.concat "\n"        
+
+q.NextSolution()
+let args = [for i in 0 .. q.Args.Size-1 -> q.Args.[i]]
+let vars = args |> List.map _.IsVar
+let comp = args |> List.map _.IsCompound
+let vals = args |> List.map _.ToString()
+let arity = args |> List.map (fun x -> if x.IsCompound then x.Arity else 0)
+let a00 = args.[2].[1].ToString()
+let 
+q.Args
+let ss = q.SolutionVariables
+ss |> Seq.length
+q.Args.Size
+[for i in 0 .. q.Args.Size-1 -> q.Args.[i].PlType]
+q.Args.[0].IsCompound
+let rtest = evalCode testCode
+match rtest with EvalOutput x -> printfn "%s" x
+let sol = q.Solutions
+let x0 = Seq.head sol
+x0.[0].ToString()
+x0.[1].ToString()
+x0.[2].ToString()
+x0.[0]
+let testCode0 = { 
+    Predicates = """
+veteran_plan(Title, TaxesIncluded) :-
+    plan(Title, category(military_veteran), _Lines, features(Features)),
+    member(feature(taxes_and_fees(_Desc, included_in_monthly_price(TaxesIncluded)), _Applies), Features).
+% The query retrieves all veteran plans with the taxes and fees inclusion information
 """
-    let cls =
-        clauses.Value + "\n"
-        + metaQuery(outfile) + "\n"
-        + code.Predicates + "\n\n"
-        + goal
-    File.WriteAllText(scriptFile,cls)
-    let args = $""" -f {scriptFile} -g goal -t halt"""
-    let rslt = Packages.runSwipl folder args
-    if rslt.Contains("Error:") then
-        CodeError rslt
-    else
-        let file = Path.Combine(folder,outfile)
-        if File.Exists(file) then
-            EvalOutput (File.ReadAllText(file))
-        else
-            CodeError "no output produced"
 
+    Query = "findall((Title,TaxesIncluded), veteran_plan(Title,TaxesIncluded), Plans)."
+}
 
-let code = genCode parmsO3Mini "List the plans which offer the most highspeed hotspot data" 
-let rslt = evalCode code
-printfn $"{code.Predicates}"
-printfn $"{code.Query}"
-match rslt with EvalOutput c -> printfn $"{c}" | CodeError s -> printfn $"{s}"
+*)

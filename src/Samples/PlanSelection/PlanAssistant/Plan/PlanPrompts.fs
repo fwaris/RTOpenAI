@@ -81,6 +81,7 @@ Likewise, unless specified, assume a given price is the maximum price. Other rul
 - Assume Prolog engine to be the ISO compliant tau prolog with the list module loaded
 - Optionally generate predicates (i.e. `consult` code) to make queries less complex and to avoid retrieving intermediate variable values.
 - To find the price for a number lines use monthly_price for that number of lines. No accumulation is needed. 
+- Instead of accumulating all solutions explicitly, rely on the Prolog system to get all solutions. Generate the query/predicates that can a solution.
 
 Respond with the following JSON structure:
 ```{{
