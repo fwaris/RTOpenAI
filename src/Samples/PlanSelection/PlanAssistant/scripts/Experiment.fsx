@@ -79,7 +79,7 @@ let evalCodeSync (id:string) (code:CodeGenResp) =
         let outfile = $"outfile_{id}.txt"
         let text = addPredicates code.Predicates
         File.WriteAllText(scriptFile,text)
-        let rslt = Packages.evalProlog scriptFile code.Query
+        let rslt = Packages.evalPrologLocal scriptFile code.Query
         File.WriteAllText(outfile,rslt)
         EvalOutput rslt
     with ex -> 
@@ -214,7 +214,6 @@ ensureDir outfolder
 
 
 (*
-*)
 let testEvalsGpt4 = [1 .. 2] |> List.map (runTestSetCodeGen 10 500000 parmsGpt40 testSet) |> List.collect id
 testEvalsGpt4 |> saveTestResults (outfolder @@ "gpt4o_code.json")
 let testEvalsGpt4D = [1 .. 2] |> List.map (runTestSetDirect 10 500000 parmsGpt40 testSet) |> List.collect id
@@ -226,7 +225,7 @@ let testEvalsO3miniD = [1 .. 2] |> List.map (runTestSetDirect 10 500000 parmsO3M
 testEvalsO3miniD |> saveTestResults (outfolder @@ "o3mini_direct.json")
 
 
-let testEvalsGemini = [1 .. 2] |> List.map (runTestSetCodeGen 3 5000 parmsGemini testSet) |> List.collect id
+let testEvalsGemini = [1 .. 2] |> List.map (runTestSetCodeGen 1 5000 parmsGemini testSet) |> List.collect id
 testEvalsGemini |>  saveTestResults (outfolder @@ "gemini_flash_code.json")
 
 let testEvalsGeminiD = [1 .. 2] |> List.map (runTestSetDirect 3 10000 parmsGemini testSet) |> List.collect id
@@ -234,7 +233,8 @@ testEvalsGeminiD |> saveTestResults (outfolder @@ "gemini_flash_direct.json")
 
 
 let testEvalsSonnet37 = [1 .. 1] |> List.map (runTestSetCodeGen 1 500 parmsClaude testSet) |> List.collect id
-
 testEvalsSonnet37 |> saveTestResults (outfolder @@ "sonnet_37_code.json")
+
 let testEvalsSonnet37D = [1 .. 2] |> List.map (runTestSetDirect 1  500 parmsClaude testSet) |> List.collect id
 testEvalsSonnet37D |> saveTestResults (outfolder @@ "sonnet_37_direct.json")
+*)

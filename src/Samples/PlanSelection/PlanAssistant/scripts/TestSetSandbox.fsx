@@ -96,15 +96,15 @@ let cs2 = cs |> List.filter(fun x -> match x.Attempt.Attempt with CodeGen g -> m
 
 match cs.[0].Attempt.Attempt with CodeGen c -> c.Code.Predicates |> printfn "%s"; c.Code.Query |> printfn "%s"
 
-(*
 
 let testCode = 
     {
       Predicates = ""
-      Query = "plan(Title, category(first_responder), lines([line(4, monthly_price(Price), _)|_]), _)."
+      Query = "plan(Title, category(military_veteran), _, features(FeatureList)), member(feature(taxes_and_fees(_, included_in_monthly_price(Included)), _), FeatureList)."
     }
 
 let r = async{ return evalCode testCode } |> Packages.runA
+(*
 
 let fn = (Path.GetFullPath(folder @@ "eval_2.pl")).Replace("\\","/")
 File.WriteAllText(fn,addPredicates testCode.Predicates)

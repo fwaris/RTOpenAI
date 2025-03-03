@@ -2,6 +2,7 @@
 Load requires packages code files for running 'assistant' related F# scripts
 *)
 
+
 #r "nuget: Microsoft.DeepDev.TokenizerLib"
 #r "nuget: Azure.Search.Documents"
 #r "nuget: Microsoft.SemanticKernel"
@@ -39,6 +40,7 @@ open Microsoft.SemanticKernel
 open Microsoft.SemanticKernel.ChatCompletion
 open Microsoft.SemanticKernel.Connectors.OpenAI
 open RT.Assistant
+open SbsSW.SwiPlCs
 
 let runA = Async.RunSynchronously
 
@@ -149,50 +151,98 @@ let loadTestResults (path:string) : TestResult list =
     use str = File.OpenRead path
     JsonSerializer.Deserialize(str,options=opts)
 
-open SbsSW.SwiPlCs
    
-let evalProlog (file:string) (query:string) = 
-    printfn $"running: {query}"
-    if not (PlEngine.IsInitialized) then 
-        PlEngine.Initialize([|"-q"|])
-    use mple1 = new PlMtEngine()
-    mple1.PlSetEngine()
+let evalPrologLocal (file:string) (query:string) = 
+    if not (PlEngine.IsInitialized) then  PlEngine.Initialize([|"-q";"--no-signals";"--traditional"|])    
+    printfn $"running: {query}"    
+    //let mple1 = new PlMtEngine()
+    //mple1.PlSetEngine()
+    let mutable q = Unchecked.defaultof<_>
     try 
-        let r = PlQuery.PlCall($"consult('{file}').")
-        if not r then failwith $"unable to compile prediciate"
-        use q = new PlQuery(query)        
-        let rslt = 
-            q.ToList()
-            |> Seq.indexed
-            |> Seq.map(fun (i,vars) ->
-                let varVals =
-                    q.VariableNames 
-                    |> Seq.map(fun v ->v, vars.[v].ToString())
-                    |> Seq.filter(fun (v,vs) -> vs <> "_")
-                    |> Seq.map (fun (v,vs) -> $"{v}={vs}") 
-                    |> String.concat "; "
-                $"{i}: {varVals}"
-            )
-            |> String.concat "\n"        
-        q.Dispose()
-        rslt
+        try 
+            let r = PlQuery.PlCall($"consult('{file}').")
+            if not r then failwith $"unable to compile prediciate"
+            q  <- new PlQuery(query)        
+            if q.VariableNames.Count = 0 then failwith "no variables in query"        
+            let rslt = 
+                q.ToList()
+                |> Seq.indexed
+                |> Seq.map(fun (i,vars) ->
+                    let varVals =
+                        q.VariableNames 
+                        |> Seq.map(fun v ->v, vars.[v].ToString())
+                        |> Seq.filter(fun (v,vs) -> vs <> "_")
+                        |> Seq.map (fun (v,vs) -> $"{v}={vs}") 
+                        |> String.concat "; "
+                    $"{i}: {varVals}"
+                )
+                |> String.concat "\n"        
+            printfn "%s" rslt
+            rslt
+        with ex -> 
+            printfn "%s" ex.Message
+            raise ex
     finally                
-        mple1.PlDetachEngine()
-        mple1.Dispose()
+        if q <> Unchecked.defaultof<_> then q.Dispose()        
+        //mple1.PlDetachEngine()
+        //mple1.Dispose()
+        PlEngine.PlCleanup()
         ()
+
+type Input = {
+    File : string
+    Query : string
+}
+
+let evalPrologExternal (file:string) (query:string) = 
+    async {
+        try
+          printfn  $"running: {query}"
+          let workingDir = Path.GetDirectoryName(file)
+          let jsonFile = file + ".json"
+          let input = {File = file; Query=query}
+          let jsonStr = JsonSerializer.Serialize(input)
+          File.WriteAllText(jsonFile,jsonStr)
+          let pi = ProcessStartInfo()
+          pi.FileName <- "E:/s/rtapi/evalP/EvalProlog.exe"
+          pi.WorkingDirectory <- @"E:/s/rtapi/evalP/"
+          pi.Arguments <- $""" "{jsonFile}" """
+          pi.UseShellExecute <- false
+          pi.RedirectStandardError <- true
+          pi.RedirectStandardOutput <- true
+          use pf = Process.Start(pi)
+          pf.WaitForExit()
+          let rslt = pf.StandardOutput.ReadToEnd() + "\n" + pf.StandardError.ReadToEnd()        
+          printfn "%s" rslt
+          return rslt
+        with ex -> 
+            printfn "%s" ex.Message
+            return raise ex
+    }
+
+let testEval() = 
+    let file = @"C:\Users\Faisa\eval\eval_1_0.pl"
+    let query = "plan(T,_,_,_)."
+    let ans = evalPrologExternal file query |> runA
+    ans 
+
 
 let private evalAgent = MailboxProcessor.Start (fun inbox -> 
     async {
-        while true do             
+        while true do          
             let! (file,query,rc:AsyncReplyChannel<string>) = inbox.Receive()
-            let rslt = evalProlog file query
-            rc.Reply(rslt)
+            try
+                let! rslt = evalPrologExternal file query
+                rc.Reply(rslt)
+            with ex ->
+                rc.Reply(ex.Message)
+
     })
 
 let evalPrologAsync file query = async {
     try 
-        let! rs = evalAgent.PostAndAsyncReply((fun rc -> file,query,rc), timeout=60000)
+        let! rs = evalAgent.PostAndAsyncReply((fun rc -> file,query,rc), timeout=5000)
         return rs
     with ex ->
-        return $"Error: {ex.Message}"
+       return raise ex
 }

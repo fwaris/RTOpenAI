@@ -1,0 +1,8 @@
+{
+  "profiles": {
+    "EvalProlog": {
+      "commandName": "Project",
+      "commandLineArgs": "\"C:\\Users\\Faisa\\eval\\eval_1_0.pl.json\""
+    }
+  }
+}

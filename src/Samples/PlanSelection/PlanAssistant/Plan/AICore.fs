@@ -110,7 +110,7 @@ module AICore =
                 if retryCount > MAX_RETRY then
                     return raise ex
                 else
-                    do! Async.Sleep (int (2.0**(float retryCount) * 1000.0))
+                    do! Async.Sleep ((retryCount + 1) * 5 * 1000)
                     return! callApi (retryCount + 1) parms sysMsg prompt opts                    
         }    
     
