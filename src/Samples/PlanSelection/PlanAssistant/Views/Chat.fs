@@ -101,7 +101,7 @@ module Chat =
 
 
     let controlsView (model:Model) =
-        (Grid([Dimension.Star],[Dimension.Absolute 0.0;Dimension.Absolute 35.0;Dimension.Star; Dimension.Star]) {
+        (Grid([Dimension.Star],[Dimension.Absolute 35.0;Dimension.Absolute 35.0;Dimension.Star; Dimension.Star]) {
             (HybridWebView())
                 .gridRow(0)
                 .reference(model.hybridView)

@@ -1,6 +1,12 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 	<PropertyGroup>
-		<TargetFrameworks>net9.0-android;net9.0-ios;net9.0-maccatalyst</TargetFrameworks>
+		<IsWindows>$([System.Runtime.InteropServices.RuntimeInformation]::IsOSPlatform($([System.Runtime.InteropServices.OSPlatform]::Windows)))</IsWindows>
+		<IsLinux>$([System.Runtime.InteropServices.RuntimeInformation]::IsOSPlatform($([System.Runtime.InteropServices.OSPlatform]::Linux)))</IsLinux>
+		<IsOSX>$([System.Runtime.InteropServices.RuntimeInformation]::IsOSPlatform($([System.Runtime.InteropServices.OSPlatform]::OSX)))</IsOSX>
+		<TargetFrameworks>net9.0-android;net9.0-ios</TargetFrameworks>		
+		<TargetFrameworks Condition="$(IsOSX)">$(TargetFrameworks);net9.0-maccatalyst</TargetFrameworks>
+		<TargetFrameworks Condition="$(IsWindows)">$(TargetFrameworks);net9.0-windows10.0.19041.0</TargetFrameworks>
+
 		<!--<TargetFrameworks Condition="$([MSBuild]::IsOSPlatform('windows'))">$(TargetFrameworks);net9.0-windows10.0.19041.0</TargetFrameworks>-->
 		<!-- Uncomment to also build the tizen app. You will need to install tizen by following this: https://github.com/Samsung/Tizen.NET -->
 		<!-- <TargetFrameworks>$(TargetFrameworks);net8.0-tizen</TargetFrameworks> -->
@@ -101,7 +107,6 @@
 		<PackageReference Include="Fabulous.MauiControls" Version="9.0.0-pre6" />
 		<PackageReference Include="FSharp.Control.AsyncSeq" Version="3.2.1" />
 		<PackageReference Update="FSharp.Core" Version="9.0.100" />
-		<PackageReference Include="Microsoft.Extensions.Logging.Console" Version="9.0.2" />
 		<PackageReference Include="Microsoft.Maui.Controls" Version="9.0.40" />
 		<PackageReference Include="Microsoft.Maui.Controls.Compatibility" Version="9.0.40" />
 		<PackageReference Include="System.Net.Security" Version="4.3.2" />

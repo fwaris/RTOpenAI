@@ -106,17 +106,33 @@ let plotCorrectVsTime() =
     loadResults()
     |> List.groupBy (fun t -> t.Model,testType t.Attempt.Attempt)
     |> List.map(fun (k,xs) -> 
+        let text = $"{fst k} {snd k}"
         let corr = xs |> List.map (fun x -> passVal x.Judgement.Value.Pass) |> List.average
         let time = xs |> List.map _.Attempt.Time.TotalSeconds |> List.average
-        Chart.Point([corr],[time])
-        |> Chart.withTraceInfo  $"{fst k} {snd k}") 
+        Chart.Scatter([corr],[time],mode=StyleParam.Mode.Markers_Text,Text=text,TextPosition=StyleParam.TextPosition.TopRight,ShowLegend=false)        
+        |> Chart.withTraceInfo text ) 
     |> Chart.combine
     |> Chart.withTitle "Avg. Correctness vs. Avg. Time (seconds) by Model and Mode"
     |> Chart.withXAxisStyle "Avg. Correctness"
     |> Chart.withYAxisStyle "Avg. Response Time (seconds)"
-    |> Chart.withMarkerStyle(Size=10)
-    |> Chart.withSize(750.,500)
+    |> Chart.withXAxisStyle(MinMax=(0.,1.))    
+    |> Chart.withMarkerStyle(Size=15)
+    |> Chart.withSize(1000,500)
     |> Chart.show
+
+
+let palette = 
+    [ Color.fromString "#1f77b4"
+      Color.fromString "#ff7f0e"
+      Color.fromString "#2ca02c"
+      Color.fromString "#d62728"
+      Color.fromString "#9467bd"
+      Color.fromString "#8c564b"
+      Color.fromString "#e377c2"
+      Color.fromString "#7f7f7f"
+      Color.fromString "#bcbd22"
+      Color.fromString "#17becf" 
+    ]
     
 
 let plotTime() = 
@@ -136,10 +152,12 @@ let plotTokens() =
 
 (*
 evalTestResults()
-let file = testFiles.[2]
+testFiles
+let file = testFiles.[0]
 let rt = evalResults file
 
 plotCorrectVsTime()
+plotCorrectVsTimeScatter()
 
 plotTime()
 plotTokens()

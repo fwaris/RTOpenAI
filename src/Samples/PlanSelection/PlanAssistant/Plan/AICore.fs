@@ -17,7 +17,9 @@ module AICore =
         let o3_mini = "o3-mini"
         let gemini_think = "gemini-2.0-flash-thinking-exp"
         let gemini_flash = "gemini-2.0-flash"
-        let isReasoning model = model = gemini_think || model = o3_mini || model = sonnet_37
+        let deepseek_reasoner = "deepseek-reasoner"
+
+        let isReasoning model = model = gemini_think || model = o3_mini || model = sonnet_37 || model = deepseek_reasoner
 
     let skipLineComment (s:string) = let i = s.IndexOf('%') in if i >= 0 then s.Substring(0,i) else s
 
@@ -87,6 +89,7 @@ module AICore =
         elif model = models.o3_mini then None
         elif model = models.gemini_think || model = models.gemini_flash then Some("google")
         elif model = models.sonnet_37 then Some("anthropic")
+        elif model = models.deepseek_reasoner then Some("deepseek")
         else None            
         
     let MAX_RETRY = 2
@@ -100,6 +103,7 @@ module AICore =
                 | None -> OpenAIChatCompletionService(parms.Model, parms.Key) 
                 | Some "google" -> Microsoft.SemanticKernel.Connectors.Google.GoogleAIGeminiChatCompletionService(parms.Model,parms.Key)
                 | Some "anthropic" -> Microsoft.SemanticKernel.Connectors.Anthropic.AnthropicChatCompletionService(parms.Model,parms.Key)
+                | Some "deepseek" -> OpenAIChatCompletionService(parms.Model,Uri "https://api.deepseek.com", parms.Key)
                 | Some x -> failwith $"not configure to call api {x}"
             try
                 let opts : PromptExecutionSettings = if parms.Model = models.sonnet_37 then AnthropicPromptExecutionSettings(MaxTokens=3000) else opts
@@ -137,7 +141,8 @@ module AICore =
     //run with structured output
     let getOutputWithStats  parms sysMsg (prompt:string) (outputFormat:Type) =
         let opts = OpenAIPromptExecutionSettings()
-        opts.ResponseFormat <- outputFormat
+        if parms.Model <> models.deepseek_reasoner then
+            opts.ResponseFormat <- outputFormat              //deepseek does not support structured output
         if not (models.isReasoning parms.Model) then 
             opts.Temperature <- 0.1
         callApi 1 parms sysMsg prompt opts

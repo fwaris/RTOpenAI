@@ -14,6 +14,7 @@ let parmsGpt40 = Packages.parms AICore.models.gpt_4o
 let parmsO3Mini = Packages.parms AICore.models.o3_mini
 let parmsGemini = {Packages.parms AICore.models.gemini_think with Key = Environment.GetEnvironmentVariable("GOOGLE_API_KEY")}
 let parmsClaude = {Packages.parms AICore.models.sonnet_37 with Key = Environment.GetEnvironmentVariable("CLAUDE_API_KEY")}
+let parmsDeepSeek = {Packages.parms AICore.models.deepseek_reasoner with Key = Environment.GetEnvironmentVariable("DEEPSEEK_API_KEY")}
  
 (*
 conduct accuracy experiments
@@ -26,7 +27,6 @@ Packages.ensureDir folder
 
 let [<Literal>] TestSetFile = __SOURCE_DIRECTORY__ + "/TestSet.xlsx"
 type T_TestSet = ExcelFile<TestSetFile>
-let TestOutput = __SOURCE_DIRECTORY__ + "/TestOutput.xlsx"
 let clauses = lazy(File.ReadAllText(__SOURCE_DIRECTORY__ + "/../Resources/Raw/wwwroot/plan_clauses.pl"))
 let plans_json = lazy(File.ReadAllText(__SOURCE_DIRECTORY__ + "/PLANS.json"))
 
@@ -36,6 +36,7 @@ let outTyp= typeof<CodeGenResp>
 let genCode parms prompt =
     let w = Stopwatch()
     w.Start()
+    
     let resp = AICore.getOutputWithStats parms PlanPrompts.sysMsg.Value prompt outTyp |> runA
     w.Stop()
     let cntnt = resp.Content
@@ -73,10 +74,8 @@ let addPredicates (predicates:string) =
     
 let evalCodeSync (id:string) (code:CodeGenResp) =    
     let scriptFile = Path.GetFullPath(folder + $"/eval_{id}.pl").Replace("\\","/")
-    let outfile = $"outfile_{id}.txt"
+    let outfile = folder @@ $"outfile_{id}.txt"
     try         
-        let scriptFile = Path.GetFullPath(folder + $"/eval_{id}.pl").Replace("\\","/")
-        let outfile = $"outfile_{id}.txt"
         let text = addPredicates code.Predicates
         File.WriteAllText(scriptFile,text)
         let rslt = Packages.evalPrologLocal scriptFile code.Query
@@ -88,19 +87,17 @@ let evalCodeSync (id:string) (code:CodeGenResp) =
 
 let evalCodeAsync (id:string) (code:CodeGenResp) =    
     async {
-    let scriptFile = Path.GetFullPath(folder + $"/eval_{id}.pl").Replace("\\","/")
-    let outfile = folder @@  $"outfile_{id}.txt"
-    try         
         let scriptFile = Path.GetFullPath(folder + $"/eval_{id}.pl").Replace("\\","/")
-        let outfile = $"outfile_{id}.txt"
-        let text = addPredicates code.Predicates
-        File.WriteAllText(scriptFile,text)
-        let! rslt = Packages.evalPrologAsync scriptFile code.Query
-        File.WriteAllText(outfile,rslt)
-        return EvalOutput rslt
-    with ex -> 
-        File.WriteAllText(outfile,$"Error: {ex.Message}")
-        return CodeError ex.Message
+        let outfile = folder @@  $"outfile_{id}.txt"
+        try         
+            let text = addPredicates code.Predicates
+            File.WriteAllText(scriptFile,text)
+            let! rslt = Packages.evalPrologAsync scriptFile code.Query
+            File.WriteAllText(outfile,rslt)
+            return EvalOutput rslt
+        with ex -> 
+            File.WriteAllText(outfile,$"Error: {ex.Message}")
+            return CodeError ex.Message
     }
     
 let runTestCodeGen parms (run,id:string,test:TestCase) =
@@ -211,9 +208,36 @@ let testSet =
 let outfolder = folder @@ "tests"
 ensureDir outfolder
 
+let rerunCodeEval (i:int, t:TestResult) =
+    async {
+        let id = $"{t.Run}_{i}"
+        match t.Attempt.Attempt with 
+        | CodeGen c  -> 
+            let! resp = evalCodeAsync id c.Code
+            let attempt = CodeGen {c with Resp=resp}
+            return {t with Attempt.Attempt = attempt}
+        | _ -> 
+            return t
+    }
+
+let rerunCodeEvalTestSet file = 
+    let tests = Packages.loadTestResults file
+    let test2 = 
+        tests
+        |> Seq.indexed
+        |> AsyncSeq.ofSeq
+        |> AsyncSeq.mapAsync rerunCodeEval
+        |> AsyncSeq.toBlockingSeq
+        |> Seq.toList
+    Packages.saveTestResults file test2    
+
 
 
 (*
+
+let testFiles = Directory.GetFiles(outfolder,"*.json")
+rerunCodeEvalTestSet testFiles.[0]
+
 let testEvalsGpt4 = [1 .. 2] |> List.map (runTestSetCodeGen 10 500000 parmsGpt40 testSet) |> List.collect id
 testEvalsGpt4 |> saveTestResults (outfolder @@ "gpt4o_code.json")
 let testEvalsGpt4D = [1 .. 2] |> List.map (runTestSetDirect 10 500000 parmsGpt40 testSet) |> List.collect id
@@ -227,14 +251,15 @@ testEvalsO3miniD |> saveTestResults (outfolder @@ "o3mini_direct.json")
 
 let testEvalsGemini = [1 .. 2] |> List.map (runTestSetCodeGen 1 5000 parmsGemini testSet) |> List.collect id
 testEvalsGemini |>  saveTestResults (outfolder @@ "gemini_flash_code.json")
-
 let testEvalsGeminiD = [1 .. 2] |> List.map (runTestSetDirect 3 10000 parmsGemini testSet) |> List.collect id
 testEvalsGeminiD |> saveTestResults (outfolder @@ "gemini_flash_direct.json")
 
-
 let testEvalsSonnet37 = [1 .. 1] |> List.map (runTestSetCodeGen 1 500 parmsClaude testSet) |> List.collect id
 testEvalsSonnet37 |> saveTestResults (outfolder @@ "sonnet_37_code.json")
-
 let testEvalsSonnet37D = [1 .. 2] |> List.map (runTestSetDirect 1  500 parmsClaude testSet) |> List.collect id
 testEvalsSonnet37D |> saveTestResults (outfolder @@ "sonnet_37_direct.json")
+
+let testEvalsDeepseek = [1 .. 1] |> List.map (runTestSetCodeGen 1 500 parmsDeepSeek testSet) |> List.collect id
+testEvalsDeepseek |> saveTestResults (outfolder @@ "deepseek_code.json")
 *)
+

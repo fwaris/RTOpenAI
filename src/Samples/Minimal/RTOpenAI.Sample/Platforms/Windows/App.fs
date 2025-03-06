@@ -1,4 +1,4 @@
-﻿namespace RTOpenAI.WinUI
+﻿namespace RTOpenAI.Sample.WinUI
 
 /// <summary>
 /// Provides application-specific behavior to supplement the default Application class.
@@ -6,4 +6,4 @@
 type App() =
     inherit FSharp.Maui.WinUICompat.App()
 
-    override this.CreateMauiApp() = RTOpenAI.MauiProgram.CreateMauiApp()
+    override this.CreateMauiApp() = RTOpenAI.Sample.MauiProgram.CreateMauiApp()

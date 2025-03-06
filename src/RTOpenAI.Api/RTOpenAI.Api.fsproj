@@ -1,15 +1,23 @@
-<Project Sdk="Microsoft.NET.Sdk">
+﻿<Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
-    <TargetFrameworks>net9.0-android;net9.0-ios;net9.0-maccatalyst</TargetFrameworks>
-    <!--    <TargetFrameworks>net9.0-ios;net9.0-maccatalyst</TargetFrameworks>-->
-    <!--<TargetFrameworks Condition="$([MSBuild]::IsOSPlatform('windows'))">$(TargetFrameworks);net9.0-windows10.0.19041.0</TargetFrameworks>-->
+    <IsWindows>$([System.Runtime.InteropServices.RuntimeInformation]::IsOSPlatform($([System.Runtime.InteropServices.OSPlatform]::Windows)))</IsWindows>
+    <IsLinux>$([System.Runtime.InteropServices.RuntimeInformation]::IsOSPlatform($([System.Runtime.InteropServices.OSPlatform]::Linux)))</IsLinux>
+    <IsOSX>$([System.Runtime.InteropServices.RuntimeInformation]::IsOSPlatform($([System.Runtime.InteropServices.OSPlatform]::OSX)))</IsOSX>
+
+    <TargetFrameworks>net9.0-android;net9.0-ios</TargetFrameworks>
+    <TargetFrameworks Condition="$(IsOSX)">$(TargetFrameworks);net9.0-maccatalyst</TargetFrameworks>
+    <TargetFrameworks Condition="$(IsWindows)">$(TargetFrameworks);net9.0-windows10.0.19041.0</TargetFrameworks>
+	  
     <!-- Uncomment to also build the tizen app. You will need to install tizen by following this: https://github.com/Samsung/Tizen.NET -->
     <!-- <TargetFrameworks>$(TargetFrameworks);net8.0-tizen</TargetFrameworks> -->
-<!--    <UseMaui>true</UseMaui>-->
+    <!--<UseMaui>true</UseMaui>-->
+	  
     <OutputType>Library</OutputType>
     <SingleProject>true</SingleProject>
+	  
 <!--    <EnableDefaultItems>false</EnableDefaultItems>-->
 <!--    <DisableImplicitFSharpCoreReference>true</DisableImplicitFSharpCoreReference>-->
+	  
     <TargetPlatformIdentifier Condition=" $(TargetPlatformIdentifier) == '' ">$([MSBuild]::GetTargetPlatformIdentifier('$(TargetFramework)'))</TargetPlatformIdentifier>
     <SupportedOSPlatformVersion Condition="$(TargetPlatformIdentifier) == 'ios'">15.0</SupportedOSPlatformVersion>
     <SupportedOSPlatformVersion Condition="$(TargetPlatformIdentifier) == 'maccatalyst'">15.0</SupportedOSPlatformVersion>
@@ -17,6 +25,7 @@
     <SupportedOSPlatformVersion Condition="$(TargetPlatformIdentifier) == 'windows'">10.0.17763.0</SupportedOSPlatformVersion>
     <TargetPlatformMinVersion Condition="$(TargetPlatformIdentifier) == 'windows'">10.0.17763.0</TargetPlatformMinVersion>
     <SupportedOSPlatformVersion Condition="$(TargetPlatformIdentifier) == 'tizen'">6.5</SupportedOSPlatformVersion>
+	  
   </PropertyGroup>
   <ItemGroup>
     <Compile Include="Constants.fs" />
@@ -25,22 +34,31 @@
     <Compile Include="WebRTC/IWebRtcClient.fs" />
     <Compile Include="WebRTC/WebRtcClient.IOS.fs" />
     <Compile Include="WebRTC/WebRtcClient.Android.fs" />
+    <Compile Include="WebRTC\WebRtcClient.Win.fs" />
     <Compile Include="WebRTC/WebRTC.fs" />
     <Compile Include="Api/Events.fs" />
     <Compile Include="Api/Ext.fs" />
-    <Compile Include="Api\Connection.fs" />
+    <Compile Include="Api/Connection.fs" />
   </ItemGroup>
   <ItemGroup Condition="$(TargetPlatformIdentifier) == 'android'">
-    <ProjectReference Include="..\WebCme\WebRTCme.Bindings.Maui.Android\WebRTCme.Bindings.Maui.Android.csproj" />
+    <ProjectReference Include="..\Bindings\WebRTCme.Bindings.Maui.Android\WebRTCme.Bindings.Maui.Android.csproj" />
   </ItemGroup>
   <ItemGroup Condition="$(TargetPlatformIdentifier) == 'ios' OR $(TargetPlatformIdentifier) == 'maccatalyst'">
-    <ProjectReference Include="..\WebCme\WebRTCme.Bindings.Maui.iOS\WebRTCme.Bindings.Maui.iOS.csproj" />
+    <ProjectReference Include="..\Bindings\WebRTCme.Bindings.Maui.iOS\WebRTCme.Bindings.Maui.iOS.csproj" />
   </ItemGroup>
+  <ItemGroup Condition="$(TargetPlatformIdentifier) == 'windows'">
+	  <PackageReference Include="SIPSorcery" Version="8.0.9" />
+	  <PackageReference Include="SIPSorceryMedia.Windows" Version="8.0.7" />
+  </ItemGroup>  
   <ItemGroup>
-    <PackageReference Include="Fabulous.MauiControls" Version="9.0.0-pre6" />
+	  <PackageReference Include="Microsoft.Maui.Controls" Version="9.0.40" />
     <PackageReference Include="FSharp.SystemTextJson" Version="1.3.13" />
     <PackageReference Include="System.Text.Json" Version="9.0.2" />
     <PackageReference Include="Microsoft.Extensions.Logging.Console" Version="9.0.2" />
     <PackageReference Update="FSharp.Core" Version="9.0.201" />
+    
   </ItemGroup>
+	
+  <Target Name="XamlPreCompile" Condition="$(TargetFramework.StartsWith('net6.0-windows10'))" /> 
+	
 </Project>

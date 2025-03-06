@@ -12,6 +12,8 @@ module WebRtc =
         #if ANDROID 
                 new RTOpenAI.WebRTC.Android.WebRtcClientAndroid()
         #else
-                failwith "not implmented"
+                #if WINDOWS
+                    new RTOpenAI.WebRTC.Windows.WebRtcClientWin()
+                #endif
         #endif
 #endif

@@ -14,4 +14,4 @@ open Microsoft.Maui
                 ||| ConfigChanges.SmallestScreenSize
                 ||| ConfigChanges.Density))>]
 type MainActivity() =
-    inherit MauiAppCompatActivity()                     
+    inherit MauiAppCompatActivity()

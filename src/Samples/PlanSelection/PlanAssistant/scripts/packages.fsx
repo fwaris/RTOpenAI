@@ -3,6 +3,7 @@ Load requires packages code files for running 'assistant' related F# scripts
 *)
 
 
+
 #r "nuget: Microsoft.DeepDev.TokenizerLib"
 #r "nuget: Azure.Search.Documents"
 #r "nuget: Microsoft.SemanticKernel"
@@ -32,6 +33,7 @@ Load requires packages code files for running 'assistant' related F# scripts
 #load "../Plan/PlanPrompts.fs"
 
 open System
+open System.Threading
 open System.Diagnostics
 open System.IO
 open System.Text.Json
@@ -194,27 +196,61 @@ type Input = {
     Query : string
 }
 
+let MAX_CODE_EVAL_TIME_MS = 5000
+
 let evalPrologExternal (file:string) (query:string) = 
     async {
         try
-          printfn  $"running: {query}"
-          let workingDir = Path.GetDirectoryName(file)
-          let jsonFile = file + ".json"
-          let input = {File = file; Query=query}
-          let jsonStr = JsonSerializer.Serialize(input)
-          File.WriteAllText(jsonFile,jsonStr)
-          let pi = ProcessStartInfo()
-          pi.FileName <- "E:/s/rtapi/evalP/EvalProlog.exe"
-          pi.WorkingDirectory <- @"E:/s/rtapi/evalP/"
-          pi.Arguments <- $""" "{jsonFile}" """
-          pi.UseShellExecute <- false
-          pi.RedirectStandardError <- true
-          pi.RedirectStandardOutput <- true
-          use pf = Process.Start(pi)
-          pf.WaitForExit()
-          let rslt = pf.StandardOutput.ReadToEnd() + "\n" + pf.StandardError.ReadToEnd()        
-          printfn "%s" rslt
-          return rslt
+            printfn  $"running: {query}"
+            let workingDir = Path.GetDirectoryName(file)
+            let jsonFile = file + ".json"
+            let input = {File = file; Query=query}
+            let jsonStr = JsonSerializer.Serialize(input)
+            File.WriteAllText(jsonFile,jsonStr)
+            let pi = ProcessStartInfo()
+            pi.FileName <- "E:/s/rtapi/evalP/EvalProlog.exe"
+            pi.WorkingDirectory <- @"E:/s/rtapi/evalP/"
+            pi.Arguments <- $""" "{jsonFile}" """
+            pi.UseShellExecute <- false
+            pi.RedirectStandardError <- true
+            pi.RedirectStandardOutput <- true
+            let cts = new CancellationTokenSource()
+            cts.Token.ThrowIfCancellationRequested()
+            let p = new Process(StartInfo = pi)
+            let runProcess() = 
+                async {
+                    try
+                        cts.CancelAfter(MAX_CODE_EVAL_TIME_MS)       //start timer                            
+                        do! p.WaitForExitAsync(cts.Token) |> Async.AwaitTask
+                        try p.Kill(true) with _ -> ()
+                        return 0
+                    with
+                    | ex ->
+                        
+                        try p.Kill(true) with _ -> ()
+                        if cts.IsCancellationRequested then
+                            return 1 //timeout
+                        else 
+                            return 2 //other error 
+                }
+            let getOutput() = 
+                async {
+                    let! str = p.StandardOutput.ReadToEndAsync() |> Async.AwaitTask
+                    let! str2 = p.StandardError.ReadToEndAsync() |> Async.AwaitTask
+                    return str + "\n" + str2
+                }
+            p.Start() |> ignore
+            let! job1 = Async.StartChild (runProcess())
+            let! job2 = Async.StartChild (getOutput())
+            let! r = job1
+            let! out = job2
+            let out = if Utils.isEmpty out then "Unknown error" else out
+            printfn "%s" out
+            match r with 
+            | 0 -> return out
+            | 1 -> return failwith "prolog eval timed out"
+            | 2 -> return failwith out
+            | _ -> return failwith "fsiEvalCode: return case not handled"
         with ex -> 
             printfn "%s" ex.Message
             return raise ex
