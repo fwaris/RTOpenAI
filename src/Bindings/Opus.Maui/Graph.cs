@@ -10,9 +10,9 @@ namespace Opus.Maui
 {
     public class Graph : IDisposable
     {
-        AudioGraph _audioGraph;
-        FromMic _fromMic;
-        ToSpeaker _toSpeaker;
+        AudioGraph? _audioGraph;
+        FromMic? _fromMic;
+        ToSpeaker? _toSpeaker;
         // PCM configuration – using mono, 16-bit at 48000 Hz (which matches the encoder).
         public const int SampleRate = 48000;
         public const int Channels = 1;
@@ -21,7 +21,10 @@ namespace Opus.Maui
         {
             // Create an AudioGraph with default settings.
             var settings = new AudioGraphSettings(AudioRenderCategory.Communications);
-            settings.EncodingProperties = AudioEncodingProperties.CreatePcm(SampleRate, Channels, 16);
+            var pcmEncoding = AudioEncodingProperties.CreatePcm((uint)SampleRate, (uint)Channels, 16u);
+            pcmEncoding.Subtype = MediaEncodingSubtypes.Pcm;
+            settings.EncodingProperties = pcmEncoding;
+            settings.DesiredRenderDeviceAudioProcessing = Windows.Media.AudioProcessing.Raw;
             var createGraphResult = await AudioGraph.CreateAsync(settings);
             if (createGraphResult.Status != AudioGraphCreationStatus.Success)
             {
@@ -32,6 +35,7 @@ namespace Opus.Maui
             _audioGraph = createGraphResult.Graph;
             await _fromMic.InitializeAsync(_audioGraph);
             await _toSpeaker.InitializeAsync(_audioGraph);
+            _audioGraph.UnrecoverableErrorOccurred += Graph_UnrecoverableErrorOccurred;
         }
 
         public void DecodeAndPlay(byte[] bytes)
@@ -41,19 +45,27 @@ namespace Opus.Maui
 
         public void Start(Action<Tuple<uint, byte[]>> callback)
         {
-            _audioGraph.Start();
-            _fromMic.Start(_audioGraph, callback);
+            _audioGraph?.Start();
+            _fromMic?.Start(_audioGraph, callback);
         }
 
-    public void Dispose()
+        void Graph_UnrecoverableErrorOccurred(AudioGraph sender, AudioGraphUnrecoverableErrorOccurredEventArgs args)
+        {
+            Dispose();
+
+            throw new Exception($"UnrecoverableErrorOccurred error: {args.Error}");
+        }
+
+
+        public void Dispose()
         {
             if (_audioGraph != null) {
-                _audioGraph.Stop();
+                _audioGraph.Stop();                
                 _audioGraph.Dispose();
                 _audioGraph = null;
-                _fromMic.Dispose();
+                _fromMic?.Dispose();
                 _fromMic = null;
-                _toSpeaker.Dispose();
+                _toSpeaker?.Dispose();
                 _toSpeaker = null;
             }
         }

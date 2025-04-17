@@ -11,9 +11,9 @@ namespace Opus.Maui
 {
     public class ToSpeaker : IDisposable
     {
-        private AudioDeviceOutputNode _deviceOutputNode;
-        private AudioFrameInputNode _frameInputNode;
-        private IOpusDecoder _opusDecoder;
+        private AudioDeviceOutputNode? _deviceOutputNode;
+        private AudioFrameInputNode? _frameInputNode;
+        private IOpusDecoder? _opusDecoder;
         // PCM configuration – using mono, 16-bit at 48000 Hz (which matches the encoder).
 
         /// <summary>
@@ -47,7 +47,7 @@ namespace Opus.Maui
             //so skip them
             if (encodedData.Length < 10)
             {
-                Debug.WriteLine($"skipping decode of {encodedData.Length} bytes");
+                //Debug.WriteLine($"skipping decode of {encodedData.Length} bytes");
                 return;
             }
             // Define a maximum frame size (in samples per channel). 
@@ -62,7 +62,7 @@ namespace Opus.Maui
             {
                 throw new Exception("Opus decode failed");
             }
-            Debug.WriteLine($"Decoded {decodedSampleCount} samples");
+            //Debug.WriteLine($"Decoded {decodedSampleCount} samples");
 
             // Convert the short PCM samples to a byte array (16-bit PCM -> 2 bytes per sample).
             byte[] pcmData = new byte[decodedSampleCount * Graph.Channels * 2];
@@ -85,7 +85,7 @@ namespace Opus.Maui
                         }
 
                     }
-                    _frameInputNode.AddFrame(audioFrame);
+                    _frameInputNode?.AddFrame(audioFrame);
                 }
 
             // Enqueue the decoded PCM frame to be played.

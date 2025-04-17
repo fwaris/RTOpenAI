@@ -112,7 +112,7 @@
 		<Compile Include="Platforms\Windows\UndockedRegFreeWinRTFS.fs" />
 		<Compile Include="$(WindowsProjectFolder)App.fs" />
 		<Compile Include="$(WindowsProjectFolder)Main.fs" />
-		<PackageReference Include="Microsoft.WindowsAppSDK" Version="1.7.250310001" />
+		<PackageReference Include="Microsoft.WindowsAppSDK" Version="1.7.250401001" />
 		<PackageReference Include="FSharp.Maui.WinUICompat" Version="1.1.0" />
 	</ItemGroup>
 	<ItemGroup Condition="$(TargetPlatformIdentifier) == 'tizen'">
@@ -131,9 +131,9 @@
 		<PackageReference Include="Fabulous.MauiControls" Version="9.0.0-pre6" />
 		<PackageReference Include="FSharp.Control.AsyncSeq" Version="3.2.1" />
 		<PackageReference Include="Lost.SemanticKernel.Connectors.Anthropic" Version="1.25.0-alpha3" />
-		<PackageReference Include="Microsoft.Maui.Controls" Version="9.0.50" />
-		<PackageReference Include="Microsoft.Maui.Controls.Compatibility" Version="9.0.50" />
-		<PackageReference Include="Microsoft.SemanticKernel" Version="1.42.0" />
+		<PackageReference Include="Microsoft.Maui.Controls" Version="9.0.60" />
+		<PackageReference Include="Microsoft.Maui.Controls.Compatibility" Version="9.0.60" />
+		<PackageReference Include="Microsoft.SemanticKernel" Version="1.46.0" />
 		<PackageReference Include="Microsoft.SemanticKernel.Connectors.Google" Version="1.38.0-alpha" />
 		<PackageReference Include="System.Net.Http" Version="4.3.4" />
 		<PackageReference Include="System.Net.Primitives" Version="4.3.1" />

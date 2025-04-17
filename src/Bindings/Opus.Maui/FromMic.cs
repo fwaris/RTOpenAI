@@ -12,9 +12,9 @@ namespace Opus.Maui
 {
     public class FromMic: IDisposable
     {        
-        private AudioDeviceInputNode _deviceInputNode;
-        private AudioFrameOutputNode _frameOutputNode;
-        private IOpusEncoder _opusEncoder;
+        private AudioDeviceInputNode? _deviceInputNode;
+        private AudioFrameOutputNode? _frameOutputNode;
+        private IOpusEncoder? _opusEncoder;
         // Choose your PCM configuration – here we use mono, 16-bit at 48000 Hz (which Opus expects).
 
         /// <summary>
@@ -52,9 +52,6 @@ namespace Opus.Maui
                 }
                 // Pass the encoded data to the callback.
             };
-
-            // Start the AudioGraph.
-            audioGraph.Start();
         }
 
         private Tuple<UInt32,byte[]> GetEncoded()
@@ -80,21 +77,28 @@ namespace Opus.Maui
 
                         // Convert byte array to a short array (assuming 16-bit PCM).
                         int sampleCount = (int)capacity / 2;
-                        short[] pcmSamples = new short[sampleCount];
+                        float[] pcmSamples = new float[sampleCount];
                         Buffer.BlockCopy(audioData, 0, pcmSamples, 0, (int)capacity);
+
+                        short[] pcmInt16Samples =  new short[sampleCount];
+                        for (int i=0; i < pcmSamples.Length; i++)
+                        {
+                            var smple = FloatToInt16(pcmSamples[i]);
+                            pcmInt16Samples[i] = smple;
+                        }
 
                         // Allocate an output buffer for the encoded Opus data.
                         byte[] encodedBuffer = new byte[4000];  // adjust size as needed
 
                         // Encode the PCM samples into an Opus frame.
-                        int encodedLength = _opusEncoder.Encode(pcmSamples, sampleCount, encodedBuffer, encodedBuffer.Length);
+                        int encodedLength = _opusEncoder.Encode(pcmInt16Samples, sampleCount, encodedBuffer, encodedBuffer.Length);
                         if (encodedLength < 0)
                         {
                             throw new Exception("unable to encode");
                         }
                         else
                         {
-                            Debug.WriteLine($"Encode: {encodedLength}");
+                           // Debug.WriteLine($"Encode: {encodedLength}");
                         }
 
                         // Return only the portion of the buffer that contains encoded data.
@@ -111,13 +115,29 @@ namespace Opus.Maui
             }
         }
 
+        static short FloatToInt16(float value)
+        {
+            float f = value * short.MaxValue;
+            if (f > short.MaxValue)
+            {
+                f = short.MaxValue;
+            }
+
+            if (f < short.MinValue)
+            {
+                f = short.MinValue;
+            }
+
+            return (short)f;
+        }
+
         public void Dispose()
         {
             try
             {   if (_frameOutputNode != null) { 
-                    _frameOutputNode.Dispose();
+                    _frameOutputNode?.Dispose();
                     _frameOutputNode = null;
-                    _opusEncoder.Dispose();                   
+                    _opusEncoder?.Dispose();                   
                     _opusEncoder = null;
                 }
 

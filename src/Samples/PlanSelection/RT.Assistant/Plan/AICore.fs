@@ -11,6 +11,7 @@ type ApiParms = {Model:string; Key:string}
 
 module AICore =    
     module models =
+        let gtp_41_nano = "gpt-4.1-nano"
         let gpt_4o = "gpt-4o"
         let gpt_4o_mini = "gpt-4o-mini"
         let sonnet_37 = "claude-3-7-sonnet-20250219"
@@ -86,6 +87,7 @@ module AICore =
   
     let endpoint model =
         if model = models.gpt_4o then None
+        elif model = models.gtp_41_nano then None
         elif model = models.o3_mini then None
         elif model = models.gemini_think || model = models.gemini_flash then Some("google")
         elif model = models.sonnet_37 then Some("anthropic")
@@ -156,4 +158,4 @@ module AICore =
     let run4o key = runModel {Model=models.gpt_4o; Key=key}
     let run4oMini key = runModel {Model=models.gpt_4o_mini; Key = key}
     let runo3Mini key = runModel {Model=models.o3_mini; Key = key}
-    
+    let run41Nano key = runModel {Model=models.gtp_41_nano; Key = key}

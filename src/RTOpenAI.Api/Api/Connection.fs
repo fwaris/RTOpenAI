@@ -40,8 +40,16 @@ module Connection =
             |> sendClientEvent connection
         | _ -> ()
         
-    let connect ephemeralKey (connection:Connection) =
-        connection.WebRtcClient.Connect(ephemeralKey,C.OPENAI_RT_API)
+    let connect ephemeralKey (connection:Connection) =        
+        let codec : obj option= 
+        #if WINDOWS 
+            let codec = new Opus.Maui.Graph()
+            codec.InitializeAsync().Wait()
+            Some codec
+        #else
+            None
+        #endif
+        connection.WebRtcClient.Connect(ephemeralKey,C.OPENAI_RT_API,codec)
 
     let close (sess:Connection) = 
         sess.WebRtcClient.Dispose()     

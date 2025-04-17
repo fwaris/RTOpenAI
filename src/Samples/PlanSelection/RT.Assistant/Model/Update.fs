@@ -49,6 +49,7 @@ valid_plan_for_military_veteran(Title, Lines, Features) :-
             let! str = PlanQuery.evalQuery viewRef code
             return str
         }
+
         
     let update nav msg model =
         //Log.info $"%A{msg}"

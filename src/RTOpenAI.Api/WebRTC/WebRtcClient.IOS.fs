@@ -174,7 +174,7 @@ type WebRtcClientIOS() =
         member _.State with get() = state
         member _.StateChanged = stateEvent.Publish
                     
-        member this.Connect (key,url) = 
+        member this.Connect (key,url,_) = 
             this.Init()
             setState Connecting
             this.SendOffer(key,url)
