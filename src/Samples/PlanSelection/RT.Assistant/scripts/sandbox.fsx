@@ -1,982 +1,276 @@
-open System.IO
 #r "nuget: Concentus.Native.NetCore, 1.5.2"
 #r "nuget: Concentus, 2.2.2"
 #r "nuget: FsPickler"
+open System
+open System.IO
 
-let readData() = 
-        use str = System.IO.File.OpenRead(@"e:\s\rtapi\pcm_in.xml")
-        let pcm = MBrace.FsPickler.FsPickler.CreateXmlSerializer().Deserialize<int16[]>(str)
-        str.Close()
-        str.Dispose()
-        pcm
 
-let pcm = readData()
-pcm.Length
-let enc = Concentus.OpusCodecFactory.CreateEncoder(48000,1,Concentus.Enums.OpusApplication.OPUS_APPLICATION_VOIP)
-let mutable buff : byte[] = Array.zeroCreate 2000 
-let len = enc.Encode(pcm,480,buff,buff.Length)
+let data = """
+216
+118
+155
+36
+106
+215
+114
+140
+65
+64
+28
+232
+80
+154
+5
+136
+207
+133
+211
+127
+51
+176
+229
+241
+209
+6
+44
+86
+236
+28
+73
+104
+232
+75
+10
+178
+226
+111
+104
+6
+216
+102
+127
+70
+159
+80
+130
+205
+224
+116
+191
+216
+27
+9
+216
+240
+82
+157
+159
+86
+109
+232
+121
+27
+33
+57
+252
+39
+203
+186
+48
+156
+151
+29
+115
+222
+228
+68
+23
+56
+111
+242
+75
+158
+234
+45
+255
+198
+220
+91
+38
+119
+128
+193
+26
+16
+172
+222
+133
+130
+25
+156
+169
+158
+74
+197
+87
+31
+205
+79
+236
+111
+211
+47
+179
+116
+164
+232
+223
+14
+171
+108
+10
+3
+10
+35
+64
+56
+51
+135
+88
+145
+64
+163
+209
+25
+210
+97
+231
+94
+136
+114
+233
+225
+194
+88
+161
+81
+228
+235
+91
+66
+33
+206
+233
+164
+223
+55
+173
+108
+122
+118
+239
+85
+53
+173
+125
+167
+249
+184
+152
+113
+176
+114
+189
+87
+125
+90
+209
+0
+31
+93
+48
+170
+150
+102
+89
+23
+164
+206
+170
+36
+0
+233
+4
+168
+27
+228
+154
+184
+250
+86
+64
+76
+113
+246
+57
+120
+64
+180
+2
+179
+209
+219
+146
+188
+2
+90
+227
+91
+137
+66
+246
+57
+170
+129
+147
+251
+24
+81
+73
+199
+18
+155
+128
+38
+63
+224
+116
+135
+180
+46
+86
+131
+129
+40
+"""
 
-(*
+let encodedData = 
+    seq {
+        use sstr = new StringReader(data)
+        let mutable line = sstr.ReadLine()
+        while line <> null do
+            yield line
+            line <- sstr.ReadLine()        
+    }
+    |> Seq.filter (System.String.IsNullOrWhiteSpace>>not)
+    |> Seq.map byte
+    |> Seq.toArray
 
-  [0] -2611 short
-  [1] 15601 short
-  [2] -12619 short
-  [3] 15633 short
-  [4] -1561 short
-  [5] 15642 short
-  [6] -6646 short
-  [7] 15642 short
-  [8] 1412 short
-  [9] 15642 short
-  [10] -8471 short
-  [11] 15645 short
-  [12] -3052 short
-  [13] 15655 short
-  [14] -4912 short
-  [15] 15671 short
-  [16] -32023 short
-  [17] 15693 short
-  [18] 28296 short
-  [19] 15719 short
-  [20] 6522 short
-  [21] 15744 short
-  [22] 21052 short
-  [23] 15750 short
-  [24] 22588 short
-  [25] 15743 short
-  [26] 12862 short
-  [27] 15696 short
-  [28] 13390 short
-  [29] 15619 short
-  [30] -12250 short
-  [31] 15396 short
-  [32] -1807 short
-  [33] -17381 short
-  [34] 19951 short
-  [35] -17226 short
-  [36] -17639 short
-  [37] -17190 short
-  [38] -6423 short
-  [39] -17208 short
-  [40] 14508 short
-  [41] -17253 short
-  [42] -1097 short
-  [43] -17328 short
-  [44] 24582 short
-  [45] -17430 short
-  [46] 3803 short
-  [47] -17661 short
-  [48] 18294 short
-  [49] 15179 short
-  [50] -7392 short
-  [51] 15360 short
-  [52] -28860 short
-  [53] 15415 short
-  [54] 7454 short
-  [55] 15426 short
-  [56] -17915 short
-  [57] 15381 short
-  [58] -27454 short
-  [59] 15195 short
-  [60] -11964 short
-  [61] -17515 short
-  [62] 25070 short
-  [63] -17314 short
-  [64] -17521 short
-  [65] -17221 short
-  [66] 14831 short
-  [67] -17148 short
-  [68] 24583 short
-  [69] -17110 short
-  [70] 2211 short
-  [71] -17072 short
-  [72] 8126 short
-  [73] -17036 short
-  [74] 5193 short
-  [75] -17014 short
-  [76] -3880 short
-  [77] -17003 short
-  [78] -14817 short
-  [79] -16998 short
-  [80] -21370 short
-  [81] -17003 short
-  [82] -3709 short
-  [83] -17020 short
-  [84] -25773 short
-  [85] -17070 short
-  [86] -27543 short
-  [87] -17140 short
-  [88] 32506 short
-  [89] -17275 short
-  [90] -5248 short
-  [91] -18303 short
-  [92] 26786 short
-  [93] 15436 short
-  [94] -29511 short
-  [95] 15528 short
-  [96] -23588 short
-  [97] 15559 short
-  [98] 23184 short
-  [99] 15559 short
-  [100] 21896 short
-  [101] 15532 short
-  [102] -3278 short
-  [103] 15484 short
-  [104] 18176 short
-  [105] 15386 short
-  [106] 10847 short
-  [107] 15293 short
-  [108] 24846 short
-  [109] 15342 short
-  [110] -27652 short
-  [111] 15477 short
-  [112] -4579 short
-  [113] 15580 short
-  [114] 26991 short
-  [115] 15645 short
-  [116] 14090 short
-  [117] 15667 short
-  [118] 24348 short
-  [119] 15649 short
-  [120] -3573 short
-  [121] 15572 short
-  [122] 14811 short
-  [123] 15366 short
-  [124] -28782 short
-  [125] -17408 short
-  [126] 13510 short
-  [127] -17262 short
-  [128] 3262 short
-  [129] -17231 short
-  [130] 29083 short
-  [131] -17223 short
-  [132] 15409 short
-  [133] -17200 short
-  [134] 1832 short
-  [135] -17148 short
-  [136] -14812 short
-  [137] -17111 short
-  [138] 25587 short
-  [139] -17082 short
-  [140] 28737 short
-  [141] -17082 short
-  [142] -29098 short
-  [143] -17118 short
-  [144] -28719 short
-  [145] -17206 short
-  [146] 1429 short
-  [147] -17380 short
-  [148] 27296 short
-  [149] -17886 short
-  [150] 1364 short
-  [151] -17658 short
-  [152] -19451 short
-  [153] -17317 short
-  [154] 4074 short
-  [155] -17162 short
-  [156] 18889 short
-  [157] -17096 short
-  [158] 23441 short
-  [159] -17067 short
-  [160] -4417 short
-  [161] -17082 short
-  [162] -32253 short
-  [163] -17132 short
-  [164] 16100 short
-  [165] -17239 short
-  [166] 17638 short
-  [167] -17400 short
-  [168] -661 short
-  [169] -17551 short
-  [170] 27642 short
-  [171] -17430 short
-  [172] -29569 short
-  [173] -17289 short
-  [174] -24386 short
-  [175] -17227 short
-  [176] 16138 short
-  [177] -17211 short
-  [178] 16979 short
-  [179] -17247 short
-  [180] -24140 short
-  [181] -17356 short
-  [182] -10640 short
-  [183] -17699 short
-  [184] -2496 short
-  [185] 15273 short
-  [186] 10024 short
-  [187] 15365 short
-  [188] 10864 short
-  [189] 15339 short
-  [190] 12626 short
-  [191] 15182 short
-  [192] 13499 short
-  [193] -17603 short
-  [194] 2254 short
-  [195] -17382 short
-  [196] -28399 short
-  [197] -17306 short
-  [198] -5985 short
-  [199] -17306 short
-  [200] 20455 short
-  [201] -17419 short
-  [202] -11439 short
-  [203] 15277 short
-  [204] -19592 short
-  [205] 15530 short
-  [206] 1467 short
-  [207] 15627 short
-  [208] 23443 short
-  [209] 15653 short
-  [210] -14273 short
-  [211] 15648 short
-  [212] -3290 short
-  [213] 15625 short
-  [214] 7044 short
-  [215] 15597 short
-  [216] -11435 short
-  [217] 15601 short
-  [218] 9910 short
-  [219] 15638 short
-  [220] -14238 short
-  [221] 15684 short
-  [222] -19381 short
-  [223] 15731 short
-  [224] 10795 short
-  [225] 15754 short
-  [226] -20567 short
-  [227] 15760 short
-  [228] 31915 short
-  [229] 15759 short
-  [230] -10357 short
-  [231] 15754 short
-  [232] 20352 short
-  [233] 15750 short
-  [234] 14324 short
-  [235] 15747 short
-  [236] -4562 short
-  [237] 15744 short
-  [238] 6773 short
-  [239] 15740 short
-  [240] -4389 short
-  [241] 15730 short
-  [242] 32669 short
-  [243] 15717 short
-  [244] 16257 short
-  [245] 15700 short
-  [246] -31252 short
-  [247] 15680 short
-  [248] -5522 short
-  [249] 15659 short
-  [250] 13975 short
-  [251] 15639 short
-  [252] 21360 short
-  [253] 15617 short
-  [254] -24948 short
-  [255] 15566 short
-  [256] -29761 short
-  [257] 15500 short
-  [258] 21360 short
-  [259] 15347 short
-  [260] -31612 short
-  [261] -17615 short
-  [262] 29088 short
-  [263] -17354 short
-  [264] -26219 short
-  [265] -17277 short
-  [266] -22222 short
-  [267] -17267 short
-  [268] -109 short
-  [269] -17273 short
-  [270] -10468 short
-  [271] -17271 short
-  [272] -18847 short
-  [273] -17244 short
-  [274] 4259 short
-  [275] -17191 short
-  [276] 1270 short
-  [277] -17141 short
-  [278] 22532 short
-  [279] -17118 short
-  [280] 20209 short
-  [281] -17109 short
-  [282] -9331 short
-  [283] -17114 short
-  [284] 6802 short
-  [285] -17124 short
-  [286] -28409 short
-  [287] -17134 short
-  [288] 18709 short
-  [289] -17139 short
-  [290] 18052 short
-  [291] -17142 short
-  [292] 1686 short
-  [293] -17146 short
-  [294] 15525 short
-  [295] -17153 short
-  [296] 2561 short
-  [297] -17164 short
-  [298] -12740 short
-  [299] -17165 short
-  [300] 22475 short
-  [301] -17150 short
-  [302] 16835 short
-  [303] -17133 short
-  [304] 24272 short
-  [305] -17110 short
-  [306] -3708 short
-  [307] -17084 short
-  [308] 1438 short
-  [309] -17056 short
-  [310] 2562 short
-  [311] -17033 short
-  [312] -31598 short
-  [313] -17023 short
-  [314] -2766 short
-  [315] -17028 short
-  [316] -16947 short
-  [317] -17054 short
-  [318] 31164 short
-  [319] -17093 short
-  [320] 16557 short
-  [321] -17130 short
-  [322] -24452 short
-  [323] -17150 short
-  [324] -16371 short
-  [325] -17146 short
-  [326] 8451 short
-  [327] -17126 short
-  [328] -27120 short
-  [329] -17111 short
-  [330] -18132 short
-  [331] -17118 short
-  [332] 10488 short
-  [333] -17153 short
-  [334] 14009 short
-  [335] -17259 short
-  [336] 11293 short
-  [337] -17470 short
-  [338] 8164 short
-  [339] 15012 short
-  [340] -3168 short
-  [341] 15073 short
-  [342] 20043 short
-  [343] -17596 short
-  [344] 3674 short
-  [345] -17372 short
-  [346] 15163 short
-  [347] -17267 short
-  [348] 31832 short
-  [349] -17209 short
-  [350] 6135 short
-  [351] -17149 short
-  [352] -12065 short
-  [353] -17116 short
-  [354] -17761 short
-  [355] -17086 short
-  [356] -9984 short
-  [357] -17070 short
-  [358] 17254 short
-  [359] -17074 short
-  [360] -15316 short
-  [361] -17098 short
-  [362] -26268 short
-  [363] -17130 short
-  [364] -19876 short
-  [365] -17164 short
-  [366] -6228 short
-  [367] -17198 short
-  [368] 27322 short
-  [369] -17211 short
-  [370] -10761 short
-  [371] -17219 short
-  [372] 26278 short
-  [373] -17234 short
-  [374] 16362 short
-  [375] -17260 short
-  [376] -17821 short
-  [377] -17296 short
-  [378] -28007 short
-  [379] -17329 short
-  [380] -9988 short
-  [381] -17325 short
-  [382] 18249 short
-  [383] -17288 short
-  [384] -9924 short
-  [385] -17260 short
-  [386] 30929 short
-  [387] -17238 short
-  [388] 18730 short
-  [389] -17224 short
-  [390] -11694 short
-  [391] -17219 short
-  [392] 23867 short
-  [393] -17222 short
-  [394] 14414 short
-  [395] -17239 short
-  [396] -25450 short
-  [397] -17278 short
-  [398] 31589 short
-  [399] -17406 short
-  [400] 5247 short
-  [401] 15162 short
-  [402] -22179 short
-  [403] 15471 short
-  [404] 5448 short
-  [405] 15562 short
-  [406] -20970 short
-  [407] 15609 short
-  [408] 22450 short
-  [409] 15614 short
-  [410] 2770 short
-  [411] 15585 short
-  [412] -3644 short
-  [413] 15544 short
-  [414] -26423 short
-  [415] 15520 short
-  [416] 5372 short
-  [417] 15528 short
-  [418] 8927 short
-  [419] 15563 short
-  [420] 12463 short
-  [421] 15601 short
-  [422] -6467 short
-  [423] 15608 short
-  [424] -30965 short
-  [425] 15562 short
-  [426] -25624 short
-  [427] 15439 short
-  [428] -16416 short
-  [429] -17665 short
-  [430] 23402 short
-  [431] -17321 short
-  [432] 8250 short
-  [433] -17282 short
-  [434] 24872 short
-  [435] -17435 short
-  [436] 1048 short
-  [437] 15394 short
-  [438] 6120 short
-  [439] 15599 short
-  [440] 30111 short
-  [441] 15669 short
-  [442] 29348 short
-  [443] 15697 short
-  [444] -6150 short
-  [445] 15691 short
-  [446] 8721 short
-  [447] 15668 short
-  [448] -28580 short
-  [449] 15646 short
-  [450] 28606 short
-  [451] 15641 short
-  [452] 23323 short
-  [453] 15654 short
-  [454] -7677 short
-  [455] 15675 short
-  [456] 14936 short
-  [457] 15693 short
-  [458] -23700 short
-  [459] 15698 short
-  [460] 13556 short
-  [461] 15693 short
-  [462] 22935 short
-  [463] 15684 short
-  [464] -22645 short
-  [465] 15679 short
-  [466] -40 short
-  [467] 15681 short
-  [468] 23161 short
-  [469] 15689 short
-  [470] -20401 short
-  [471] 15698 short
-  [472] 2470 short
-  [473] 15710 short
-  [474] -26441 short
-  [475] 15726 short
-  [476] 7442 short
-  [477] 15747 short
-  [478] 1116 short
-  [479] 15760 short
-  [480] -21719 short
-  [481] 15767 short
-  [482] -13953 short
-  [483] 15762 short
-  [484] 8790 short
-  [485] 15740 short
-  [486] 4440 short
-  [487] 15675 short
-  [488] 20773 short
-  [489] 15597 short
-  [490] -19185 short
-  [491] 15495 short
-  [492] 12854 short
-  [493] 15402 short
-  [494] 11923 short
-  [495] 15355 short
-  [496] -28864 short
-  [497] 15144 short
-  [498] 27092 short
-  [499] -17376 short
-  [500] -20045 short
-  [501] -17166 short
-  [502] -1151 short
-  [503] -17070 short
-  [504] -32151 short
-  [505] -17015 short
-  [506] -16953 short
-  [507] -17009 short
-  [508] 20342 short
-  [509] -17034 short
-  [510] 16240 short
-  [511] -17105 short
-  [512] 25988 short
-  [513] -17187 short
-  [514] -8272 short
-  [515] -17245 short
-  [516] -28811 short
-  [517] -17215 short
-  [518] -23336 short
-  [519] -17140 short
-  [520] 5464 short
-  [521] -17092 short
-  [522] 32135 short
-  [523] -17062 short
-  [524] 15190 short
-  [525] -17054 short
-  [526] 14685 short
-  [527] -17060 short
-  [528] 1076 short
-  [529] -17065 short
-  [530] 15524 short
-  [531] -17060 short
-  [532] 4442 short
-  [533] -17045 short
-  [534] 15665 short
-  [535] -17030 short
-  [536] 9428 short
-  [537] -17025 short
-  [538] 146 short
-  [539] -17035 short
-  [540] -19049 short
-  [541] -17057 short
-  [542] 9361 short
-  [543] -17079 short
-  [544] 33 short
-  [545] -17093 short
-  [546] -2877 short
-  [547] -17096 short
-  [548] 31303 short
-  [549] -17090 short
-  [550] 27096 short
-  [551] -17087 short
-  [552] -15112 short
-  [553] -17097 short
-  [554] 27993 short
-  [555] -17123 short
-  [556] 14883 short
-  [557] -17171 short
-  [558] -28488 short
-  [559] -17253 short
-  [560] -1653 short
-  [561] -17352 short
-  [562] 30693 short
-  [563] -17419 short
-  [564] -1333 short
-  [565] -17420 short
-  [566] -27713 short
-  [567] -17377 short
-  [568] -20647 short
-  [569] -17334 short
-  [570] -18646 short
-  [571] -17308 short
-  [572] -8238 short
-  [573] -17309 short
-  [574] -2547 short
-  [575] -17338 short
-  [576] 17310 short
-  [577] -17394 short
-  [578] -9428 short
-  [579] -17561 short
-  [580] -13780 short
-  [581] 15170 short
-  [582] -4749 short
-  [583] 15393 short
-  [584] -5673 short
-  [585] 15488 short
-  [586] 26713 short
-  [587] 15518 short
-  [588] 15168 short
-  [589] 15529 short
-  [590] 20273 short
-  [591] 15533 short
-  [592] -4422 short
-  [593] 15548 short
-  [594] 5185 short
-  [595] 15589 short
-  [596] -26527 short
-  [597] 15633 short
-  [598] -13230 short
-  [599] 15665 short
-  [600] 10219 short
-  [601] 15685 short
-  [602] -30507 short
-  [603] 15680 short
-  [604] 2343 short
-  [605] 15649 short
-  [606] -32199 short
-  [607] 15577 short
-  [608] -20786 short
-  [609] 15420 short
-  [610] 23071 short
-  [611] -17602 short
-  [612] 25234 short
-  [613] -17298 short
-  [614] -10700 short
-  [615] -17228 short
-  [616] -4948 short
-  [617] -17207 short
-  [618] -27912 short
-  [619] -17230 short
-  [620] 20374 short
-  [621] -17313 short
-  [622] 8280 short
-  [623] -17765 short
-  [624] -6837 short
-  [625] 15453 short
-  [626] 24174 short
-  [627] 15590 short
-  [628] -12118 short
-  [629] 15653 short
-  [630] -29138 short
-  [631] 15690 short
-  [632] 3768 short
-  [633] 15712 short
-  [634] -22488 short
-  [635] 15718 short
-  [636] 7839 short
-  [637] 15711 short
-  [638] 23641 short
-  [639] 15691 short
-  [640] 20493 short
-  [641] 15664 short
-  [642] 23820 short
-  [643] 15638 short
-  [644] 28602 short
-  [645] 15622 short
-  [646] -29368 short
-  [647] 15620 short
-  [648] 32192 short
-  [649] 15627 short
-  [650] -30658 short
-  [651] 15629 short
-  [652] -32274 short
-  [653] 15606 short
-  [654] 10189 short
-  [655] 15514 short
-  [656] 22641 short
-  [657] 15132 short
-  [658] 11082 short
-  [659] -17302 short
-  [660] -13676 short
-  [661] -17203 short
-  [662] -6126 short
-  [663] -17199 short
-  [664] 20194 short
-  [665] -17291 short
-  [666] -25538 short
-  [667] 15219 short
-  [668] 3607 short
-  [669] 15563 short
-  [670] 5469 short
-  [671] 15661 short
-  [672] 17158 short
-  [673] 15700 short
-  [674] -9650 short
-  [675] 15700 short
-  [676] 26960 short
-  [677] 15668 short
-  [678] 6455 short
-  [679] 15617 short
-  [680] 24191 short
-  [681] 15512 short
-  [682] -20155 short
-  [683] 15374 short
-  [684] 12037 short
-  [685] 15186 short
-  [686] -14910 short
-  [687] 14982 short
-  [688] 16255 short
-  [689] -17932 short
-  [690] 10011 short
-  [691] -17547 short
-  [692] -18352 short
-  [693] -17382 short
-  [694] -8326 short
-  [695] -17278 short
-  [696] -21224 short
-  [697] -17239 short
-  [698] 25641 short
-  [699] -17227 short
-  [700] 31896 short
-  [701] -17233 short
-  [702] -15775 short
-  [703] -17228 short
-  [704] 24239 short
-  [705] -17181 short
-  [706] 23880 short
-  [707] -17118 short
-  [708] 24886 short
-  [709] -17055 short
-  [710] 21976 short
-  [711] -17012 short
-  [712] -14751 short
-  [713] -16999 short
-  [714] 28605 short
-  [715] -17003 short
-  [716] -30883 short
-  [717] -17020 short
-  [718] 29090 short
-  [719] -17053 short
-  [720] -27748 short
-  [721] -17075 short
-  [722] -11306 short
-  [723] -17074 short
-  [724] -22692 short
-  [725] -17056 short
-  [726] -31883 short
-  [727] -17035 short
-  [728] 25109 short
-  [729] -17023 short
-  [730] 18378 short
-  [731] -17021 short
-  [732] 11762 short
-  [733] -17021 short
-  [734] 12771 short
-  [735] -17020 short
-  [736] -13693 short
-  [737] -17018 short
-  [738] 12694 short
-  [739] -17016 short
-  [740] 26398 short
-  [741] -17020 short
-  [742] 5211 short
-  [743] -17038 short
-  [744] -14039 short
-  [745] -17075 short
-  [746] -26078 short
-  [747] -17118 short
-  [748] -21239 short
-  [749] -17168 short
-  [750] -18934 short
-  [751] -17240 short
-  [752] -17266 short
-  [753] -17311 short
-  [754] -8945 short
-  [755] -17394 short
-  [756] 27740 short
-  [757] -17505 short
-  [758] -15233 short
-  [759] -17738 short
-  [760] 5383 short
-  [761] 15158 short
-  [762] -9357 short
-  [763] 15374 short
-  [764] 28059 short
-  [765] 15497 short
-  [766] -7391 short
-  [767] 15571 short
-  [768] 2425 short
-  [769] 15625 short
-  [770] 6739 short
-  [771] 15638 short
-  [772] 760 short
-  [773] 15627 short
-  [774] 13785 short
-  [775] 15578 short
-  [776] -17727 short
-  [777] 15513 short
-  [778] -9364 short
-  [779] 15481 short
-  [780] -17559 short
-  [781] 15517 short
-  [782] -12694 short
-  [783] 15607 short
-  [784] 30305 short
-  [785] 15668 short
-  [786] 7086 short
-  [787] 15713 short
-  [788] 20552 short
-  [789] 15728 short
-  [790] 17416 short
-  [791] 15711 short
-  [792] 23925 short
-  [793] 15674 short
-  [794] -26772 short
-  [795] 15637 short
-  [796] -31126 short
-  [797] 15617 short
-  [798] 19526 short
-  [799] 15619 short
-  [800] -31726 short
-  [801] 15635 short
-  [802] -5061 short
-  [803] 15651 short
-  [804] 1089 short
-  [805] 15656 short
-  [806] -13399 short
-  [807] 15643 short
-  [808] 28486 short
-  [809] 15621 short
-  [810] 19143 short
-  [811] 15587 short
-  [812] 9649 short
-  [813] 15578 short
-  [814] 24074 short
-  [815] 15612 short
-  [816] 32428 short
-  [817] 15650 short
-  [818] 14430 short
-  [819] 15696 short
-  [820] 14123 short
-  [821] 15739 short
-  [822] 16195 short
-  [823] 15757 short
-  [824] -20855 short
-  [825] 15765 short
-  [826] 19983 short
-  [827] 15768 short
-  [828] 18837 short
-  [829] 15767 short
-  [830] -29485 short
-  [831] 15763 short
-  [832] 16823 short
-  [833] 15756 short
-  [834] 21775 short
-  [835] 15744 short
-  [836] -9990 short
-  [837] 15713 short
-  [838] 25617 short
-  [839] 15685 short
-  [840] -19248 short
-  [841] 15672 short
-  [842] -32606 short
-  [843] 15685 short
-  [844] -3564 short
-  [845] 15721 short
-  [846] 21990 short
-  [847] 15755 short
-  [848] -19752 short
-  [849] 15770 short
-  [850] -30268 short
-  [851] 15770 short
-  [852] 3950 short
-  [853] 15754 short
-  [854] -15234 short
-  [855] 15713 short
-  [856] 5398 short
-  [857] 15669 short
-  [858] -2530 short
-  [859] 15646 short
-  [860] 5635 short
-  [861] 15648 short
-  [862] 18742 short
-  [863] 15657 short
-  [864] -7491 short
-  [865] 15653 short
-  [866] 7632 short
-  [867] 15625 short
-  [868] -11737 short
-  [869] 15531 short
-  [870] -22474 short
-  [871] 15331 short
-  [872] 28830 short
-  [873] -17535 short
-  [874] 6403 short
-  [875] -17387 short
-  [876] 24892 short
-  [877] -17386 short
-  [878] -18901 short
-  [879] -17423 short
-  [880] -9211 short
-  [881] -17424 short
-  [882] 4355 short
-  [883] -17351 short
-  [884] 10363 short
-  [885] -17251 short
-  [886] -62 short
-  [887] -17169 short
-  [888] 26091 short
-  [889] -17119 short
-  [890] -13956 short
-  [891] -17085 short
-  [892] 7597 short
-  [893] -17060 short
-  [894] -13132 short
-  [895] -17046 short
-  [896] 12662 short
-  [897] -17038 short
-  [898] 6364 short
-  [899] -17035 short
-  [900] -13988 short
-  [901] -17035 short
-  [902] -16943 short
-  [903] -17035 short
-  [904] 7101 short
-  [905] -17034 short
-  [906] -26119 short
-  [907] -17032 short
-  [908] 1468 short
-  [909] -17024 short
-  [910] -15242 short
-  [911] -17017 short
-  [912] -1119 short
-  [913] -17005 short
-  [914] -23878 short
-  [915] -16990 short
-  [916] -6124 short
-  [917] -16978 short
-  [918] -11486 short
-  [919] -16974 short
-  [920] 29170 short
-  [921] -16982 short
-  [922] -15823 short
-  [923] -17002 short
-  [924] 21982 short
-  [925] -17028 short
-  [926] 21479 short
-  [927] -17069 short
-  [928] 5971 short
-  [929] -17088 short
-  [930] 14826 short
-  [931] -17084 short
-  [932] -4678 short
-  [933] -17068 short
-  [934] 30492 short
-  [935] -17054 short
-  [936] -14298 short
-  [937] -17054 short
-  [938] 7890 short
-  [939] -17064 short
-  [940] 2000 short
-  [941] -17073 short
-  [942] 707 short
-  [943] -17067 short
-  [944] 13859 short
-  [945] -17042 short
-  [946] -20833 short
-  [947] -17016 short
-  [948] 28804 short
-  [949] -17002 short
-  [950] -5175 short
-  [951] -17000 short
-  [952] -11274 short
-  [953] -17010 short
-  [954] -305 short
-  [955] -17029 short
-  [956] -6589 short
-  [957] -17057 short
-  [958] -31042 short
-  [959] -17064 short
-
-*)
+let dec = Concentus.OpusCodecFactory.CreateDecoder(48000,1)
+dec.s
+let pcmData : float32[] =  Array.zeroCreate 5760;
+let decodedDataLen = dec.Decode(encodedData,pcmData,pcmData.Length,true)
+pcmData.[800..959]
+decodedDataLen
+let i1 = pcmData |> Array.findIndex (fun x -> x<>0.f)
+pcmData.[120 .. 145]

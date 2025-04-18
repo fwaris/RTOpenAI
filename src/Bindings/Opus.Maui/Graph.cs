@@ -46,6 +46,7 @@ namespace Opus.Maui
         public void Start(Action<Tuple<uint, byte[]>> callback)
         {
             _audioGraph?.Start();
+            _toSpeaker?.Start();
             _fromMic?.Start(_audioGraph, callback);
         }
 

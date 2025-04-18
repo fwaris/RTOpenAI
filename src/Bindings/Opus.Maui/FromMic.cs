@@ -38,6 +38,7 @@ namespace Opus.Maui
             // Initialize the Concentus Opus encoder.
             // The encoder expects PCM at 48000 Hz. You can adjust channels as needed.
             _opusEncoder = OpusCodecFactory.CreateEncoder(Graph.SampleRate, Graph.Channels, OpusApplication.OPUS_APPLICATION_VOIP);
+            _frameOutputNode.Stop();
         }
 
         public void Start(AudioGraph audioGraph, Action<Tuple<UInt32,byte[]>> callback)
@@ -50,8 +51,9 @@ namespace Opus.Maui
                 {
                     callback(ret);
                 }
-                // Pass the encoded data to the callback.
+                // Pass the encoded// data to the callback.
             };
+            _frameOutputNode.Start();
         }
 
         private Tuple<UInt32,byte[]> GetEncoded()
@@ -65,33 +67,21 @@ namespace Opus.Maui
                 // Use COM interop to get a pointer to the raw buffer.
                 unsafe
                 {
-                    byte* dataInBytes;
+                    byte* dataInBytes;                   
                     uint capacity;
                     var buffRef = reference.As<IMemoryBufferByteAccess>();
                     buffRef.GetBuffer(out dataInBytes, out capacity);
                     if (capacity > 0)
                     {
+                        float * pcmFloats = (float*)dataInBytes;
+                        var sampleCount =(int) capacity / sizeof(float);
+                        Span<float> span = MemoryMarshal.CreateSpan<float>(ref pcmFloats[0], sampleCount);                  
                         // Copy the raw data to a managed byte array.
-                        byte[] audioData = new byte[capacity];
-                        Marshal.Copy((IntPtr)dataInBytes, audioData, 0, (int)capacity);
-
-                        // Convert byte array to a short array (assuming 16-bit PCM).
-                        int sampleCount = (int)capacity / 2;
-                        float[] pcmSamples = new float[sampleCount];
-                        Buffer.BlockCopy(audioData, 0, pcmSamples, 0, (int)capacity);
-
-                        short[] pcmInt16Samples =  new short[sampleCount];
-                        for (int i=0; i < pcmSamples.Length; i++)
-                        {
-                            var smple = FloatToInt16(pcmSamples[i]);
-                            pcmInt16Samples[i] = smple;
-                        }
-
                         // Allocate an output buffer for the encoded Opus data.
                         byte[] encodedBuffer = new byte[4000];  // adjust size as needed
 
                         // Encode the PCM samples into an Opus frame.
-                        int encodedLength = _opusEncoder.Encode(pcmInt16Samples, sampleCount, encodedBuffer, encodedBuffer.Length);
+                        int encodedLength = _opusEncoder.Encode(span, sampleCount, encodedBuffer, encodedBuffer.Length);
                         if (encodedLength < 0)
                         {
                             throw new Exception("unable to encode");
@@ -101,11 +91,8 @@ namespace Opus.Maui
                            // Debug.WriteLine($"Encode: {encodedLength}");
                         }
 
-                        // Return only the portion of the buffer that contains encoded data.
-                        byte[] encodedData = new byte[encodedLength];
-                        Array.Copy(encodedBuffer, encodedData, encodedLength);
                         UInt32 duration = (uint)(Graph.SampleRate / sampleCount);
-                        return Tuple.Create(duration, encodedData);
+                        return Tuple.Create(duration, encodedBuffer.AsSpan().Slice(0,sampleCount).ToArray());
                     }
                     else
                     {
