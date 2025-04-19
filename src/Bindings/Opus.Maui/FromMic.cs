@@ -53,7 +53,7 @@ namespace Opus.Maui
                 }
                 // Pass the encoded// data to the callback.
             };
-            _frameOutputNode.Start();
+            _frameOutputNode?.Start();
         }
 
         private Tuple<UInt32,byte[]> GetEncoded()
@@ -88,10 +88,12 @@ namespace Opus.Maui
                         }
                         else
                         {
-                           // Debug.WriteLine($"Encode: {encodedLength}");
+                            var nonZeros = encodedBuffer.Take(encodedLength).Where(x=> x != 0).Count();
+                            Debug.WriteLine($"Encoded: {encodedLength} / non zeros {nonZeros}");
                         }
 
                         UInt32 duration = (uint)(Graph.SampleRate / sampleCount);
+                        
                         return Tuple.Create(duration, encodedBuffer.AsSpan().Slice(0,sampleCount).ToArray());
                     }
                     else
@@ -100,22 +102,6 @@ namespace Opus.Maui
                     }
                 }
             }
-        }
-
-        static short FloatToInt16(float value)
-        {
-            float f = value * short.MaxValue;
-            if (f > short.MaxValue)
-            {
-                f = short.MaxValue;
-            }
-
-            if (f < short.MinValue)
-            {
-                f = short.MinValue;
-            }
-
-            return (short)f;
         }
 
         public void Dispose()

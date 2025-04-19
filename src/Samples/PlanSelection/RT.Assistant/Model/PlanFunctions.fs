@@ -18,6 +18,8 @@ module Functions =
                                         //response.modalities = Some [M_AUDIO; M_TEXT]
                                         })
         |> Api.Connection.sendClientEvent conn
+
+    
         
     let inline sendFunctionResponse conn (ev:ResponseOutputItemDoneEvent) result =
         let outEv =

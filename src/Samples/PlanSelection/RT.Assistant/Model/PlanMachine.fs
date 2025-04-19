@@ -99,7 +99,7 @@ module Machine =
     let update dispatch hybridWebView conn (st:State) ev =
         async {
             match ev with
-            | SessionCreated s when not st.initialized -> sendUpdateSession conn s.session; return {st with initialized = true} 
+            | SessionCreated s when not st.initialized ->  sendUpdateSession conn s.session; return {st with initialized = true} 
             | SessionCreated s -> return {st with currentSession = s.session }
             | SessionUpdated s -> return {st with currentSession = s.session }
             | ResponseOutputItemDone ev when isRunQuery ev  -> Functions.runQuery 1 dispatch hybridWebView conn ev None |> Async.Start; dispatch (Log_Append(getQuery ev)); return st

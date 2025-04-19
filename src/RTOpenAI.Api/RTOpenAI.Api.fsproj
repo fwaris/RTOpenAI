@@ -47,7 +47,6 @@
     <ProjectReference Include="..\Bindings\WebRTCme.Bindings.Maui.iOS\WebRTCme.Bindings.Maui.iOS.csproj" />
   </ItemGroup>
   <ItemGroup Condition="$(TargetPlatformIdentifier) == 'windows'">
-	  <PackageReference Include="Concentus.Native.NetCore" Version="1.5.2" />	 
 	  <PackageReference Include="SIPSorcery" Version="8.0.11" />
 	  <PackageReference Include="Concentus" Version="2.2.2" />
 	  <ProjectReference Include="..\Bindings\Opus.Maui\Opus.Maui.csproj" />

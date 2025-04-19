@@ -21,10 +21,10 @@ namespace Opus.Maui
         {
             // Create an AudioGraph with default settings.
             var settings = new AudioGraphSettings(AudioRenderCategory.Communications);
-            var pcmEncoding = AudioEncodingProperties.CreatePcm((uint)SampleRate, (uint)Channels, 16u);
-            pcmEncoding.Subtype = MediaEncodingSubtypes.Pcm;
+            var pcmEncoding = AudioEncodingProperties.CreatePcm((uint)SampleRate, (uint)Channels, 16u);           
             settings.EncodingProperties = pcmEncoding;
             settings.DesiredRenderDeviceAudioProcessing = Windows.Media.AudioProcessing.Raw;
+            settings.DesiredSamplesPerQuantum = 48000 / 1000 * 20;
             var createGraphResult = await AudioGraph.CreateAsync(settings);
             if (createGraphResult.Status != AudioGraphCreationStatus.Success)
             {

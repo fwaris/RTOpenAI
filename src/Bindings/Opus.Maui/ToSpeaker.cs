@@ -10,6 +10,7 @@ using System.Text;
 using Windows.Devices.AllJoyn;
 using System.Buffers;
 using Windows.Foundation;
+using System.Collections;
 
 namespace Opus.Maui
 {
@@ -36,7 +37,7 @@ namespace Opus.Maui
 
     public class SamplesBuffer
     {
-        private readonly ArrayBufferWriter<float> _buffer = new();
+        private readonly List<Tuple<int, float[]>> samples = [];
         private readonly object _lock = new();
 
         // Writes PCM data to the buffer
@@ -44,20 +45,26 @@ namespace Opus.Maui
         {
             lock (_lock)
             {
-                var span = _buffer.GetSpan(data.Length);
-                data.CopyTo(span);
-                _buffer.Advance(data.Length);
+                var sampleSet = ArrayPool<float>.Shared.Rent(data.Length);
+                data.CopyTo(sampleSet);
+                samples.Add(Tuple.Create(data.Length,sampleSet));
             }
         }
 
         // Reads available data from the buffer
-        public ReadOnlyMemory<float> Read()
+        public Tuple<int,float[]>? Read()
         {
             lock (_lock)
             {
-                var data = _buffer.WrittenMemory;
-                _buffer.Clear(); // Clear after reading
-                return data;
+                if(samples.Count > 0)
+                {
+                    var (len,data) = samples[0];
+                    samples.RemoveAt(0);
+                    return Tuple.Create(len,data);
+                }
+                {
+                    return null;
+                }
             }
         }
     }
@@ -97,12 +104,12 @@ namespace Opus.Maui
         }
 
         public void Start() {
-            _frameInputNode.Start();
+            _frameInputNode?.Start();
         }
 
-        unsafe private AudioFrame GenerateAudioData(ReadOnlyMemory<float> data)
+        unsafe private AudioFrame GenerateAudioData(Tuple<int, float[]> data)
         {        
-            int byteLen = data.Length * sizeof(float);
+            int byteLen = data.Item1 * sizeof(float);
             AudioFrame frame = new Windows.Media.AudioFrame((uint)byteLen);
 
             using (AudioBuffer buffer = frame.LockBuffer(AudioBufferAccessMode.Write))
@@ -116,11 +123,12 @@ namespace Opus.Maui
                 var buffRef = reference.As<IMemoryBufferByteAccess>();
                 buffRef.GetBuffer(out dataInBytes, out capacityInBytes);
                 dataInFloat = (float*)dataInBytes;
-                var span = data.Span;
-                for(int i=0; i < data.Length; i++) {
-                    dataInFloat[i] = span[i];
+                for(int i=0; i < data.Item1; i++) {
+                    dataInFloat[i] = data.Item2[i];
                 }
-                Debug.WriteLine($"written to speaker {data.Length}");
+                var nonZeroFloats = data.Item2.Take(data.Item1).Where(x => x != 0.0f).Count();
+                ArrayPool<float>.Shared.Return(data.Item2);
+                Debug.WriteLine($"written to speaker {data.Item1}; non zero count {nonZeroFloats}");
             }
 
             return frame;
@@ -130,8 +138,8 @@ namespace Opus.Maui
         {
             try
             {
-                var data = _buffer.Read();
-                if (data.Length > 0 )
+                Tuple<int,float[]>? data = _buffer.Read();
+                if (data != null )
                 {
                     sender.AddFrame(GenerateAudioData(data));
                 }
@@ -150,18 +158,20 @@ namespace Opus.Maui
         {
             //openai sends tiny audio packets (3 bytes) that can't really be decoded
             //so skip them
-            if (encodedData.Length < 10)
-            {
-                //Debug.WriteLine($"skipping decode of {encodedData.Length} bytes");
-                return;
-            }
+            //if (encodedData.Length < 10)
+            //{
+            //    Debug.WriteLine($"skipping decode of {encodedData.Length} bytes");
+            //    return;
+            //}
+            Debug.WriteLine($"received rtp {encodedData.Length} bytes");
+
             // Define a maximum frame size (in samples per channel). 
             // Opus frames typically have a maximum of 5760 samples per channel for 120 ms frames at 48000 Hz.
             unsafe
             {
                 int maxSamplesPerChannel = 5760;
                 Span<float> decodedPcm = stackalloc float[maxSamplesPerChannel * Graph.Channels];
-                int decodedSampleCount = _opusDecoder.Decode(encodedData, decodedPcm, maxSamplesPerChannel * Graph.Channels);
+                int decodedSampleCount = _opusDecoder.Decode(encodedData, decodedPcm, maxSamplesPerChannel * Graph.Channels,false);
 
                 if (decodedSampleCount <= 0 || decodedSampleCount == maxSamplesPerChannel)
                 {
