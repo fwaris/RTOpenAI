@@ -41,15 +41,7 @@ module Connection =
         | _ -> ()
         
     let connect ephemeralKey (connection:Connection) =        
-        let codec : obj option = 
-        #if WINDOWS 
-            let codec = new Opus.Maui.Graph() 
-            codec.InitializeAsync().Wait() //initializing audio graph in RTOpenAI causes 'window handle not valid' type errors so doing it here for now
-            Some codec
-        #else
-            None
-        #endif
-        connection.WebRtcClient.Connect(ephemeralKey,C.OPENAI_RT_API,codec)
+        connection.WebRtcClient.Connect(ephemeralKey,C.OPENAI_RT_API,None)
 
     let close (sess:Connection) = 
         sess.WebRtcClient.Dispose()     

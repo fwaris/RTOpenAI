@@ -3,59 +3,14 @@
 open RTOpenAI.WebRTC
 open System
 open System.Threading
-open System.Threading.Tasks
 open SIPSorcery.Net
 open System.Text.Json
 open RTOpenAI.Api
+open SIPSorcery.Media
+open SIPSorceryMedia.Windows
 open SIPSorceryMedia.Abstractions
-open Microsoft.Maui.ApplicationModel
-
-
-module Connect =
-    let createPeerConnection (config:RTCConfiguration) =
-        try
-            new RTCPeerConnection(config)
-        with ex ->
-            Log.exn(ex,"unable to create peer connection")
-            raise ex
-    
-    let createAudioTrack (codec:Opus.Maui.Graph) (pc:RTCPeerConnection) = 
-        let opus = ResizeArray [new AudioFormat(111, "OPUS", Opus.Maui.Graph.SampleRate, Opus.Maui.Graph.Channels, "useinbandfec=1")]
-        let audioTrack = new MediaStreamTrack(opus, MediaStreamStatusEnum.SendRecv)
-        pc.addTrack(audioTrack)
-        
-        
-        pc.add_OnAudioFormatsNegotiated(fun afs -> Utils.debug $"audio format is {Seq.head afs}")
-        pc.add_onconnectionstatechange(fun state -> 
-            task {
-                Utils.debug $"Peer connection state changed to {state}"
-                Log.info $"Peer connection state changed to {state}"
-                if not( state = RTCPeerConnectionState.connected || state = RTCPeerConnectionState.connecting) then 
-                   codec.Dispose()
-                elif state = RTCPeerConnectionState.connected then 
-                    codec.Start(fun (duration,bytes) -> pc.SendAudio(duration,bytes))                    
-            }
-            |> ignore            
-        )
-        pc.add_OnRtpPacketReceived(fun ep media packet -> 
-            if media = SDPMediaTypesEnum.audio then 
-                let ph = packet.Header
-                codec.DecodeAndPlay(packet.Payload)                
-            )
-        audioTrack,codec
-
-    let createDataChannel (pc:RTCPeerConnection) =        
-        try
-            pc.createDataChannel(C.OPENAI_RT_DATA_CHANNEL).Result |> Some
-        with ex -> 
-            Log.exn (ex,"createDataChannel")
-            None
-
-    let createMediaSenders codec (pc:RTCPeerConnection)   = 
-        let audioTrack = createAudioTrack codec pc
-        let dataChannel = createDataChannel pc
-        audioTrack,dataChannel
-
+open Concentus
+open Concentus.Enums
 
 type WebRtcClientWin() = 
         
@@ -74,24 +29,77 @@ type WebRtcClientWin() =
         let msg = JsonSerializer.Deserialize(bytes)
         outputChannel.Writer.TryWrite(msg) |> ignore
 
-    member this.Init (codec:Opus.Maui.Graph) () =               
-        let pcConfig = RTCConfiguration(X_UseRtpFeedbackProfile = true)
-        peerConnection <- Connect.createPeerConnection(pcConfig)
-        let audioTrack,dataChannelOpt = Connect.createMediaSenders codec peerConnection
-        peerConnection.add_OnTimeout(fun mediaType -> Log.info $"Timeout on media {mediaType}")
-        match dataChannelOpt with 
-        | Some dc ->
+    let audioDelegate (pc:RTCPeerConnection) = EncodedSampleDelegate(fun duration bytes -> pc.SendAudio(duration,bytes))
+
+    let addAudio(pc:RTCPeerConnection) = 
+        let winAudioEP = new WindowsAudioEndPoint(new AudioEncoder(includeOpus=true),-1,-1,false,false)
+        winAudioEP.RestrictFormats(fun x -> x.FormatName = "OPUS")         
+        winAudioEP.add_OnAudioSinkError(SourceErrorDelegate(fun err -> Log.info $"Audio sink error {err}"))
+        let audioDlg = audioDelegate pc
+        winAudioEP.add_OnAudioSourceEncodedSample(audioDlg)
+        let audioTrack = new MediaStreamTrack(winAudioEP.GetAudioSourceFormats(), MediaStreamStatusEnum.SendRecv)
+        pc.addTrack(audioTrack)
+        pc.add_OnAudioFormatsNegotiated(fun afs -> 
+            let af = Seq.head afs
+            Log.info $"Audio format negotiated {af.FormatName} channels:{af.ChannelCount} rate:{af.ClockRate} rtpRate:{af.RtpClockRate} {af.FormatID}."
+            winAudioEP.SetAudioSinkFormat(af) 
+            winAudioEP.SetAudioSourceFormat(af)
+        )
+        winAudioEP
+
+    let hookConnectionHandling (winAudioEP:WindowsAudioEndPoint) (pc:RTCPeerConnection) = 
+        pc.add_oniceconnectionstatechange(fun state -> Log.info $"ICE connection state changed to {state}")
+        pc.add_onconnectionstatechange(fun state ->             
+            task {
+                Log.info $"Peer connection state changed to {state}"
+                if state = RTCPeerConnectionState.connected then 
+                    do! winAudioEP.StartAudio()
+                    do! winAudioEP.StartAudioSink()
+                }
+                |> ignore)
+
+    let hookAudioStream (winAudioEP:WindowsAudioEndPoint) (pc:RTCPeerConnection) = 
+        pc.add_OnRtpPacketReceived (fun ep media packet -> 
+            if media = SDPMediaTypesEnum.audio then 
+                let ph = packet.Header
+                winAudioEP.GotAudioRtp(
+                    ep,
+                    ph.SyncSource,
+                    uint32 ph.SequenceNumber,
+                    ph.Timestamp,
+                    ph.PayloadType,
+                    ph.MarkerBit = 1,
+                    packet.Payload)
+        )
+
+    let createPcConnection() = 
+        task {
+            let pcConfig = RTCConfiguration(X_UseRtpFeedbackProfile = true)
+            let pc = new RTCPeerConnection(pcConfig)
+            let! dataChannel = pc.createDataChannel(C.OPENAI_RT_DATA_CHANNEL)
+            let winAudioEP = addAudio pc
+            pc.add_OnTimeout(fun mediaType -> Log.info $"Timeout on media {mediaType}")
+            hookConnectionHandling winAudioEP pc
+            hookAudioStream winAudioEP pc
+            return pc,dataChannel,winAudioEP
+        }
+
+
+    member this.Init () =               
+        task {
+            let! pc,dc,winAudioEP = createPcConnection()
+            peerConnection <- pc
             dataChannel <- dc
-            dc.add_onmessage(OnDataChannelMessageDelegate(onMessage))
-        | None -> ()
+            dataChannel.add_onmessage(OnDataChannelMessageDelegate(onMessage))
+        }
 
     member this.SendOffer(ephemeralKey:string,url:string) =
         task {
             let offer = peerConnection.createOffer()
-            Utils.debug $"Offer SDP:\r\n{offer.sdp}"
+            //Log.info $"Offer SDP:\r\n{offer.sdp}"
             do! peerConnection.setLocalDescription(offer)
             let! answer = Utils.getAnswerSdp ephemeralKey url offer.sdp
-            Utils.debug $"Answer SDP:\r\n{answer}"
+            //Log.info $"Answer SDP:\r\n{answer}"
             let r = peerConnection.setRemoteDescription(RTCSessionDescriptionInit(
                                                         sdp=answer, ``type`` = RTCSdpType.answer))
             if r = SetDescriptionResultEnum.OK then 
@@ -124,11 +132,10 @@ type WebRtcClientWin() =
         member _.State with get() = state
         member _.StateChanged = stateEvent.Publish
                     
-        member this.Connect (key,url,codec) = 
+        member this.Connect (key,url,_) = 
             task {
                 try
-                    let codec:Opus.Maui.Graph = match codec with Some c -> c :?> _ | None -> failwith "codec graph not given"
-                    do! MainThread.InvokeOnMainThreadAsync(this.Init codec)                
+                    do! this.Init()
                     setState Connecting
                     do!this.SendOffer(key,url)
                 with ex ->
