@@ -101,7 +101,7 @@ module Machine =
             match ev with
             | SessionCreated s when not st.initialized ->  sendUpdateSession conn s.session; return {st with initialized = true} 
             | SessionCreated s -> return {st with currentSession = s.session }
-            | SessionUpdated s -> return {st with currentSession = s.session }
+            | SessionUpdated s -> Functions.sendInitResp conn; return {st with currentSession = s.session }
             | ResponseOutputItemDone ev when isRunQuery ev  -> Functions.runQuery 1 dispatch hybridWebView conn ev None |> Async.Start; dispatch (Log_Append(getQuery ev)); return st
             | ResponseOutputItemDone ev when isQueryResult ev  -> return  st            
             | ResponseOutputItemDone ev when isGetPlanDetails ev -> Functions.getPlanDetails dispatch hybridWebView conn ev; return st

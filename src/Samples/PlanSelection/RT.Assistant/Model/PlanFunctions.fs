@@ -11,6 +11,14 @@ open RT.Assistant
 
 module Functions =
 
+    let sendInitResp conn = 
+        (ClientEvent.ResponseCreate {ResponseCreateEvent.Default with
+                                        event_id = Api.Utils.newId()
+                                        response.instructions = Some "briefly introduce yourself"
+                                        //response.modalities = Some [M_AUDIO; M_TEXT]
+                                        })
+        |> Api.Connection.sendClientEvent conn
+
     //sends 'response.create' to prompt the LLM to generate audio (otherwise it seems to wait).
     let sendResponseCreate conn=
         (ClientEvent.ResponseCreate {ResponseCreateEvent.Default with
