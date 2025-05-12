@@ -1,11 +1,16 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 	<PropertyGroup>
+		<!-- 
+dotnet publish -f net9.0-windows10.0.19041.0 -c Release -r win-x64 -p:Platform=x64 -p:SelfContained=true -p:WindowsAppSDKSelfContained=true -p:WindowsAppSdkUndockedRegFreeWinRTInitialize=false -P:ErrorOnDuplicatePublishOutputFiles=false
+MakeAppx pack /d "./win10-x64" /p "RT.Assistant.msix"
+		-->
 		<IsWindows>$([System.Runtime.InteropServices.RuntimeInformation]::IsOSPlatform($([System.Runtime.InteropServices.OSPlatform]::Windows)))</IsWindows>
 		<IsLinux>$([System.Runtime.InteropServices.RuntimeInformation]::IsOSPlatform($([System.Runtime.InteropServices.OSPlatform]::Linux)))</IsLinux>
 		<IsOSX>$([System.Runtime.InteropServices.RuntimeInformation]::IsOSPlatform($([System.Runtime.InteropServices.OSPlatform]::OSX)))</IsOSX>
-		<TargetFrameworks>net9.0-android;net9.0-ios</TargetFrameworks>
-		<TargetFrameworks Condition="$(IsOSX)">$(TargetFrameworks);net9.0-maccatalyst</TargetFrameworks>
-		<TargetFrameworks Condition="$(IsWindows)">$(TargetFrameworks);net9.0-windows10.0.19041.0</TargetFrameworks>
+		<!--<TargetFrameworks>net9.0-android;net9.0-ios</TargetFrameworks>-->
+		<TargetFrameworks>net9.0-windows10.0.19041.0</TargetFrameworks>
+		<!--<TargetFrameworks Condition="$(IsOSX)">$(TargetFrameworks);net9.0-maccatalyst</TargetFrameworks>
+		<TargetFrameworks Condition="$(IsWindows)">$(TargetFrameworks);net9.0-windows10.0.19041.0</TargetFrameworks>-->
 		<OutputType>Exe</OutputType>
 		<RootNamespace>RT.Assistant</RootNamespace>
 		<AllowUnsafeBlocks>true</AllowUnsafeBlocks>
@@ -34,6 +39,19 @@
 		<TargetPlatformMinVersion Condition="$(TargetPlatformIdentifier) == 'windows'">10.0.17763.0</TargetPlatformMinVersion>
 		<SupportedOSPlatformVersion Condition="$(TargetPlatformIdentifier) == 'tizen'">6.5</SupportedOSPlatformVersion>
 	</PropertyGroup>
+
+<!--<PropertyGroup>
+  <TargetFramework>net9.0-windows10.0.19041.0</TargetFramework>
+  <RuntimeIdentifier>win-x64</RuntimeIdentifier>
+  <SelfContained>true</SelfContained>
+  <WindowsAppSDKSelfContained>true</WindowsAppSDKSelfContained>
+  <WindowsPackageType>None</WindowsPackageType>
+  <PlatformTarget>x64</PlatformTarget>
+</PropertyGroup>-->
+<PropertyGroup>
+  <WindowsAppSdkUndockedRegFreeWinRTInitialize>false</WindowsAppSdkUndockedRegFreeWinRTInitialize>
+</PropertyGroup>
+
 	<ItemGroup>
 		<Content Include="readme.md" />
 		<Content Include="Resources\Raw\plan_schema.pl" />
@@ -123,8 +141,14 @@
 	<ItemGroup>
 		<!-- Exclude the auto-generated C# file from the Windows App SDK -->
 		<!--<Compile Remove="$(NuGetPackageRoot)microsoft.windowsappsdk/1.6.250108002/include/UndockedRegFreeWinRT-AutoInitializer.cs" />-->
-		<Compile Remove="C:\Users\Faisa\.nuget\packages\microsoft.windowsappsdk\1.6.250228001\include\UndockedRegFreeWinRT-AutoInitializer.cs" />
+		<!--<Compile Remove="$(USERPROFILE)\.nuget\packages\microsoft.windowsappsdk\1.7.250401001\include\UndockedRegFreeWinRT-AutoInitializer.cs" />-->
+		<Compile Remove="C:\Users\fwaris1\.nuget\packages\microsoft.windowsappsdk\1.7.250401001\include\UndockedRegFreeWinRT-AutoInitializer.cs" />
+		<Compile Remove="**/*.cs" />
 	</ItemGroup>
+
+<ItemGroup>
+  <Compile Remove="**\UndockedRegFreeWinRT-AutoInitializer.cs" />
+</ItemGroup>
 
 
 	<ItemGroup>
