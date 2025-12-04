@@ -3,8 +3,7 @@
 		<IsWindows>$([System.Runtime.InteropServices.RuntimeInformation]::IsOSPlatform($([System.Runtime.InteropServices.OSPlatform]::Windows)))</IsWindows>
 		<IsLinux>$([System.Runtime.InteropServices.RuntimeInformation]::IsOSPlatform($([System.Runtime.InteropServices.OSPlatform]::Linux)))</IsLinux>
 		<IsOSX>$([System.Runtime.InteropServices.RuntimeInformation]::IsOSPlatform($([System.Runtime.InteropServices.OSPlatform]::OSX)))</IsOSX>
-		<TargetFrameworks>net9.0-android;net9.0-ios</TargetFrameworks>
-		<TargetFrameworks Condition="$(IsOSX)">$(TargetFrameworks);net9.0-maccatalyst</TargetFrameworks>
+		<TargetFrameworks>net9.0-android;net9.0-ios;net9.0-maccatalyst</TargetFrameworks>
 		<TargetFrameworks Condition="$(IsWindows)">$(TargetFrameworks);net9.0-windows10.0.19041.0</TargetFrameworks>
 		<OutputType>Exe</OutputType>
 		<RootNamespace>RT.Assistant</RootNamespace>
@@ -13,7 +12,6 @@
 		<!--<WindowsPackageType>None</WindowsPackageType>
 		<WindowsAppSdkUndockedRegFreeWinRTInitialize>false</WindowsAppSdkUndockedRegFreeWinRTInitialize>
 		<UseWinUI>true</UseWinUI>-->
-		
 		<UseMaui>true</UseMaui>
 		<SingleProject>true</SingleProject>
 		<EnableDefaultItems>false</EnableDefaultItems>
@@ -128,13 +126,13 @@
 
 
 	<ItemGroup>
-		<PackageReference Include="Fabulous.MauiControls" Version="9.0.0-pre6" />
+		<PackageReference Include="Fabulous.MauiControls" Version="9.0.0-pre9" />
 		<PackageReference Include="FSharp.Control.AsyncSeq" Version="3.2.1" />
 		<PackageReference Include="Lost.SemanticKernel.Connectors.Anthropic" Version="1.25.0-alpha3" />
-		<PackageReference Include="Microsoft.Maui.Controls" Version="9.0.60" />
+		<PackageReference Include="Microsoft.Maui.Controls" Version="9.0.120" />
 		<PackageReference Include="Microsoft.Maui.Controls.Compatibility" Version="9.0.60" />
-		<PackageReference Include="Microsoft.SemanticKernel" Version="1.46.0" />
-		<PackageReference Include="Microsoft.SemanticKernel.Connectors.Google" Version="1.38.0-alpha" />
+		<PackageReference Include="Microsoft.SemanticKernel" Version="1.68.0" />
+		<PackageReference Include="Microsoft.SemanticKernel.Connectors.Google" Version="1.68.0-alpha" />
 		<PackageReference Include="System.Net.Http" Version="4.3.4" />
 		<PackageReference Include="System.Net.Primitives" Version="4.3.1" />
 		<PackageReference Include="System.Net.Security" Version="4.3.2" />

@@ -104,10 +104,10 @@
 	</ItemGroup>
 	
 	<ItemGroup>
-		<PackageReference Include="Fabulous.MauiControls" Version="9.0.0-pre6" />
+		<PackageReference Include="Fabulous.MauiControls" Version="9.0.0-pre9" />
 		<PackageReference Include="FSharp.Control.AsyncSeq" Version="3.2.1" />
 		<PackageReference Update="FSharp.Core" Version="9.0.100" />
-		<PackageReference Include="Microsoft.Maui.Controls" Version="9.0.60" />
+		<PackageReference Include="Microsoft.Maui.Controls" Version="9.0.120" />
 		<PackageReference Include="Microsoft.Maui.Controls.Compatibility" Version="9.0.60" />
 		<PackageReference Include="System.Net.Security" Version="4.3.2" />
 		<PackageReference Include="System.Private.Uri" Version="4.3.2" />
