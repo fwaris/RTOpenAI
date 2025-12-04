@@ -11,7 +11,6 @@
 		<!--<WindowsPackageType>None</WindowsPackageType>
 		<WindowsAppSdkUndockedRegFreeWinRTInitialize>false</WindowsAppSdkUndockedRegFreeWinRTInitialize>
 		<UseWinUI>true</UseWinUI>-->
-		
 		<UseMaui>true</UseMaui>
 		<SingleProject>true</SingleProject>
 		<EnableDefaultItems>false</EnableDefaultItems>
@@ -33,16 +32,16 @@
 		<SupportedOSPlatformVersion Condition="$(TargetPlatformIdentifier) == 'tizen'">6.5</SupportedOSPlatformVersion>
 	</PropertyGroup>
 	<ItemGroup>
-		<Content Include="readme.md" />
 		<Content Include="Resources\Raw\plan_schema.pl" />
-		<Content Include="scripts\PLANS.json" />
-		<None Include="scripts\packages.fsx" />
 		<Content Include="scripts\BasePlanStructure.pl" />
+		<Content Include="scripts\PLANS.json" />
+		<None Include="readme.md" />
+		<None Include="scripts\packages.fsx" />
 		<None Include="scripts\sandbox.fsx" />
 		<None Include="scripts\ExtractStructure.fsx" />
 		<None Include="scripts\Experiment.fsx" />
 		<None Include="scripts\ExperimenEval.fsx" />
-		<Content Include="scripts\TestSet.xlsx" />
+		<None Include="scripts\TestSet.xlsx" />
 		<None Include="scripts\TestSetSandbox.fsx" />
 		<None Include="scripts\SeliniumTest.fsx" />
 		<None Include="scripts\JintTest.fsx" />
@@ -118,14 +117,14 @@
 	</ItemGroup>
 	
 	<ItemGroup>
-		<PackageReference Include="Fabulous.MauiControls" Version="9.0.0-pre6" />
+		<PackageReference Include="Fabulous.MauiControls" Version="9.0.0-pre9" />
 		<PackageReference Include="FSharp.Control.AsyncSeq" Version="3.2.1" />
 		<PackageReference Include="Lost.SemanticKernel.Connectors.Anthropic" Version="1.25.0-alpha3" />
-		<PackageReference Include="Microsoft.Extensions.Logging.Console" Version="9.0.2" />
-		<PackageReference Include="Microsoft.Maui.Controls" Version="9.0.40" />
-		<PackageReference Include="Microsoft.Maui.Controls.Compatibility" Version="9.0.40" />
-		<PackageReference Include="Microsoft.SemanticKernel" Version="1.37.0" />
-		<PackageReference Include="Microsoft.SemanticKernel.Connectors.Google" Version="1.38.0-alpha" />
+		<PackageReference Include="Microsoft.Extensions.Logging.Console" Version="9.0.11" />
+		<PackageReference Include="Microsoft.Maui.Controls" Version="9.0.120" />
+		<PackageReference Include="Microsoft.Maui.Controls.Compatibility" Version="9.0.120" />
+		<PackageReference Include="Microsoft.SemanticKernel" Version="1.68.0" />
+		<PackageReference Include="Microsoft.SemanticKernel.Connectors.Google" Version="1.68.0-alpha" />
 		<PackageReference Include="System.Net.Http" Version="4.3.4" />
 		<PackageReference Include="System.Net.Primitives" Version="4.3.1" />
 		<PackageReference Include="System.Net.Security" Version="4.3.2" />
