@@ -1,4 +1,6 @@
 namespace RT.Assistant.WorkFlow
+
+open System.Threading
 open Fabulous
 open RT.Assistant
 open RTFlow
@@ -9,53 +11,69 @@ module StateMachine =
         viewRef:ViewRef<Microsoft.Maui.Controls.HybridWebView>
         bus : WBus<FlowMsg,AgentMsg>
         usage : Map<string,Usage>
+        conn : RTOpenAI.Api.Connection
     }
     
-    let rec (|Txn|M|)  (s_ret,ss:SubState,msg) = //common message processing for each state
+    let startAgents (ss:SubState) = async {
+        AppAgent.start ss.mailbox ss.bus
+        QueryAgent.start ss.viewRef ss.bus
+        CodeGenAgent.start ss.viewRef ss.bus
+        VoiceAgent.start ss.conn ss.bus
+    }
+    let ignoreMsg s msg name =
+        Log.warn $"{name}: ignored message {msg}"
+        F(s,[])
+    
+    let rec terminate isAbnormal (ss:SubState) =
+        async {
+            Log.info "terminating flow ..."
+            RTOpenAI.Api.Connection.close ss.conn
+            do! Async.Sleep(1000)        
+            ss.bus.Close()
+        }
+        |> Async.Start
+        F(s_terminate ss, [Ag_FlowDone {|abnormal=isAbnormal|}])
+          
+    /// log that a message was ignored in some state
+    
+    and (|Txn|M|)  (s_ret,ss:SubState,msg) = //common message processing for each state
         match msg with
-        | W_Err e                       -> Txn(F(s_terminate false ss,[Ag_FlowError e]))                   //error: switch to s_terminate; send error to app
-        | W_Msg (Fl_Usage (id,usg))     -> let ss = {ss with usage = Usage.combineUsage ss.usage}
-                                            let ss = {ss with task = ss.task.appendUsage (id,usg)}       //accumulate usage and return to same state
-                                            Txn(F(s_ret ss, [APo_Usage ss.task.usage]))                  //  - also send usage to app
-        | W_Msg (APi_TerminateTask x)    -> Txn(F(s_terminate false ss,[APo_Done {|abnormal = x.abnormal; task = ss.task|}]))    //done: switch to s_terminate; send results to app
-        | W_Msg msg                      -> M msg                                                        //to be handled by the state 
+        | W_Err e                       -> Txn(terminate true ss)                            //error: switch to s_terminate; send error to app
+        | W_Msg (Fl_Usage usg)          -> let ss = {ss with usage = Usage.combineUsage ss.usage usg}               //accumulate token usage
+                                           Txn(F(s_ret ss, []))                  
+        | W_Msg (Fl_Terminate x)        -> Txn(terminate x.abnormal ss)    //done: switch to s_terminate; send results to app
+        | W_Msg msg                     -> M msg                                                                   //to be handled by the current state 
 
     and s_start ss msg = async {
-        Log.info $"{nameof s_start}, '{ss.task.id}', {ss.cuaLoopCount}"
+        Log.info $"{nameof s_start}"
         match s_start,ss,msg with 
         | Txn s                         -> return s
-        | M APi_Start                   -> do! ss.task.driver.start ss.task.target                             //start browser - this takes some time
-                                           let! vs,dims,_ = ss.task.driver.snapshot()
-                                           let ss = {ss with screenDimensions=dims}
-                                           return! reset s_cua ss 
+        | M Fl_Start                    -> do! startAgents ss 
+                                           return F(s_run ss,[])
         | x                             -> Log.warn $"{nameof s_start}: expecting APi_Start but got {x}"
                                            return F(s_start ss,[])
     }
-    
-    //main cua loop control
-    and s_cua ss msg = async {
-        Log.info $"{nameof s_cua}, '{ss.task.id}', {ss.cuaLoopCount}"
-        match s_cua,ss,msg with 
-        | Txn s                            -> return s
-        | M (CUAi_ComputerCall (_,_,_)) when ss.cuaLoopCount > C.MAX_CUA_CALLS_IN_TASK ->      
-                                            Log.warn $"{nameof s_cua}: exceeded max cua calls {ss.cuaLoopCount}"
-                                            return! reset s_cua ss
-        | M (CUAi_ComputerCall (cc,text,msgs)) ->            
-                                            text |> Option.iter Log.info
-                                            let ss = {ss with task.cuaMessages = msgs}.incrCuaLoopCount()
-                                            let cuaCalls,pendingCalls = splitCalls cc
-                                            let! ss,cuaResults = performActions ss cuaCalls
-                                            let req = cuaLoopRequest ss cuaResults pendingCalls
-                                            let actMsgs = cuaCalls |> List.collect fst |> List.map (Actions.actionToString>>APo_Action)
-                                            return F(s_cua ss,CUAo_Req req::actMsgs) //txn back to s_cua; send action to app and loop
-        | M (CUAi_NoComputerCall (_,_))  -> return! reset s_cua ss
-        | x                              -> return ignoreMsg (s_cua ss) x (nameof s_cua)
+        
+    and s_run ss msg = async {
+       Log.info $"{nameof s_run}"
+       match s_run,ss,msg with 
+       | Txn s                          -> return s
+       | x                              -> return ignoreMsg (s_run ss) x (nameof s_run)
     }
 
-    and s_terminate startedCancel ss msg = async {
-        if not startedCancel then terminate ss.cts ss.task.bus
-        Log.info $"{nameof s_terminate}, '{ss.task.id}', {ss.cuaLoopCount}"
+    and s_terminate ss msg = async {
         Log.info $"s_terminate: message ignored {msg}"
-        return F(s_terminate true ss,[])
+        return F(s_terminate ss,[])
     }
 
+    let create mailbox viewRef conn =
+        let bus = WBus.Create()
+        let ss = {mailbox=mailbox; viewRef=viewRef; conn=conn; usage=Map.empty; bus=bus}
+        let s0 = s_start ss
+        RTFlow.Workflow.run CancellationToken.None bus s0 //start the state machine with initial state
+        {new IFlow<FlowMsg,AgentMsg> with
+            member _.PostToFlow msg = bus.PostToFlow (W_Msg msg)
+            member _.PostToAgent msg = bus.PostToAgent msg
+            member _.Terminate() = bus.PostToFlow (W_Msg (Fl_Terminate {|abnormal=false|}))
+        }
+        

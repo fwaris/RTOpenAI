@@ -99,7 +99,7 @@ module Connect =
                             let conn = RTOpenAI.Api.Connection.create()
                             let sub = conn.WebRtcClient.StateChanged.Subscribe(fun ev -> model.mailbox.Writer.TryWrite ((WebRTC_StateChanged) ev) |> ignore)
                             logServerEvents model conn.WebRtcClient.OutputChannel
-                            let conn = {conn with Diposables = sub::conn.Diposables}                            
+                            let conn = {conn with Disposables = sub::conn.Disposables }                            
                             return (Some conn)
                         with ex ->
                             Log.exn (ex,"startStopSession")

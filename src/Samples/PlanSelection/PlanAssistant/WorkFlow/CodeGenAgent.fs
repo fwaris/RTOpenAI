@@ -57,8 +57,8 @@ module CodeGenAgent =
     let internal sendRequest state (history : ChatMessage list)= async {
         let client = Anthropic.Client.createClient()              
         let! resp = client.GetResponseAsync<RT.Assistant.Plan.CodeGenResp>(history,useJsonSchemaResponseFormat=true) |> Async.AwaitTask
-        let usage = mapUsage resp.Usage
-        state.bus.PostToFlow(W_Msg (Fl_Usage (resp.ModelId,usage)))
+        let usage = [resp.ModelId,mapUsage resp.Usage] |> Map.ofList
+        state.bus.PostToFlow(W_Msg (Fl_Usage usage))
         return resp.Result
     }
     

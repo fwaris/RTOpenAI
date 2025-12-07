@@ -2,6 +2,8 @@
 
 open Fabulous
 open RT.Assistant.Plan
+open RT.Assistant.WorkFlow
+open RTFlow
 open RTOpenAI.Api.Events
           
 exception InputKeyExn
@@ -11,7 +13,6 @@ type Message = {Role : Role; Content: string}
 type Model = 
     {
         mailbox : System.Threading.Channels.Channel<Msg> //background messages        
-        connection : RTOpenAI.Api.Connection option
         sessionState : RTOpenAI.WebRTC.State
         log : string list
         isActive : bool
@@ -21,14 +22,14 @@ type Model =
         hybridView : ViewRef<Microsoft.Maui.Controls.HybridWebView>
         code : CodeGenResp
         fontSize : float
+        flow : IFlow<FlowMsg,AgentMsg> option
     }
 
 and Msg =
     | EventError of exn        
     | WebRTC_StateChanged of RTOpenAI.WebRTC.State
-    | Cn_Set of RTOpenAI.Api.Connection option
+    | Cn_Set of IFlow<FlowMsg,AgentMsg> option
     | Cn_StartStop of unit
-    | Cn_Connect of RTOpenAI.Api.Connection
     | Cn_EnsureKey_Start    
     | Cn_Started of Session
     | Log_Append of string
@@ -38,7 +39,6 @@ and Msg =
     | Active
     | InActive
     | BackButtonPressed
-    | InputKey of exn
     | ItemStarted
     | ItemAdded of string
     | SubmitCode

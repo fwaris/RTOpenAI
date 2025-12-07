@@ -18,7 +18,10 @@ Load requires packages code files for running 'assistant' related F# scripts
 #r "nuget: ExcelProvider"
 #r "nuget: Plotly.NET"
 
-#r @"..\..\SwiPlcsCore\bin\Debug\net9.0\SwiPlcsCore.dll"
+
+#r @"../../SwiPlcsCore/bin/Debug/net9.0/SwiPlcsCore.dll"
+
+
 
 
 //transient packages. update to remove vulnerability warnings

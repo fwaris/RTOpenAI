@@ -31,7 +31,6 @@ valid_plan_for_military_veteran(Title, Lines, Features) :-
     let initModel() = 
         {
             mailbox = System.Threading.Channels.Channel.CreateBounded<Msg>(30)
-            connection = None
             sessionState = RTOpenAI.WebRTC.State.Disconnected
             log = []
             isActive = false
@@ -41,6 +40,7 @@ valid_plan_for_military_veteran(Title, Lines, Features) :-
             hybridView = ViewRef<Microsoft.Maui.Controls.HybridWebView>()
             code = {CodeGenResp.Predicates=testConsult; CodeGenResp.Query=testQuery}
             fontSize = 11.0
+            flow = None
         }, Cmd.none
         
     let submitCode (code,viewRef) =
@@ -56,13 +56,11 @@ valid_plan_for_military_veteran(Title, Lines, Features) :-
         | EventError exn -> debug exn.Message; {model with log=exn.Message::model.log}, Cmd.none
         | Log_Append s -> { model with log = s::model.log |> List.truncate C.MAX_LOG }, Cmd.none
         | Log_Clear -> { model with log = [] }, Cmd.none
-        | Cn_EnsureKey_Start -> model, Cmd.OfTask.either Connect.lookForKey () Cn_StartStop InputKey
-        | InputKey _ -> model, Cmd.ofMsg Settings_Show
+        | Cn_EnsureKey_Start -> model, (if Connect.checkKeys() then Cmd.ofMsg (Cn_StartStop()) else Cmd.ofMsg Settings_Show)
         | Cn_Started _ -> model, Cmd.none
         | Cn_StartStop _ -> model, Cmd.OfAsync.either Connect.startStopConnection model Cn_Set EventError 
-        | Cn_Set None -> {model with connection = None }, Cmd.none
-        | Cn_Set (Some(sess)) -> {model with connection = Some sess}, Cmd.ofMsg (Cn_Connect sess); 
-        | Cn_Connect sess -> model, Cmd.OfTask.attempt Connect.connect model EventError
+        | Cn_Set None -> {model with flow = None }, Cmd.none
+        | Cn_Set (Some(sess)) -> {model with flow = Some sess}, Cmd.none
         | WebRTC_StateChanged s -> {model with sessionState = s}, Cmd.none
         | Nop -> model, Cmd.none
         | Settings_Show -> model, Navigation.navigateToSettings nav

@@ -126,14 +126,16 @@ module VoiceAgent =
             | SessionUpdated s -> return {st with currentSession = s.session }
             | ResponseOutputItemDone ev when isRunQuery ev  -> st.bus.PostToAgent(Ag_Query(getQuery ev)); return st
             | ResponseOutputItemDone ev when isGetPlanDetails ev -> st.bus.PostToAgent(Ag_GetPlanDetails(getPlanTitle ev)); return st
-            | other -> (* Log.info $"unhandled event: {other}"; *) return st //log other events
+            | Error e -> Log.error e.error.message; return st
+            | other ->  (*Log.info $"unhandled event: {other}";*)  return st //log other events
         }
         
     let startVoice (conn:RTOpenAI.Api.Connection) (bus:WBus<FlowMsg, AgentMsg>) = async {
         let initState = VoState.Create bus
         if conn.WebRtcClient.State.IsDisconnected then
-                let! key = Connect.getEphemeralKey(Settings.Values.openaiKey()) |> Async.AwaitTask
-                do! RTOpenAI.Api.Connection.connect key conn |> Async.AwaitTask
+                let keyReq = {KeyReq.Default with model = RTOpenAI.Api.C.OPENAI_RT_MODEL_GPT_REALTIME}                
+                let! ephemKey = Connection.getEphemeralKey (Settings.Values.openaiKey()) keyReq |> Async.AwaitTask
+                do! Connection.connect ephemKey conn |> Async.AwaitTask
         let comp = 
             conn.WebRtcClient.OutputChannel.Reader.ReadAllAsync()
             |> AsyncSeq.ofAsyncEnum
@@ -153,7 +155,7 @@ module VoiceAgent =
     }
     
     let startFlow conn (bus:WBus<FlowMsg,AgentMsg>) =
-        let channel = bus.agentChannel.Subscribe("codegen")
+        let channel = bus.agentChannel.Subscribe("voice")
         let st = {conn = conn; bus = bus}
         channel.Reader.ReadAllAsync()
         |> AsyncSeq.ofAsyncEnum

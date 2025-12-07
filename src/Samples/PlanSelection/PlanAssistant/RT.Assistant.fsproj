@@ -32,7 +32,7 @@
 		<SupportedOSPlatformVersion Condition="$(TargetPlatformIdentifier) == 'tizen'">6.5</SupportedOSPlatformVersion>
 	</PropertyGroup>
 	<ItemGroup>
-		<Content Include="Resources\Raw\plan_schema.pl" />
+		<None Include="Resources\Raw\plan_schema.pl" />
 		<Content Include="scripts\BasePlanStructure.pl" />
 		<Content Include="scripts\PLANS.json" />
 		<None Include="readme.md" />
@@ -56,22 +56,22 @@
 		<Compile Include="Plan\PlanPrompts.fs" />
 		<Compile Include="Model\AppMsg.fs" />
 		<Compile Include="Model\Navigation.fs" />
+		<Compile Include="Model\WorkFlowTypes.fs" />
 		<Compile Include="Model\Model.fs" />
 		<Compile Include="Model\Audio.fs" />
 		<Compile Include="Model\PlanQuery.fs" />
 		<Compile Include="Model\PlanFunctions.fs" />
 		<Compile Include="Model\PlanMachine.fs" />
-		<Compile Include="Model\Connect.fs" />
 		<Compile Include="WorkFlow\AnthropicClient.fs" />
-		<Compile Include="WorkFlow\WorkFlowTypes.fs" />
 		<Compile Include="WorkFlow\VoiceAgent.fs" />
 		<Compile Include="WorkFlow\QueryService.fs" />
 		<Compile Include="WorkFlow\CodeGenPrompts.fs" />
 		<Compile Include="WorkFlow\CodeGenAgent.fs" />
 		<Compile Include="WorkFlow\QueryAgent.fs" />
 		<Compile Include="WorkFlow\AppAgent.fs" />
-		<Compile Include="WorkFlow\WorkFlow.fs" />		
-		<Compile Include="Update.fs" />
+		<Compile Include="WorkFlow\WorkFlow.fs" />
+		<Compile Include="Interaction\Connect.fs" />
+		<Compile Include="Interaction\Update.fs" />
 		<Compile Include="Views\Settings.fs" />
 		<Compile Include="Views\ViewExtensions.fs" />
 		<Compile Include="Views\Chat.fs" />
@@ -150,6 +150,5 @@
 	</ItemGroup>
 	
 	<ItemGroup>
-
 	</ItemGroup>
 </Project>

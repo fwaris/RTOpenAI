@@ -4,8 +4,9 @@ open System.Threading
 open System.Threading.Channels
 open FSharp.Control
 
-type IFlow<'inMsg> = 
-    abstract member Post : 'inMsg -> unit
+type IFlow<'flowMsg,'agentMsg> = 
+    abstract member PostToFlow: 'flowMsg -> unit
+    abstract member PostToAgent: 'agentMsg -> unit
     abstract member Terminate : unit -> unit
     
 type StepperHolder() =
@@ -28,6 +29,7 @@ type StepperHolder() =
         this.Set(None)
 
 type WErrorType = WE_Error of string | WE_Exn of exn
+    with member this.ErrorText with get() = match this with WE_Error s -> s | WE_Exn ex -> ex.Message
 
 type W_Msg_In<'input> = 
     | W_Msg of 'input

@@ -1,21 +1,33 @@
-#r "nuget: FSharp.Data.Mutator, 0.1.1-beta" //local package built from source with latest FSharp.Data
-#load "AICore.fsx"
+#load "packages.fsx"
+#load "../../../../RTOpenAI.Api/Api/Events.fs"
 
-(* for quick testing of code snippets. Loads packages and code files typically required for 'assistant' related tasks *)
-open System
+open System.Text.Json
+open System.Text.Json.Serialization
 
-open FSharp.Data
-open FSharp.Data.Mutator
-
-[<Literal>]
-let PlanJson = __SOURCE_DIRECTORY__ + "/PLANS.json"
-
-type T_Plan = JsonProvider< PlanJson, SampleIsList=true>
-let tPlan = T_Plan.GetSamples() 
-let ts = tPlan |> Seq.toList |> List.indexed |> List.map(fun (i,x) -> x |> Change <@ fun x -> x.Id.JsonValue = JsonValue.Number i @>)
-let str = ts |> List.map (fun x->x.JsonValue.ToString()) |> String.concat ",\n"
-let jstr = $"""[{str }]"""
-System.IO.File.WriteAllText(__SOURCE_DIRECTORY__ + "/PLANS2.json",jstr)
+let data = """{"type":"session.created","event_id":"event_CkBNY5q68b1BqrxVOorzK","session":{"object":"realtime.session","id":"sess_CkBNY4Df98S3UR04YBREU","model":"gpt-realtime","modalities":["audio","text"],"instructions":"You are a friendly assistant","voice":"alloy","output_audio_format":"pcm16","tools":[],"tool_choice":"auto","temperature":0.8,"max_response_output_tokens":"inf","turn_detection":{"type":"server_vad","threshold":0.5,"prefix_padding_ms":300,"silence_duration_ms":200,"idle_timeout_ms":null,"create_response":true,"interrupt_response":true},"speed":1.0,"tracing":null,"truncation":"auto","prompt":null,"expires_at":1765126464,"input_audio_noise_reduction":null,"input_audio_format":"pcm16","input_audio_transcription":null,"client_secret":null,"include":null}}"""
+let dsess = """{"object":"realtime.session","id":"sess_CkBNY4Df98S3UR04YBREU","model":"gpt-realtime","modalities":["audio","text"],"instructions":"You are a friendly assistant","voice":"alloy","output_audio_format":"pcm16","tools":[],"tool_choice":"auto","temperature":0.8,"max_response_output_tokens":"inf","turn_detection":{"type":"server_vad","threshold":0.5,"prefix_padding_ms":300,"silence_duration_ms":200,"idle_timeout_ms":null,"create_response":true,"interrupt_response":true},"speed":1.0,"tracing":null,"truncation":"auto","prompt":null,"expires_at":1765126464,"input_audio_noise_reduction":null,"input_audio_format":"pcm16","input_audio_transcription":null,"client_secret":null,"include":null}"""
 
 
+let serOptionsFSharp = 
+    let o = JsonSerializerOptions(JsonSerializerDefaults.General)
+    // o.Converters.Add(ContentTypeConverter())
+    // o.Converters.Add(ConversationItemTypeConverter())
+    //o.WriteIndented <- true
+    //o.ReadCommentHandling <- JsonCommentHandling.Skip        
+    let opts = JsonFSharpOptions.Default()
+    opts
+        //.WithSkippableOptionFields(true)
+        //.WithAllowNullFields()
+        //.WithUnionUnwrapRecordCases()
+        // .WithAllowOverride()
+        // .WithUnionUnwrapFieldlessTags()
+        //.WithUnwrapOption()
+        .AddToJsonSerializerOptions(o)        
+    o
 
+    
+let j2 = JsonSerializer.Deserialize<RTOpenAI.Api.Events.SessionCreatedEvent>(data,serOptionsFSharp)
+let j3 = JsonSerializer.Deserialize<RTOpenAI.Api.Events.Session>(dsess,serOptionsFSharp)
+
+
+    
