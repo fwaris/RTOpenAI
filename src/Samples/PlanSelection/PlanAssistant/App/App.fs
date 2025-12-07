@@ -67,6 +67,6 @@ module App =
                         .onBackNavigated(BackNavigationMsg)
                 )
             })
-                .environment(Settings.Environment.settingsKey, new Settings.Settings())
+                .environment(Settings.Values.settingsKey, new Settings.SettingsModel())
         }
 

@@ -7,5 +7,9 @@
 		<DefineConstants>_PL_X64</DefineConstants>
 	</PropertyGroup>
 
+	<ItemGroup>
+	  <PackageReference Include="FSharp.SystemTextJson" Version="1.4.36" />
+	</ItemGroup>
+
 
 </Project>

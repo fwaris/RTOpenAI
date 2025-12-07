@@ -8,4 +8,7 @@
     <ImplicitUsings>disable</ImplicitUsings>
     <GeneratePackageOnBuild>False</GeneratePackageOnBuild>
   </PropertyGroup>
+  <ItemGroup>
+    <PackageReference Include="FSharp.SystemTextJson" Version="1.4.36" />
+  </ItemGroup>
 </Project>

@@ -34,34 +34,56 @@ type TurnDetection =
         prefix_padding_ms = Some 300  // How much audio to include in the audio stream before the speech starts.
         silence_duration_ms = Some 200 //// How long to wait to mark the speech as stopped.
     }
+    
+[<JsonFSharpConverter(SkippableOptionFields=SkippableOptionFields.Always)>]
+type JsDesc = {description : string option}
 
-type Property =
+[<JsonFSharpConverter(SkippableOptionFields=SkippableOptionFields.Always)>]
+type JsString = {description : string option; enum : string list option}
+
+[<JsonFSharpConverter(SkippableOptionFields=SkippableOptionFields.Always)>]
+type JsObj = 
     {
-        ``type``: string
         description: string option
-    }    
+        properties: Map<string, JsProperty>
+        required: string list
+        additionalProperties:bool
+    }
+
+and [<JsonFSharpConverter(SkippableOptionFields=SkippableOptionFields.Always)>]
+    JsArray = {description: string option; items: JsProperty}
+
+and [<RequireQualifiedAccess>]     
+    JsProperty =  
+    | [<JsonName "integer">] Integer of JsDesc
+    | [<JsonName "number">] Number of JsDesc
+    | [<JsonName "string">] String of JsString
+    | [<JsonName "boolean">] Boolean of JsDesc
+    | [<JsonName "array">] Array of JsArray
+    | [<JsonName "object">] Object of JsObj
 
 type Parameters =
     {
         ``type``: string
-        properties: Map<string, Property>
+        properties: Map<string, JsProperty>
         required: string list
+        additionalProperties : bool
     }
-    static member Default = { ``type`` = ""; properties = Map.empty; required = [] }
+    static member Default = { ``type`` = "object"; properties = Map.empty; required = []; additionalProperties = false }
 
 type Tool =
     {
-        ``type``: string
         name: string
         description: string
         parameters: Parameters
+        strict : bool
     }
-    static member Default = { ``type`` = ""; name = ""; description = ""; parameters = Parameters.Default }
+    static member Default = {name = "function"; description = ""; parameters = Parameters.Default; strict=true}
 
- type Client_Secret = {
+type Client_Secret = {
      expires_at : int64
      value : string
- }
+}
 
 type Session =
     {

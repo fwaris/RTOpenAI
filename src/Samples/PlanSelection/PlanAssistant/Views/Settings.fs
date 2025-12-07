@@ -9,7 +9,7 @@ open RT.Assistant.Navigation
 open RT.Assistant
 
 module Settings =   
-    type SettingsModel = { settings: Settings.Settings; isActive : bool; hidden : bool}        
+    type SettingsModel = { settings: Settings.SettingsModel; isActive : bool; hidden : bool}        
     type SettingsMsg = BackButtonPressed | Active | InActive | Nop | ToggleVisbilty
     
     let init settings =
@@ -40,16 +40,17 @@ module Settings =
                     
     let view nav appMsDispatcher=
         Component("Settings") {
-            let! settings = EnvironmentObject(Settings.Environment.settingsKey)
+            let! settings = EnvironmentObject(Settings.Values.settingsKey)
             let! model = Context.Mvu(program nav appMsDispatcher, settings) 
             (ContentPage(
-                Grid([Dimension.Absolute 100.0; Dimension.Star; Dimension.Absolute 55.0],[Dimension.Absolute 50.0;]) {
+                Grid([Dimension.Absolute 100.0; Dimension.Star; Dimension.Absolute 55.0],
+                     [Dimension.Absolute 50.0;Dimension.Absolute 50.0;]) {
                     Label($"OpenAI Key:")
                         .gridColumn(0)
                         .alignEndHorizontal()
                         .centerVertical()
                         .margin(2.)
-                    Entry(settings.ApiKey,(fun v -> settings.ApiKey <- v.Trim(); Nop))
+                    Entry(settings.OpenAIKey,(fun v -> settings.OpenAIKey <- v.Trim(); Nop))
                        .gridColumn(1)
                        .isPassword(model.hidden)
                        .margin(2.)
@@ -59,6 +60,17 @@ module Settings =
                         .background(Colors.Transparent)
                         .textColor(Colors.Magenta)
                         .centerHorizontal()        
+                    Label($"Antrhopic Key:")
+                        .gridRow(1)
+                        .gridColumn(0)
+                        .alignEndHorizontal()
+                        .centerVertical()
+                        .margin(2.)
+                    Entry(settings.AnthropicKey,(fun v -> settings.AnthropicKey <- v.Trim(); Nop))
+                       .gridRow(1)
+                       .gridColumn(1)
+                       .isPassword(model.hidden)
+                       .margin(2.)
                 })
                     .padding(5.)
             )

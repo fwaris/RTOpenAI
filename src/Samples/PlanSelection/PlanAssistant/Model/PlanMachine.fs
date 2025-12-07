@@ -33,28 +33,22 @@ module Machine =
             instructions = Some PlanPrompts.rtInstructions.Value
             tool_choice = Some "auto"
             tools = [
-                {
-                    ``type`` = "function"
+                {Tool.Default with
                     name = PLAN_QUERY_FUNCTION
                     description = "Accepts a set of English instructions that are to be converted to a Prolog query to query the plan database. Responds with results of the query"
-                    parameters =
-                        {
-                            ``type`` = "object"
-                            properties = Map.ofList ["query", {``type``= "string"; description= Some "detailed steps in English"}] 
-                            required = []                            
-                        }
+                    parameters = {Parameters.Default with
+                                    properties = Map.ofList ["query", JsProperty.String {description = Some"detailed steps in English"; enum = None}]
+                                    required = ["query"]
+                                 }
                 }
-                {
-                    ``type`` = "function"
+                {Tool.Default with
                     name = PLAN_DETAILS_FUNCTION
-                    description = "Retrieve the details of a plan from the Prolog plan database"
-                    parameters =
-                        {
-                            ``type`` = "object"
-                            properties = Map.ofList ["planTitle", {``type``= "string"; description= Some "Plan title or name for which detail is required"}] 
-                            required = []                            
-                        }
-                }                
+                    description = "Plan title or name for which detail is required"
+                    parameters = {Parameters.Default with
+                                    properties = Map.ofList ["planTitle", JsProperty.String {description = Some "Plan title or name for which detail is required"; enum = None}]
+                                    required = ["planTitle"]
+                                 }
+                }
             ]                
         }
         

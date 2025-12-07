@@ -50,7 +50,7 @@
 		<Compile Include="Icons.fs" />
 		<Compile Include="Log.fs" />
 		<Compile Include="Utils.fs" />
-		<Compile Include="Settings.fs" />
+		<Compile Include="SettingsModel.fs" />
 		<Compile Include="Plan\AICore.fs" />
 		<Compile Include="Plan\AsyncExt.fs" />
 		<Compile Include="Plan\PlanPrompts.fs" />
@@ -62,7 +62,16 @@
 		<Compile Include="Model\PlanFunctions.fs" />
 		<Compile Include="Model\PlanMachine.fs" />
 		<Compile Include="Model\Connect.fs" />
-		<Compile Include="Model\Update.fs" />
+		<Compile Include="WorkFlow\AnthropicClient.fs" />
+		<Compile Include="WorkFlow\WorkFlowTypes.fs" />
+		<Compile Include="WorkFlow\VoiceAgent.fs" />
+		<Compile Include="WorkFlow\QueryService.fs" />
+		<Compile Include="WorkFlow\CodeGenPrompts.fs" />
+		<Compile Include="WorkFlow\CodeGenAgent.fs" />
+		<Compile Include="WorkFlow\QueryAgent.fs" />
+		<Compile Include="WorkFlow\AppAgent.fs" />
+		<Compile Include="WorkFlow\WorkFlow.fs" />		
+		<Compile Include="Update.fs" />
 		<Compile Include="Views\Settings.fs" />
 		<Compile Include="Views\ViewExtensions.fs" />
 		<Compile Include="Views\Chat.fs" />
@@ -117,8 +126,10 @@
 	</ItemGroup>
 	
 	<ItemGroup>
+		<PackageReference Include="Anthropic.SDK" Version="5.8.0" />
 		<PackageReference Include="Fabulous.MauiControls" Version="9.0.0-pre9" />
 		<PackageReference Include="FSharp.Control.AsyncSeq" Version="3.2.1" />
+		<PackageReference Include="FSharp.SystemTextJson" Version="1.4.36" />
 		<PackageReference Include="Lost.SemanticKernel.Connectors.Anthropic" Version="1.25.0-alpha3" />
 		<PackageReference Include="Microsoft.Extensions.Logging.Console" Version="9.0.11" />
 		<PackageReference Include="Microsoft.Maui.Controls" Version="9.0.120" />
@@ -134,6 +145,11 @@
 	</ItemGroup>
 	
 	<ItemGroup>
+	  <ProjectReference Include="..\..\..\RTFlow\RTFlow.fsproj" />
 	  <ProjectReference Include="..\..\..\RTOpenAI.Api\RTOpenAI.Api.fsproj" />
+	</ItemGroup>
+	
+	<ItemGroup>
+
 	</ItemGroup>
 </Project>

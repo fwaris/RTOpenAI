@@ -64,7 +64,7 @@ module Functions =
         async {
             try 
                 let query = ev.item.arguments |> Option.map (getArg "query") |> Option.defaultWith (fun _ -> failwith "function call argument not found")
-                let key = RT.Assistant.Settings.Environment.apiKey()
+                let key = RT.Assistant.Settings.Values.openaiKey()
                 let parms = {Model=AICore.models.gpt_4o; Key=key}
                 let! ans =
                     match prologError with

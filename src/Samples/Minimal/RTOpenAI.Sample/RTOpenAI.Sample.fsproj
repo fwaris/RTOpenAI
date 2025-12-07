@@ -101,6 +101,7 @@
 		<PackageReference Include="Fabulous.MauiControls" Version="9.0.0-pre9" />
 		<PackageReference Include="FSharp.Control.AsyncSeq" Version="3.2.1" />
 		<PackageReference Update="FSharp.Core" Version="9.0.100" />
+		<PackageReference Include="FSharp.SystemTextJson" Version="1.4.36" />
 		<PackageReference Include="Microsoft.Extensions.Logging.Console" Version="9.0.11" />
 		<PackageReference Include="Microsoft.Maui.Controls" Version="9.0.120" />
 		<PackageReference Include="Microsoft.Maui.Controls.Compatibility" Version="9.0.120" />

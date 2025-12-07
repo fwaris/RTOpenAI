@@ -37,7 +37,7 @@ module Connect =
         
     let getEphemeralKey modelId =
         let apiKey = 
-            Settings.Environment.apiKey()
+            Settings.Values.openaiKey()
             |> checkEmpty
             |> Option.defaultWith (fun () -> failwith "api key not set")
         getOpenAIEphemKey apiKey modelId
@@ -49,7 +49,7 @@ module Connect =
     let lookForKey() =
         task {
             try
-                let key = Settings.Environment.apiKey() |> checkEmpty
+                let key = Settings.Values.openaiKey() |> checkEmpty
                 match key with
                 | Some k -> return ()
                 | None ->                 
@@ -87,7 +87,7 @@ module Connect =
         async {
             match model.connection with
             | None -> 
-                match checkEmpty (Settings.Environment.apiKey()) with
+                match checkEmpty (Settings.Values.openaiKey()) with
                 | None -> return failwith "No api key" 
                 | Some _ ->
                     match! Audio.haveRecordPermission model with

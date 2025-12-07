@@ -20,7 +20,7 @@
   </PropertyGroup>
   <ItemGroup>
     <Compile Include="Constants.fs" />
-    <Compile Include="Log.fs" />
+    <Compile Include="RTOpenAI.Log.fs" />
     <Compile Include="Utils.fs" />
     <Compile Include="WebRTC/IWebRtcClient.fs" />
     <Compile Include="WebRTC/WebRtcClient.IOS.fs" />
