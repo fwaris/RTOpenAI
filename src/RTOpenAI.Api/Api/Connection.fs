@@ -5,7 +5,7 @@ open FSharp.Control
 open System
 open RTOpenAI
 open RTOpenAI.Api
-open RTOpenAI.Api.Events
+open RTOpenAI.Events
 
 type Connection = {
         WebRtcClient : WebRTC.IWebRtcClient
@@ -19,7 +19,7 @@ module Connection =
     let getEphemeralKey apiKey (keyReq:KeyReq) =
         task {
             //use helper function in Api project to exchange 'real' OpenAI key for an ephemeral key for the RT api
-            let! resp = RTOpenAI.Api.Exts.callApi<_,RTOpenAI.Api.Events.KeyResp>(apiKey,RTOpenAI.Api.C.OPENAI_SESSION_API,keyReq)
+            let! resp = RTOpenAI.Api.Exts.callApi<_,RTOpenAI.Events.KeyResp>(apiKey,RTOpenAI.Api.C.OPENAI_SESSION_API,keyReq)
             let errmsg =  "Unable to get ephemeral key"
             return resp.value
         }       
@@ -33,7 +33,7 @@ module Connection =
        
     let sendClientEvent connection ev =
         ev
-        |> Exts.toJson
+        |> SerDe.toJson
         |> fun j -> Log.info $">>> {j.ToString()}"; j
         |> connection.WebRtcClient.Send
         |> ignore

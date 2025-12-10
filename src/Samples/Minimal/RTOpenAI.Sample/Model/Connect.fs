@@ -8,7 +8,7 @@ open Microsoft.Maui.Controls
 open Microsoft.Maui.ApplicationModel
 open FSharp.Control
 open RTOpenAI.Api
-open RTOpenAI.Api.Events  
+open RTOpenAI.Events  
 
 
 [<RequireQualifiedAccess>]
@@ -46,7 +46,7 @@ module Connect =
         let comp = 
             channel.Reader.ReadAllAsync()
             |> AsyncSeq.ofAsyncEnum// listen to RT OpenAI server events coming over the WebRTC data channel
-            |> AsyncSeq.map RTOpenAI.Api.Exts.toEvent//covert JSON to strongly typed event
+            |> AsyncSeq.map SerDe.toEvent//covert JSON to strongly typed event
             |> AsyncSeq.iter (fun msg -> model.mailbox.Writer.TryWrite(Log_Append $"{DateTime.Now}: {msg}") |> ignore) // send events to UI to show in Log view
         async {
             match! Async.Catch comp with

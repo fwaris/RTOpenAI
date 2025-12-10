@@ -4,7 +4,7 @@ open Fabulous
 open RT.Assistant.Plan
 open RT.Assistant.WorkFlow
 open RTFlow
-open RTOpenAI.Api.Events
+open RTOpenAI.Events
           
 exception InputKeyExn
 type Role = User | Assistant

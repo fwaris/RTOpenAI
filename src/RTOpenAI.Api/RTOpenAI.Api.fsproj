@@ -26,8 +26,7 @@
     <Compile Include="WebRTC/WebRtcClient.IOS.fs" />
     <Compile Include="WebRTC/WebRtcClient.Android.fs" />
     <Compile Include="WebRTC/WebRTC.fs" />
-    <Compile Include="Api/Events.fs" />
-    <Compile Include="Api/Ext.fs" />
+    <Compile Include="Api\Ext.fs" />
     <Compile Include="Api\Connection.fs" />
   </ItemGroup>
   <ItemGroup Condition="$(TargetPlatformIdentifier) == 'android'">
@@ -42,5 +41,8 @@
     <PackageReference Include="System.Text.Json" Version="9.0.2" />
     <PackageReference Include="Microsoft.Extensions.Logging.Console" Version="9.0.11" />
     <PackageReference Update="FSharp.Core" Version="9.0.303" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\RTOpenAI.Events\RTOpenAI.Events.fsproj" />
   </ItemGroup>
 </Project>

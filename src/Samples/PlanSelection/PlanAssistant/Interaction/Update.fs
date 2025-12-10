@@ -1,11 +1,7 @@
 namespace RT.Assistant
-open System.IO
 open Fabulous
-open Fabulous.Maui
 open type Fabulous.Maui.View
-open Microsoft.Maui.Storage
 open RT.Assistant.Plan
-open RTOpenAI.Api.Events
 open RT.Assistant.Navigation
 
 module Update =

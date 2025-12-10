@@ -5,7 +5,7 @@ open System.Text.Json.Serialization
 open FSharp.Control
 open Fabulous.Maui.KeyboardAccelerator
 open RTOpenAI
-open RTOpenAI.Api.Events
+open RTOpenAI.Events
 open Microsoft.Maui.ApplicationModel
 open RT.Assistant
 
@@ -15,7 +15,7 @@ module Functions =
     //sends 'response.create' to prompt the LLM to generate audio (otherwise it seems to wait).
     let sendResponseCreate conn=
         (ClientEvent.ResponseCreate {ResponseCreateEvent.Default with
-                                        event_id = Api.Utils.newId()
+                                        event_id = Utils.newId()
                                         //response.modalities = Some [M_AUDIO; M_TEXT]
                                         })
         |> Api.Connection.sendClientEvent conn

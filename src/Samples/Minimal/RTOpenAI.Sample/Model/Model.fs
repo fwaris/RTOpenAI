@@ -1,6 +1,6 @@
 ﻿namespace RTOpenAI.Sample
 
-open RTOpenAI.Api.Events
+open RTOpenAI.Events
           
 exception InputKeyExn
 type Role = User | Assistant

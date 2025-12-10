@@ -1,7 +1,7 @@
 namespace RTOpenAI.Sample
 open Fabulous
 open type Fabulous.Maui.View
-open RTOpenAI.Api.Events
+open RTOpenAI.Events
 open RTOpenAI.Sample.Navigation
 
 module Update =

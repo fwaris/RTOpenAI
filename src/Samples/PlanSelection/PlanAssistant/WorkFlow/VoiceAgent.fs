@@ -9,7 +9,7 @@ open RTFlow
 open RTFlow.Functions
 open RTOpenAI
 open RTOpenAI.Api
-open RTOpenAI.Api.Events
+open RTOpenAI.Events
 open RT.Assistant
 
 module VoiceAgent =    
@@ -23,7 +23,7 @@ module VoiceAgent =
     //sends 'response.create' to prompt the LLM to generate audio (otherwise it seems to wait).
     let sendResponseCreate conn=
         (ClientEvent.ResponseCreate {ResponseCreateEvent.Default with
-                                        event_id = Api.Utils.newId()
+                                        event_id = Utils.newId()
                                         //response.modalities = Some [M_AUDIO; M_TEXT]
                                         })
         |> Api.Connection.sendClientEvent conn
@@ -87,7 +87,7 @@ module VoiceAgent =
         
     let toUpdateEvent (s:Session) =
         { SessionUpdateEvent.Default with
-            event_id = Api.Utils.newId()
+            event_id = Utils.newId()
             session = s}
         |> ClientEvent.SessionUpdate
             
@@ -143,7 +143,7 @@ module VoiceAgent =
         let comp = 
             conn.WebRtcClient.OutputChannel.Reader.ReadAllAsync()
             |> AsyncSeq.ofAsyncEnum
-            |> AsyncSeq.map Api.Exts.toEvent
+            |> AsyncSeq.map SerDe.toEvent
             |> AsyncSeq.scanAsync (updateVoice conn) initState   //handle actual event
             |> AsyncSeq.iter (fun s -> ())            
         match! Async.Catch comp with

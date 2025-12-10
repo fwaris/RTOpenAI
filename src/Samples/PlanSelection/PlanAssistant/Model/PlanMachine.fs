@@ -3,7 +3,7 @@ open System.Text.Json
 open System.Text.Json.Serialization
 open FSharp.Control
 open RTOpenAI
-open RTOpenAI.Api.Events
+open RTOpenAI.Events
 open RT.Assistant
 
 module Machine =    
@@ -57,7 +57,7 @@ module Machine =
         
     let toUpdateEvent (s:Session) =
         { SessionUpdateEvent.Default with
-            event_id = Api.Utils.newId()
+            event_id = Utils.newId()
             session = s}
         |> ClientEvent.SessionUpdate
             
@@ -111,7 +111,7 @@ module Machine =
         let comp = 
             conn.WebRtcClient.OutputChannel.Reader.ReadAllAsync()
             |> AsyncSeq.ofAsyncEnum
-            |> AsyncSeq.map Api.Exts.toEvent
+            |> AsyncSeq.map SerDe.toEvent
             |> AsyncSeq.scanAsync (update dispatch hybridWebView conn) ssInit   //handle actual event
             |> AsyncSeq.iter (fun s -> ())
         async {

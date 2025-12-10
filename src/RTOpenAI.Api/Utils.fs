@@ -12,13 +12,6 @@ open System.Security.Cryptography
 module Utils =
     let inline debug (s:'a) = System.Diagnostics.Debug.WriteLine(s)
 
-    let newId() = 
-        Guid.NewGuid().ToByteArray() 
-        |> Convert.ToBase64String 
-        |> Seq.takeWhile (fun c -> c <> '=') 
-        |> Seq.map (function '/' -> 'a' | c -> c)
-        |> Seq.toArray 
-        |> String
 
     let notEmpty (s:string) = String.IsNullOrWhiteSpace s |> not
     let isEmpty (s:string) = String.IsNullOrWhiteSpace s 

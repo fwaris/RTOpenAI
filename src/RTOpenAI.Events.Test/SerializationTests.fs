@@ -2,8 +2,7 @@
 
 open NUnit.Framework
 open System.Text.Json
-open RTOpenAI.Api
-open RTOpenAI.Api.Events
+open RTOpenAI.Events
 
 [<SetUp>]
 let Setup () =
