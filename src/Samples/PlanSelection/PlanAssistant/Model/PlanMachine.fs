@@ -1,5 +1,6 @@
 namespace RT.Assistant.Plan
 open System.Text.Json
+open System.Text.Json.Serialization
 open FSharp.Control
 open RTOpenAI
 open RTOpenAI.Api.Events
@@ -24,88 +25,84 @@ module Machine =
                             
     let ssInit = State.Default          //initial state for server event handling
         
-    //take an existing session and 'update' it to new settings       
-    let reconfigure (s:Session) =
+    ///functions that the voice api can call
+    let voiceFunctions =
+        [
+            {Tool.Default with
+                name = PLAN_QUERY_FUNCTION
+                description = "Accepts a set of English instructions that are to be converted to a Prolog query to query the plan database. Responds with results of the query"
+                parameters = {Parameters.Default with
+                                properties = Map.ofList ["query", JsProperty.String {description = Some"detailed steps in English"; enum = None}]
+                                required = ["query"]
+                             }
+            }
+            {Tool.Default with
+                name = PLAN_DETAILS_FUNCTION
+                description = "Plan title or name for which detail is required"
+                parameters = {Parameters.Default with
+                                properties = Map.ofList ["planTitle", JsProperty.String {description = Some "Plan title or name for which detail is required"; enum = None}]
+                                required = ["planTitle"]
+                             }
+            }
+        ]    
+        
+    let updateSession (s:Session) =
         { s with
-            id = None                               //*** set 'id' and 'object' to None when updating an existing session
-            object = None   
-                                                    // set, unset, or override other fields as needed 
-            instructions = Some PlanPrompts.rtInstructions.Value
-            tool_choice = Some "auto"
-            tools = [
-                {Tool.Default with
-                    name = PLAN_QUERY_FUNCTION
-                    description = "Accepts a set of English instructions that are to be converted to a Prolog query to query the plan database. Responds with results of the query"
-                    parameters = {Parameters.Default with
-                                    properties = Map.ofList ["query", JsProperty.String {description = Some"detailed steps in English"; enum = None}]
-                                    required = ["query"]
-                                 }
-                }
-                {Tool.Default with
-                    name = PLAN_DETAILS_FUNCTION
-                    description = "Plan title or name for which detail is required"
-                    parameters = {Parameters.Default with
-                                    properties = Map.ofList ["planTitle", JsProperty.String {description = Some "Plan title or name for which detail is required"; enum = None}]
-                                    required = ["planTitle"]
-                                 }
-                }
-            ]                
+            id = Skip
+            object = Skip
+            instructions = Some PlanPrompts.rtInstructions.Value // set, unset, or override other fields as needed 
+            tool_choice = Include "auto"            
+            tools = Include voiceFunctions
         }
         
     let toUpdateEvent (s:Session) =
         { SessionUpdateEvent.Default with
             event_id = Api.Utils.newId()
             session = s}
-        |> SessionUpdate
+        |> ClientEvent.SessionUpdate
             
     let sendUpdateSession conn session =
         session
-        |> reconfigure
+        |> updateSession
         |> toUpdateEvent
         |> Api.Connection.sendClientEvent conn
             
-    let  isRunQuery (ev:ResponseOutputItemDoneEvent) =
-        ev.item.``type`` = FUNCTION_CALL && ev.item.name = Some PLAN_QUERY_FUNCTION
+    let  isRunQuery (ev:ResponseOutputItemEvent) =
+        match ev.item with
+        | Function_call fc when fc.name = PLAN_QUERY_FUNCTION -> true
+        | _ -> false
 
-    let isGetPlanDetails (ev:ResponseOutputItemDoneEvent) =
-        ev.item.``type`` = FUNCTION_CALL && ev.item.name = Some PLAN_DETAILS_FUNCTION
+    let isGetPlanDetails (ev:ResponseOutputItemEvent) =
+        match ev.item with
+        | Function_call fc when fc.name = PLAN_DETAILS_FUNCTION -> true
+        | _ -> false
         
-    let  getQuery (ev:ResponseOutputItemDoneEvent) =
-        if ev.item.``type`` = FUNCTION_CALL && ev.item.name = Some PLAN_QUERY_FUNCTION then
-             ev.item.arguments |> Option.defaultValue "no query found"
-        else
-            "no query: incorrect response type"
+    let  getQuery (ev:ResponseOutputItemEvent) =
+        match ev.item with
+        | Function_call fc when fc.name = PLAN_QUERY_FUNCTION -> fc.arguments
+        | _ -> failwith "no query: incorrect response type"
             
-    let  getPlanTitle (ev:ResponseOutputItemDoneEvent) =
-        if ev.item.``type`` = FUNCTION_CALL && ev.item.name = Some PLAN_DETAILS_FUNCTION then
-             ev.item.arguments |> Option.defaultValue "no plan title found"
-        else
-            "no plan title: incorrect response type"               
- 
-    let  isQueryResult (ev:ResponseOutputItemDoneEvent) =
-        ev.item.``type`` = FUNCTION_CALL_OUTPUT && ev.item.name = Some PLAN_QUERY_FUNCTION
-        
-    let  isPlanDetailsResult (ev:ResponseOutputItemDoneEvent) =
-        ev.item.``type`` = FUNCTION_CALL_OUTPUT && ev.item.name = Some PLAN_DETAILS_FUNCTION
-        
+    let  getPlanTitle (ev:ResponseOutputItemEvent) =
+        match ev.item with
+        | Function_call fc when fc.name = PLAN_DETAILS_FUNCTION -> fc.arguments
+        |_ -> failwith "no plan title: incorrect response type"
        
+    type SE = ServerEvent
     // accepts old state and next event - returns new state
     let update dispatch hybridWebView conn (st:State) ev =
         async {
             match ev with
-            | SessionCreated s when not st.initialized -> sendUpdateSession conn s.session; return {st with initialized = true} 
-            | SessionCreated s -> return {st with currentSession = s.session }
-            | SessionUpdated s -> return {st with currentSession = s.session }
-            | ResponseOutputItemDone ev when isRunQuery ev  -> Functions.runQuery 1 dispatch hybridWebView conn ev None |> Async.Start; dispatch (Log_Append(getQuery ev)); return st
-            | ResponseOutputItemDone ev when isQueryResult ev  -> return  st            
-            | ResponseOutputItemDone ev when isGetPlanDetails ev -> Functions.getPlanDetails dispatch hybridWebView conn ev; return st
-            | ResponseOutputItemDone ev when isPlanDetailsResult ev -> return st
-            | ResponseCreated ev -> return dispatch ItemStarted; return {st with responses = Set.add ev.response.id st.responses}
-            | ResponseDone ev -> return {st with responses = Set.remove ev.response.id st.responses}
-            | ResponseTextDelta ev when st.responses.Contains ev.response_id -> dispatch (ItemAdded ev.delta); return st
-            | ResponseAudioDelta _
-            | ResponseAudioTranscriptDelta _
-            | ResponseFunctionCallArgumentsDelta _ -> return st // suppress logging 'delta' events 
+            | SE.SessionCreated s when not st.initialized -> sendUpdateSession conn s.session; return {st with initialized = true} 
+            | SE.SessionCreated s -> return {st with currentSession = s.session }
+            | SE.SessionUpdated s -> return {st with currentSession = s.session }
+            | SE.ResponseOutputItemDone ev when isRunQuery ev  -> Functions.runQuery 1 dispatch hybridWebView conn ev None |> Async.Start; dispatch (Log_Append(getQuery ev)); return st
+            | SE.ResponseOutputItemDone ev when isGetPlanDetails ev -> Functions.getPlanDetails dispatch hybridWebView conn ev; return st
+            | SE.ResponseCreated ev -> return dispatch ItemStarted; return {st with responses = Set.add ev.response.id st.responses}
+            | SE.ResponseDone ev -> return {st with responses = Set.remove ev.response.id st.responses}
+            | SE.ResponseOutputTextDelta ev when st.responses.Contains ev.response_id -> dispatch (ItemAdded ev.delta); return st
+            | SE.ResponseOutputAudioDelta _
+            | SE.ResponseOutputAudioTranscriptDelta _
+            | SE.ResponseFunctionCallArgumentsDelta _ -> return st // suppress logging 'delta' events 
             | other -> (* Log.info $"unhandled event: {other}"; *) return st //log other events
         }
         

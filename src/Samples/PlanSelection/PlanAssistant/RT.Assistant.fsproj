@@ -33,9 +33,9 @@
 	</PropertyGroup>
 	<ItemGroup>
 		<None Include="Resources\Raw\plan_schema.pl" />
+		<None Include="readme.md" />
 		<Content Include="scripts\BasePlanStructure.pl" />
 		<Content Include="scripts\PLANS.json" />
-		<None Include="readme.md" />
 		<None Include="scripts\packages.fsx" />
 		<None Include="scripts\sandbox.fsx" />
 		<None Include="scripts\ExtractStructure.fsx" />

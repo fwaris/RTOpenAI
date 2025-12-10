@@ -1,6 +1,7 @@
 namespace RT.Assistant.Plan
 open System.Text.Json
 open System.Text.Json.Nodes
+open System.Text.Json.Serialization
 open FSharp.Control
 open Fabulous.Maui.KeyboardAccelerator
 open RTOpenAI
@@ -19,17 +20,13 @@ module Functions =
                                         })
         |> Api.Connection.sendClientEvent conn
         
-    let inline sendFunctionResponse conn (ev:ResponseOutputItemDoneEvent) result =
+    let inline sendFunctionResponse conn (ev:ResponseOutputItemEvent) result =
+        let callId = match ev.item with Function_call i -> i.call_id | _ -> failwith "not expected"
         let outEv =
             { ConversationItemCreateEvent.Default with
-                item =
-                      { ConversationItem.Default with
-                          ``type`` = ConversationItemType.Function_call_output
-                          call_id = Some ev.item.call_id
-                          output = Some (JsonSerializer.Serialize(result))                                      
-                      }
+                item = ConversationItem.Function_call_output (ContentFunctionCallOutput.Create callId (JsonSerializer.Serialize(result)))
             }
-            |> ConversationItemCreate
+            |> ClientEvent.ConversationItemCreate
         Api.Connection.sendClientEvent conn outEv  //send prolog query results (or error)
         sendResponseCreate conn                    //prompt the LLM to respond now
     
@@ -45,52 +42,58 @@ module Functions =
         jargs.[argName].ToString()
     
     //get details for a single plan
-    let getPlanDetails dispatch hybridWebView conn (ev:ResponseOutputItemDoneEvent) =
+    let getPlanDetails dispatch hybridWebView conn (ev:ResponseOutputItemEvent) =
         async {
             try
-                let title = ev.item.arguments |> Option.map (getArg "planTitle") |> Option.defaultWith (fun _ -> failwith "function call argument not found")
-                let prolog = {Predicates=""; Query= $"plan('{title}',Category,Lines,Features)."}
-                dispatch (SetCode prolog)
-                let! ans = PlanQuery.evalQuery hybridWebView prolog
-                dispatch (Log_Append ans)
-                sendFunctionResponse conn ev ans
+                match ev.item with
+                | Function_call fc ->
+                    let title = fc.arguments |> getArg "planTitle" 
+                    let prolog = {Predicates=""; Query= $"plan('{title}',Category,Lines,Features)."}
+                    dispatch (SetCode prolog)
+                    let! ans = PlanQuery.evalQuery hybridWebView prolog
+                    dispatch (Log_Append ans)
+                    sendFunctionResponse conn ev ans
+                | _ -> failwith "function call expected"
             with ex ->
                 Log.exn (ex,"getPlanDetails")
         }
         |> Async.Start
         
     //evaluate LLM generated Prolog code (predicates and query)
-    let rec runQuery count dispatch hybridWebView conn (ev:ResponseOutputItemDoneEvent) (prologError:PrologParseError option)=
+    let rec runQuery count dispatch hybridWebView conn (ev:ResponseOutputItemEvent) (prologError:PrologParseError option)=
         async {
-            try 
-                let query = ev.item.arguments |> Option.map (getArg "query") |> Option.defaultWith (fun _ -> failwith "function call argument not found")
-                let key = RT.Assistant.Settings.Values.openaiKey()
-                let parms = {Model=AICore.models.gpt_4o; Key=key}
-                let! ans =
-                    match prologError with
-                    | None -> AICore.getOutput parms PlanPrompts.sysMsg.Value query typeof<CodeGenResp>
-                    | Some err -> AICore.getOutput {parms with Model=AICore.models.o3_mini} (PlanPrompts.fixCodePrompt err.Code err.Error) query typeof<CodeGenResp>
-                let codeGen = JsonSerializer.Deserialize<CodeGenResp>(ans.Content)                
-                dispatch (SetCode codeGen)
-                dispatch (Log_Append $"Code: {codeGen}")
-                try 
-                    let! result = PlanQuery.evalQuery hybridWebView codeGen
-                    dispatch (Log_Append $"Code eval: {result}")
-                    let result = $"""
+            try
+                match ev.item with
+                | Function_call fc ->
+                    let query = fc.arguments |> getArg "query"
+                    let key = RT.Assistant.Settings.Values.openaiKey()
+                    let parms = {Model=AICore.models.gpt_4o; Key=key}
+                    let! ans =
+                        match prologError with
+                        | None -> AICore.getOutput parms PlanPrompts.sysMsg.Value query typeof<CodeGenResp>
+                        | Some err -> AICore.getOutput {parms with Model=AICore.models.o3_mini} (PlanPrompts.fixCodePrompt err.Code err.Error) query typeof<CodeGenResp>
+                    let codeGen = JsonSerializer.Deserialize<CodeGenResp>(ans.Content)                
+                    dispatch (SetCode codeGen)
+                    dispatch (Log_Append $"Code: {codeGen}")
+                    try 
+                        let! result = PlanQuery.evalQuery hybridWebView codeGen
+                        dispatch (Log_Append $"Code eval: {result}")
+                        let result = $"""
 Code Evaluated```
 {ans}
 ```
 
 Evaluation Results:
 {result}
-"""
-                    sendFunctionResponse conn ev result
-                with
-                | TimeoutException -> sendFunctionResponse conn ev "query timed out"
-                | PrologError ex when count < MAX_RETRY ->
-                    Log.info $"Prolog err: {ex}. Regenerating code."
-                    return! runQuery (count+1) dispatch hybridWebView conn ev (Some {Error=ex; Code=ans.Content})
-                | ex -> raise ex
+    """
+                        sendFunctionResponse conn ev result
+                    with
+                    | TimeoutException -> sendFunctionResponse conn ev "query timed out"
+                    | PrologError ex when count < MAX_RETRY ->
+                        Log.info $"Prolog err: {ex}. Regenerating code."
+                        return! runQuery (count+1) dispatch hybridWebView conn ev (Some {Error=ex; Code=ans.Content})
+                    | ex -> raise ex
+                | _ -> failwith "function call expected"
             with exn ->
                 dispatch (Log_Append exn.Message)
                 Log.exn (exn,"Machine.runQuery")

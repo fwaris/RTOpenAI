@@ -1,20 +1,11 @@
 namespace RTOpenAI.Api
+
+open System.Text.Json.Serialization
 open FSharp.Control
 open System
 open RTOpenAI
 open RTOpenAI.Api
 open RTOpenAI.Api.Events
-
-type KeyReq = {
-    model : string
-    modalities : string list
-    instructions : string
-}
-with static member Default = {
-        model = ""
-        modalities = ["audio"; "text"]
-        instructions = "You are a friendly assistant"
-    }
 
 type Connection = {
         WebRtcClient : WebRTC.IWebRtcClient
@@ -28,11 +19,9 @@ module Connection =
     let getEphemeralKey apiKey (keyReq:KeyReq) =
         task {
             //use helper function in Api project to exchange 'real' OpenAI key for an ephemeral key for the RT api
-            let! resp = RTOpenAI.Api.Exts.callApi<_,RTOpenAI.Api.Events.Session>(apiKey,RTOpenAI.Api.C.OPENAI_SESSION_API,keyReq)
-            return
-                resp.client_secret
-                |> Option.map _.value
-                |> Option.defaultWith (fun _ -> failwith "Unable to get ephemeral key")
+            let! resp = RTOpenAI.Api.Exts.callApi<_,RTOpenAI.Api.Events.KeyResp>(apiKey,RTOpenAI.Api.C.OPENAI_SESSION_API,keyReq)
+            let errmsg =  "Unable to get ephemeral key"
+            return resp.value
         }       
     
     let create() = 
@@ -51,20 +40,20 @@ module Connection =
         
     let defaultHandleServerEvent (connection:Connection) (ev:ServerEvent) =
         match ev with
-        | SessionCreated s ->
+        | ServerEvent.SessionCreated s ->
             {SessionUpdateEvent.Default with
                 event_id = Utils.newId()
                 session =
                     {s.session with
-                        id=None
-                        object=None
-                        input_audio_transcription = Some InputAudioTranscription.Default}}
+                        audio = Include Audio.Default
+                    }
+            }
             |> ClientEvent.SessionUpdate
             |> sendClientEvent connection
         | _ -> ()
         
     let connect ephemeralKey (connection:Connection) =
-        connection.WebRtcClient.Connect(ephemeralKey,C.OPENAI_RT_API)
+        connection.WebRtcClient.Connect(ephemeralKey,C.OPENAI_RT_API_CALLS)
 
     let close (sess:Connection) = 
         sess.WebRtcClient.Dispose()     

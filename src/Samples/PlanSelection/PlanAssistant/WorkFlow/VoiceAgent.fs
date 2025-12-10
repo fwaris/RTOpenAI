@@ -1,6 +1,7 @@
 namespace RT.Assistant.WorkFlow
 
 open System.Text.Json
+open System.Text.Json.Serialization
 open FSharp.Control
 open RT.Assistant.Plan
 open RT.Assistant.WorkFlow
@@ -28,16 +29,13 @@ module VoiceAgent =
         |> Api.Connection.sendClientEvent conn
                 
     let inline sendFunctionResponse conn (callId:CallId) result =
+        let rslt = JsonSerializer.Serialize(result)
         let outEv =
             { ConversationItemCreateEvent.Default with
-                item =
-                      { ConversationItem.Default with
-                          ``type`` = ConversationItemType.Function_call_output
-                          call_id = Some callId.id
-                          output = Some (JsonSerializer.Serialize(result))                                      
-                      }
+                item = ConversationItem.Function_call_output
+                            (ContentFunctionCallOutput.Create callId.id rslt)
             }
-            |> ConversationItemCreate
+            |> ClientEvent.ConversationItemCreate
         Api.Connection.sendClientEvent conn outEv  //send prolog query results (or error)
         sendResponseCreate conn                    //prompt the LLM to respond now
     
@@ -80,18 +78,18 @@ module VoiceAgent =
                                     
     let updateSession (s:Session) =
         { s with
-            id = None                                            //*** set 'id' and 'object' to None when updating an existing session
-            object = None                                                       
+            id = Skip
+            object = Skip
             instructions = Some PlanPrompts.rtInstructions.Value // set, unset, or override other fields as needed 
-            tool_choice = Some "auto"            
-            tools = voiceFunctions
+            tool_choice = Include "auto"            
+            tools = Include voiceFunctions
         }
         
     let toUpdateEvent (s:Session) =
         { SessionUpdateEvent.Default with
             event_id = Api.Utils.newId()
             session = s}
-        |> SessionUpdate
+        |> ClientEvent.SessionUpdate
             
     let sendUpdateSession conn session =
         session
@@ -99,41 +97,47 @@ module VoiceAgent =
         |> toUpdateEvent
         |> Api.Connection.sendClientEvent conn
             
-    let  isRunQuery (ev:ResponseOutputItemDoneEvent) =
-        ev.item.``type`` = FUNCTION_CALL && ev.item.name = Some PLAN_QUERY_FUNCTION
+    let  isRunQuery (ev:ResponseOutputItemEvent) =
+        match ev.item with
+        | Function_call fc when fc.name = PLAN_QUERY_FUNCTION -> true
+        | _ -> false
 
-    let isGetPlanDetails (ev:ResponseOutputItemDoneEvent) =
-        ev.item.``type`` = FUNCTION_CALL && ev.item.name = Some PLAN_DETAILS_FUNCTION
+    let isGetPlanDetails (ev:ResponseOutputItemEvent) =
+        match ev.item with
+        | Function_call fc when fc.name = PLAN_DETAILS_FUNCTION -> true
+        | _ -> false
         
-    let  getQuery (ev:ResponseOutputItemDoneEvent) =
-        if ev.item.``type`` = FUNCTION_CALL && ev.item.name = Some PLAN_QUERY_FUNCTION then
-             CallId ev.item.call_id , ev.item.arguments |> Option.defaultValue "no query found"
-        else
-            failwith "no query: incorrect response type"
+    let  getQuery (ev:ResponseOutputItemEvent) =
+        match ev.item with
+        | Function_call fc when fc.name = PLAN_QUERY_FUNCTION -> CallId fc.call_id, fc.arguments
+        | _ -> failwith "no query: incorrect response type"
             
-    let  getPlanTitle (ev:ResponseOutputItemDoneEvent) =
-        if ev.item.``type`` = FUNCTION_CALL && ev.item.name = Some PLAN_DETAILS_FUNCTION then
-             CallId ev.item.call_id, ev.item.arguments |> Option.defaultValue "no plan title found"
-        else
-            failwith "no plan title: incorrect response type"               
+    let  getPlanTitle (ev:ResponseOutputItemEvent) =
+        match ev.item with
+        | Function_call fc when fc.name = PLAN_DETAILS_FUNCTION ->
+            CallId fc.call_id, fc.arguments
+        |_ ->
+            failwith "no plan title: incorrect response type"
+            
+    type SE = ServerEvent
              
     // accepts old state and next event - returns new state
     let updateVoice conn (st: VoState) ev =
         async {
             match ev with
-            | SessionCreated s when not st.initialized -> sendUpdateSession conn s.session; return {st with initialized = true} 
-            | SessionCreated s -> return {st with currentSession = s.session }
-            | SessionUpdated s -> return {st with currentSession = s.session }
-            | ResponseOutputItemDone ev when isRunQuery ev  -> st.bus.PostToAgent(Ag_Query(getQuery ev)); return st
-            | ResponseOutputItemDone ev when isGetPlanDetails ev -> st.bus.PostToAgent(Ag_GetPlanDetails(getPlanTitle ev)); return st
-            | Error e -> Log.error e.error.message; return st
+            | SE.SessionCreated s when not st.initialized -> sendUpdateSession conn s.session; return {st with initialized = true} 
+            | SE.SessionCreated s -> return {st with currentSession = s.session }
+            | SE.SessionUpdated s -> return {st with currentSession = s.session }
+            | SE.ResponseOutputItemDone ev when isRunQuery ev  -> st.bus.PostToAgent(Ag_Query(getQuery ev)); return st
+            | SE.ResponseOutputItemDone ev when isGetPlanDetails ev -> st.bus.PostToAgent(Ag_GetPlanDetails(getPlanTitle ev)); return st
+            | SE.Error e -> Log.error e.error.message; return st
             | other ->  (*Log.info $"unhandled event: {other}";*)  return st //log other events
         }
         
     let startVoice (conn:RTOpenAI.Api.Connection) (bus:WBus<FlowMsg, AgentMsg>) = async {
         let initState = VoState.Create bus
         if conn.WebRtcClient.State.IsDisconnected then
-                let keyReq = {KeyReq.Default with model = RTOpenAI.Api.C.OPENAI_RT_MODEL_GPT_REALTIME}                
+                let keyReq = KeyReq.Default                
                 let! ephemKey = Connection.getEphemeralKey (Settings.Values.openaiKey()) keyReq |> Async.AwaitTask
                 do! Connection.connect ephemKey conn |> Async.AwaitTask
         let comp = 
