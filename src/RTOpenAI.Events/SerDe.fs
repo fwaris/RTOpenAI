@@ -29,10 +29,11 @@ module SerDe =
                 .WithUnionUnwrapFieldlessTags()
                 .ToJsonSerializerOptions()
         opts.WriteIndented <- true
+        opts.Converters.Insert(0, OutputTokensTypeConverter())
         opts
         
     let private serialize<'t> (message: 't) = JsonSerializer.Serialize(message,serOpts)
-    let private deserialize<'t> (j:JsonDocument) = JsonSerializer.Deserialize<'t>(j)
+    let private deserialize<'t> (j:JsonDocument) = JsonSerializer.Deserialize<'t>(j.RootElement, serOpts)
    
     let toJson (event: ClientEvent) = 
         match event with
@@ -94,7 +95,7 @@ module SerDe =
             | "response.function_call_arguments.delta" -> ServerEvent.ResponseFunctionCallArgumentsDelta(deserialize<ResponseFunctionCallArgumentsDeltaEvent> j)
             | "response.function_call_arguments.done" -> ServerEvent.ResponseFunctionCallArgumentsDone(deserialize<ResponseFunctionCallArgumentsDoneEvent> j)
             | "response.mcp_call_arguments.delta" -> ServerEvent.ResponseMcpCallArgumentsDelta(deserialize<ResponseMcpCallArgumentsDeltaEvent> j)
-            | "response.mcp_call_arguments.done" -> ServerEvent.ResponseMcpCallArgumentsDone(deserialize<ResponseFunctionCallArgumentsDoneEvent> j)
+            | "response.mcp_call_arguments.done" -> ServerEvent.ResponseMcpCallArgumentsDone(deserialize<ResponseMcpCallArgumentsDoneEvent> j)
             | "response.mcp_call.in_progress" -> ServerEvent.ResponseMcpCallInProgress(deserialize<ResponseMcpEvent> j)
             | "response.mcp_call.completed" -> ServerEvent.ResponseMcpCallCompleted(deserialize<ResponseMcpEvent> j)
             | "response.mcp_call.failed" -> ServerEvent.ResponseMcpCallFailed(deserialize<ResponseMcpEvent> j)

@@ -121,9 +121,9 @@ type VAD =
                       threshold           : float                      
                     |}
     | [<JsonName "semantic_vad">] Semantic_Vad of
-                      {| create_response   : bool
-                         eagerness         : string //high,medium,low, auto
-                         interrupt_respnse : bool
+                      {| create_response    : bool
+                         eagerness          : string //high,medium,low, auto
+                         interrupt_response : bool
                       |}
                       
 [<JsonFSharpConverter(
@@ -158,14 +158,14 @@ type AudioInput = {
 [<JsonFSharpConverter>]
 type AudioOutput = {
     format : AudioFormat
-    speed : float
+    speed : Skippable<float option>
     voice : string
 }
     with
     static member Default =
         {
             format = AudioFormat.PCM {|rate=24000|}
-            speed = 1.0
+            speed = Include (Some 1.0)
             voice = "alloy"
         }
         
@@ -208,43 +208,44 @@ type OutputTokensTypeConverter() =
         match value with
         | Inf -> writer.WriteStringValue("inf") 
         | Value v -> writer.WriteNumberValue(v)
-and [<JsonConverter(typeof<OutputTokensTypeConverter>)>]OutputTokens =
+and [<JsonConverter(typeof<OutputTokensTypeConverter>)>]
+    OutputTokens =
     | Inf
     | Value of int
 
 [<JsonFSharpConverter(BaseUnionEncoding = JsonUnionEncoding.UnwrapRecordCases)>]
 type Truncation =
     | [<JsonName "auto">] Auto
-    | Truncation of {|retension_ration:float; ``type`` : string; token_limits : TokenLimits|}
+    | Truncation of {|retention_ratio:float; ``type`` : string; token_limits : TokenLimits|}
 
 [<JsonFSharpConverter>]
 type Session =
     {
-        ``type`` : string 
+        ``type`` : Skippable<string> 
         id: Skippable<string>
         ``object`` : Skippable<string>        
         model: string option
         audio : Skippable<Audio>
-        ``include`` : string list
+        ``include`` : Skippable<string list>
         output_modalities: Skippable<string list>
         instructions: string option
         prompt : Skippable<Prompt option>
         tool_choice: Skippable<string>
         tools: Skippable<Tool list>
         tracing : Skippable<Tracing option>
-        max_output_tokens : Skippable<OutputTokens> 
+        max_output_tokens : Skippable<OutputTokens option> 
         client_secret : Skippable<Client_Secret option>
         value : Skippable<string>
         expires_at : Skippable<int>
     }
     static member Default = 
         {
-            ``type`` = "realtime"
+            ``type`` = Include "realtime"
             id = Skip
             ``object`` = Skip
             model = None
             audio = Skip
-            ``include`` = []
+            ``include`` = Include []
             output_modalities = Skip
             instructions = None
             prompt = Skip
@@ -262,19 +263,19 @@ type ErrorDetail =
         ``type``: string
         code: string
         message: string
-        param: string option
-        event_id: string option
+        param: Skippable<string option>
+        event_id: Skippable<string option>
     }
-    static member Default = { ``type`` = ""; code = ""; message = ""; param = None; event_id = None }
+    static member Default = { ``type`` = ""; code = ""; message = ""; param = Skip; event_id = Skip }
     
 type Usage = {
-    ``type`` : string
+    ``type`` : Skippable<string>
     total_tokens : int
     input_tokens : int
     output_tokens : int
-    input_tokens_details : {|text_tokens:int; audio_tokens:int|}
+    input_token_details : {|text_tokens:int; audio_tokens:int|}
 }
-    with static member Default = { total_tokens = 0; input_tokens = 0; output_tokens = 0; input_tokens_details ={|text_tokens=0; audio_tokens=0|}; ``type`` = "tokens"}
+    with static member Default = { total_tokens = 0; input_tokens = 0; output_tokens = 0; input_token_details ={|text_tokens=0; audio_tokens=0|}; ``type`` = Include "tokens"}
 
 /// Send this event to update the session’s default configuration.
 [<JsonFSharpConverter>]
@@ -379,22 +380,41 @@ type ResponseCancelEvent =
     }
     static member Default = { event_id = ""; ``type`` = "response.cancel" }
 
+[<JsonFSharpConverter>]
+type MessageAudioContent =
+    {
+        audio: Skippable<string>
+        transcript: Skippable<string>
+        format: Skippable<JsonElement>
+    }
+
+[<JsonFSharpConverter>]
+type MessageTextContent =
+    {
+        text: Skippable<string>
+        annotations: Skippable<JsonElement>
+    }
+
 type MessageContent =
     | [<JsonName("input_audio")>] Input_audio of {|audio:string; transcript:string|}
     | [<JsonName("input_text")>] Input_text of {|text:string|}
     | [<JsonName("input_image")>] Input_image of {|image_url:string; detail:string|}
+    | [<JsonName("output_audio")>] Output_audio of MessageAudioContent
+    | [<JsonName("audio")>] Audio of MessageAudioContent
+    | [<JsonName("text")>] Text of MessageTextContent
+    | [<JsonName("output_text")>] Output_text of MessageTextContent
         
 type ContentMessage = {
     content : MessageContent List
     role : string
     id : string
-    object : string
+    object : Skippable<string>
     status : string
 }
 with static member Default : ContentMessage = {
             role = "user"
             id = ""
-            object = ""
+            object = Skip
             status = ""                        
             content = [Input_text {|text="hello"|}]
     }
@@ -530,7 +550,7 @@ type ConversationItemEvent =
         event_id: string
         item : ConversationItem
         ``type``: string  // "conversation.item.[added|done|retrieved]"
-        previous_item_id : string option
+        previous_item_id : Skippable<string option>
     }
 
 ///Returned when a conversation item is created.
@@ -621,7 +641,7 @@ type InputAudioBufferDtmfEventReceived =
     {
         event : string
         received_at : int
-        item_id: string
+        item_id: Skippable<string option>
     }
 
 ///Returned when the input audio buffer is cleared by the client.
@@ -811,7 +831,17 @@ type ResponseMcpCallArgumentsDeltaEvent =
         delta : string
         event_id : string
         item_id : string
-        obfuscation : string option
+        obfuscation : Skippable<string option>
+        output_index : int
+        response_id : string
+        ``type`` : string
+    }
+    
+type ResponseMcpCallArgumentsDoneEvent =
+    {
+        arguments : string
+        event_id : string
+        item_id : string
         output_index : int
         response_id : string
         ``type`` : string
@@ -865,7 +895,7 @@ type StatusDetails =
 
 type ResponseDetails =
     {
-        audio : Audio
+        audio : Skippable<Audio>
         conversation_id : string       
         id: string
         max_output_tokens : OutputTokens
@@ -876,16 +906,16 @@ type ResponseDetails =
         status: string
         status_details: Skippable<StatusDetails option>
         usage: Skippable<Usage option>
-        ``type`` : string //"response.created"
+        ``type`` : Skippable<string>
     }
     
 
 ///Returned when a new content part is added to an assistant message item during response generation.
 type ContentPart =
     {
-        audio : string option
-        text: string option
-        transcript: string option
+        audio : Skippable<string option>
+        text: Skippable<string option>
+        transcript: Skippable<string option>
         ``type``: string //[audio | text ]
     }
         
@@ -952,7 +982,7 @@ type ServerEvent =
     | ResponseFunctionCallArgumentsDelta of ResponseFunctionCallArgumentsDeltaEvent
     | ResponseFunctionCallArgumentsDone of ResponseFunctionCallArgumentsDoneEvent
     | ResponseMcpCallArgumentsDelta of ResponseMcpCallArgumentsDeltaEvent
-    | ResponseMcpCallArgumentsDone of ResponseFunctionCallArgumentsDoneEvent
+    | ResponseMcpCallArgumentsDone of ResponseMcpCallArgumentsDoneEvent
     | ResponseMcpCallInProgress of ResponseMcpEvent
     | ResponseMcpCallCompleted of ResponseMcpEvent
     | ResponseMcpCallFailed of ResponseMcpEvent

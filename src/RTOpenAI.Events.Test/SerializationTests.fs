@@ -10,7 +10,7 @@ let Setup () =
 
 // Helper function to serialize and deserialize
 let serializeDeserializeTest<'T> (event: 'T) (expectedType: string) =
-    let json = JsonSerializer.Serialize(event, Exts.serOpts)
+    let json = JsonSerializer.Serialize(event, SerDe.serOpts)
     printfn "Serialized JSON: %s" json
     
     // Verify that the json contains the type field
@@ -18,7 +18,7 @@ let serializeDeserializeTest<'T> (event: 'T) (expectedType: string) =
     
     // Deserialize back
     let doc = JsonDocument.Parse(json)
-    let serverEvent = Exts.toEvent doc
+    let serverEvent = SerDe.toEvent doc
     
     serverEvent
 
@@ -39,7 +39,7 @@ let ``Error event serialization and deserialization`` () =
     }"""
     
     let doc = JsonDocument.Parse(errorJson)
-    let serverEvent = Exts.toEvent doc
+    let serverEvent = SerDe.toEvent doc
     
     match serverEvent with
     | ServerEvent.Error e ->
@@ -76,7 +76,7 @@ let ``SessionCreated event deserialization`` () =
     }"""
     
     let doc = JsonDocument.Parse(sessionCreatedJson)
-    let serverEvent = Exts.toEvent doc
+    let serverEvent = SerDe.toEvent doc
     
     match serverEvent with
     | ServerEvent.SessionCreated e ->
@@ -110,7 +110,7 @@ let ``SessionUpdated event deserialization`` () =
     }"""
     
     let doc = JsonDocument.Parse(sessionUpdatedJson)
-    let serverEvent = Exts.toEvent doc
+    let serverEvent = SerDe.toEvent doc
     
     match serverEvent with
     | ServerEvent.SessionUpdated e ->
@@ -141,7 +141,7 @@ let ``ConversationItemAdded event deserialization`` () =
     }"""
     
     let doc = JsonDocument.Parse(itemAddedJson)
-    let serverEvent = Exts.toEvent doc
+    let serverEvent = SerDe.toEvent doc
     
     match serverEvent with
     | ServerEvent.ConversationItemAdded e ->
@@ -172,7 +172,7 @@ let ``ConversationItemDone event deserialization`` () =
     }"""
     
     let doc = JsonDocument.Parse(itemDoneJson)
-    let serverEvent = Exts.toEvent doc
+    let serverEvent = SerDe.toEvent doc
     
     match serverEvent with
     | ServerEvent.ConversationItemDone e ->
@@ -205,7 +205,7 @@ let ``ConversationItemRetrieved event deserialization`` () =
     }"""
     
     let doc = JsonDocument.Parse(itemRetrievedJson)
-    let serverEvent = Exts.toEvent doc
+    let serverEvent = SerDe.toEvent doc
     
     match serverEvent with
     | ServerEvent.ConversationItemRetrieved e ->
@@ -236,7 +236,7 @@ let ``ConversationItemInputAudioTranscriptionCompleted event deserialization`` (
     }"""
     
     let doc = JsonDocument.Parse(transcriptionCompletedJson)
-    let serverEvent = Exts.toEvent doc
+    let serverEvent = SerDe.toEvent doc
     
     match serverEvent with
     | ServerEvent.ConversationItemInputAudioTranscriptionCompleted e ->
@@ -258,7 +258,7 @@ let ``ConversationItemInputAudioTranscriptionDelta event deserialization`` () =
     }"""
     
     let doc = JsonDocument.Parse(transcriptionDeltaJson)
-    let serverEvent = Exts.toEvent doc
+    let serverEvent = SerDe.toEvent doc
     
     match serverEvent with
     | ServerEvent.ConversationItemInputAudioTranscriptionDelta e ->
@@ -283,7 +283,7 @@ let ``ConversationItemInputAudioTranscriptionSegment event deserialization`` () 
     }"""
     
     let doc = JsonDocument.Parse(transcriptionSegmentJson)
-    let serverEvent = Exts.toEvent doc
+    let serverEvent = SerDe.toEvent doc
     
     match serverEvent with
     | ServerEvent.ConversationItemInputAudioTranscriptionSegment e ->
@@ -309,7 +309,7 @@ let ``ConversationItemInputAudioTranscriptionFailed event deserialization`` () =
     }"""
     
     let doc = JsonDocument.Parse(transcriptionFailedJson)
-    let serverEvent = Exts.toEvent doc
+    let serverEvent = SerDe.toEvent doc
     
     match serverEvent with
     | ServerEvent.ConversationItemInputAudioTranscriptionFailed e ->
@@ -330,7 +330,7 @@ let ``ConversationItemTruncated event deserialization`` () =
     }"""
     
     let doc = JsonDocument.Parse(itemTruncatedJson)
-    let serverEvent = Exts.toEvent doc
+    let serverEvent = SerDe.toEvent doc
     
     match serverEvent with
     | ServerEvent.ConversationItemTruncated e ->
@@ -349,7 +349,7 @@ let ``ConversationItemDeleted event deserialization`` () =
     }"""
     
     let doc = JsonDocument.Parse(itemDeletedJson)
-    let serverEvent = Exts.toEvent doc
+    let serverEvent = SerDe.toEvent doc
     
     match serverEvent with
     | ServerEvent.ConversationItemDeleted e ->
@@ -369,7 +369,7 @@ let ``InputAudioBufferCommitted event deserialization`` () =
     }"""
     
     let doc = JsonDocument.Parse(bufferCommittedJson)
-    let serverEvent = Exts.toEvent doc
+    let serverEvent = SerDe.toEvent doc
     
     match serverEvent with
     | ServerEvent.InputAudioBufferCommitted e ->
@@ -388,7 +388,7 @@ let ``InputAudioBufferDtmfEventReceived event deserialization`` () =
     }"""
     
     let doc = JsonDocument.Parse(dtmfEventJson)
-    let serverEvent = Exts.toEvent doc
+    let serverEvent = SerDe.toEvent doc
     
     match serverEvent with
     | ServerEvent.InputAudioBufferDtmfEventReceived e ->
@@ -406,7 +406,7 @@ let ``InputAudioBufferCleared event deserialization`` () =
     }"""
     
     let doc = JsonDocument.Parse(bufferClearedJson)
-    let serverEvent = Exts.toEvent doc
+    let serverEvent = SerDe.toEvent doc
     
     match serverEvent with
     | ServerEvent.InputAudioBufferCleared e ->
@@ -425,7 +425,7 @@ let ``InputAudioBufferSpeechStarted event deserialization`` () =
     }"""
     
     let doc = JsonDocument.Parse(speechStartedJson)
-    let serverEvent = Exts.toEvent doc
+    let serverEvent = SerDe.toEvent doc
     
     match serverEvent with
     | ServerEvent.InputAudioBufferSpeechStarted e ->
@@ -445,7 +445,7 @@ let ``InputAudioBufferSpeechStopped event deserialization`` () =
     }"""
     
     let doc = JsonDocument.Parse(speechStoppedJson)
-    let serverEvent = Exts.toEvent doc
+    let serverEvent = SerDe.toEvent doc
     
     match serverEvent with
     | ServerEvent.InputAudioBufferSpeechStopped e ->
@@ -466,7 +466,7 @@ let ``InputAudioBufferTimeoutTriggered event deserialization`` () =
     }"""
     
     let doc = JsonDocument.Parse(timeoutTriggeredJson)
-    let serverEvent = Exts.toEvent doc
+    let serverEvent = SerDe.toEvent doc
     
     match serverEvent with
     | ServerEvent.InputAudioBufferTimeoutTriggered e ->
@@ -486,7 +486,7 @@ let ``OutputAudioBufferStarted event deserialization`` () =
     }"""
     
     let doc = JsonDocument.Parse(bufferStartedJson)
-    let serverEvent = Exts.toEvent doc
+    let serverEvent = SerDe.toEvent doc
     
     match serverEvent with
     | ServerEvent.OutputAudioBufferStarted e ->
@@ -505,7 +505,7 @@ let ``OutputAudioBufferStopped event deserialization`` () =
     }"""
     
     let doc = JsonDocument.Parse(bufferStoppedJson)
-    let serverEvent = Exts.toEvent doc
+    let serverEvent = SerDe.toEvent doc
     
     match serverEvent with
     | ServerEvent.OutputAudioBufferStopped e ->
@@ -524,7 +524,7 @@ let ``OutputAudioBufferCleared event deserialization`` () =
     }"""
     
     let doc = JsonDocument.Parse(bufferClearedJson)
-    let serverEvent = Exts.toEvent doc
+    let serverEvent = SerDe.toEvent doc
     
     match serverEvent with
     | ServerEvent.OutputAudioBufferCleared e ->
@@ -563,7 +563,7 @@ let ``ResponseCreated event deserialization`` () =
     }"""
     
     let doc = JsonDocument.Parse(responseCreatedJson)
-    let serverEvent = Exts.toEvent doc
+    let serverEvent = SerDe.toEvent doc
     
     match serverEvent with
     | ServerEvent.ResponseCreated e ->
@@ -609,7 +609,7 @@ let ``ResponseDone event deserialization`` () =
     }"""
     
     let doc = JsonDocument.Parse(responseDoneJson)
-    let serverEvent = Exts.toEvent doc
+    let serverEvent = SerDe.toEvent doc
     
     match serverEvent with
     | ServerEvent.ResponseDone e ->
@@ -636,7 +636,7 @@ let ``ResponseOutputItemAdded event deserialization`` () =
     }"""
     
     let doc = JsonDocument.Parse(itemAddedJson)
-    let serverEvent = Exts.toEvent doc
+    let serverEvent = SerDe.toEvent doc
     
     match serverEvent with
     | ServerEvent.ResponseOutputItemAdded e ->
@@ -669,7 +669,7 @@ let ``ResponseOutputItemDone event deserialization`` () =
     }"""
     
     let doc = JsonDocument.Parse(itemDoneJson)
-    let serverEvent = Exts.toEvent doc
+    let serverEvent = SerDe.toEvent doc
     
     match serverEvent with
     | ServerEvent.ResponseOutputItemDone e ->
@@ -695,7 +695,7 @@ let ``ResponseContentPartAdded event deserialization`` () =
     }"""
     
     let doc = JsonDocument.Parse(contentPartAddedJson)
-    let serverEvent = Exts.toEvent doc
+    let serverEvent = SerDe.toEvent doc
     
     match serverEvent with
     | ServerEvent.ResponseContentPartAdded e ->
@@ -721,7 +721,7 @@ let ``ResponseContentPartDone event deserialization`` () =
     }"""
     
     let doc = JsonDocument.Parse(contentPartDoneJson)
-    let serverEvent = Exts.toEvent doc
+    let serverEvent = SerDe.toEvent doc
     
     match serverEvent with
     | ServerEvent.ResponseContentPartDone e ->
@@ -744,7 +744,7 @@ let ``ResponseOutputTextDelta event deserialization`` () =
     }"""
     
     let doc = JsonDocument.Parse(textDeltaJson)
-    let serverEvent = Exts.toEvent doc
+    let serverEvent = SerDe.toEvent doc
     
     match serverEvent with
     | ServerEvent.ResponseOutputTextDelta e ->
@@ -767,7 +767,7 @@ let ``ResponseOutputTextDone event deserialization`` () =
     }"""
     
     let doc = JsonDocument.Parse(textDoneJson)
-    let serverEvent = Exts.toEvent doc
+    let serverEvent = SerDe.toEvent doc
     
     match serverEvent with
     | ServerEvent.ResponseOutputTextDone e ->
@@ -790,7 +790,7 @@ let ``ResponseOutputAudioTranscriptDelta event deserialization`` () =
     }"""
     
     let doc = JsonDocument.Parse(audioTranscriptDeltaJson)
-    let serverEvent = Exts.toEvent doc
+    let serverEvent = SerDe.toEvent doc
     
     match serverEvent with
     | ServerEvent.ResponseOutputAudioTranscriptDelta e ->
@@ -813,7 +813,7 @@ let ``ResponseOutputAudioTranscriptDone event deserialization`` () =
     }"""
     
     let doc = JsonDocument.Parse(audioTranscriptDoneJson)
-    let serverEvent = Exts.toEvent doc
+    let serverEvent = SerDe.toEvent doc
     
     match serverEvent with
     | ServerEvent.ResponseOutputAudioTranscriptDone e ->
@@ -836,7 +836,7 @@ let ``ResponseOutputAudioDelta event deserialization`` () =
     }"""
     
     let doc = JsonDocument.Parse(audioDeltaJson)
-    let serverEvent = Exts.toEvent doc
+    let serverEvent = SerDe.toEvent doc
     
     match serverEvent with
     | ServerEvent.ResponseOutputAudioDelta e ->
@@ -858,7 +858,7 @@ let ``ResponseOutputAudioDone event deserialization`` () =
     }"""
     
     let doc = JsonDocument.Parse(audioDoneJson)
-    let serverEvent = Exts.toEvent doc
+    let serverEvent = SerDe.toEvent doc
     
     match serverEvent with
     | ServerEvent.ResponseOutputAudioDone e ->
@@ -880,7 +880,7 @@ let ``ResponseFunctionCallArgumentsDelta event deserialization`` () =
     }"""
     
     let doc = JsonDocument.Parse(functionCallDeltaJson)
-    let serverEvent = Exts.toEvent doc
+    let serverEvent = SerDe.toEvent doc
     
     match serverEvent with
     | ServerEvent.ResponseFunctionCallArgumentsDelta e ->
@@ -903,7 +903,7 @@ let ``ResponseFunctionCallArgumentsDone event deserialization`` () =
     }"""
     
     let doc = JsonDocument.Parse(functionCallDoneJson)
-    let serverEvent = Exts.toEvent doc
+    let serverEvent = SerDe.toEvent doc
     
     match serverEvent with
     | ServerEvent.ResponseFunctionCallArgumentsDone e ->
@@ -925,7 +925,7 @@ let ``ResponseMcpCallArgumentsDelta event deserialization`` () =
     }"""
     
     let doc = JsonDocument.Parse(mcpCallDeltaJson)
-    let serverEvent = Exts.toEvent doc
+    let serverEvent = SerDe.toEvent doc
     
     match serverEvent with
     | ServerEvent.ResponseMcpCallArgumentsDelta e ->
@@ -947,7 +947,7 @@ let ``ResponseMcpCallArgumentsDone event deserialization`` () =
     }"""
     
     let doc = JsonDocument.Parse(mcpCallDoneJson)
-    let serverEvent = Exts.toEvent doc
+    let serverEvent = SerDe.toEvent doc
     
     match serverEvent with
     | ServerEvent.ResponseMcpCallArgumentsDone e ->
@@ -967,7 +967,7 @@ let ``ResponseMcpCallInProgress event deserialization`` () =
     }"""
     
     let doc = JsonDocument.Parse(mcpCallInProgressJson)
-    let serverEvent = Exts.toEvent doc
+    let serverEvent = SerDe.toEvent doc
     
     match serverEvent with
     | ServerEvent.ResponseMcpCallInProgress e ->
@@ -987,7 +987,7 @@ let ``ResponseMcpCallCompleted event deserialization`` () =
     }"""
     
     let doc = JsonDocument.Parse(mcpCallCompletedJson)
-    let serverEvent = Exts.toEvent doc
+    let serverEvent = SerDe.toEvent doc
     
     match serverEvent with
     | ServerEvent.ResponseMcpCallCompleted e ->
@@ -1007,7 +1007,7 @@ let ``ResponseMcpCallFailed event deserialization`` () =
     }"""
     
     let doc = JsonDocument.Parse(mcpCallFailedJson)
-    let serverEvent = Exts.toEvent doc
+    let serverEvent = SerDe.toEvent doc
     
     match serverEvent with
     | ServerEvent.ResponseMcpCallFailed e ->
@@ -1026,7 +1026,7 @@ let ``ResponseMcpListToolsInProgress event deserialization`` () =
     }"""
     
     let doc = JsonDocument.Parse(mcpListToolsInProgressJson)
-    let serverEvent = Exts.toEvent doc
+    let serverEvent = SerDe.toEvent doc
     
     match serverEvent with
     | ServerEvent.ResponseMcpListToolsInProgress e ->
@@ -1045,7 +1045,7 @@ let ``ResponseMcpListToolsCompleted event deserialization`` () =
     }"""
     
     let doc = JsonDocument.Parse(mcpListToolsCompletedJson)
-    let serverEvent = Exts.toEvent doc
+    let serverEvent = SerDe.toEvent doc
     
     match serverEvent with
     | ServerEvent.ResponseMcpListToolsCompleted e ->
@@ -1064,7 +1064,7 @@ let ``ResponseMcpListToolsFailed event deserialization`` () =
     }"""
     
     let doc = JsonDocument.Parse(mcpListToolsFailedJson)
-    let serverEvent = Exts.toEvent doc
+    let serverEvent = SerDe.toEvent doc
     
     match serverEvent with
     | ServerEvent.ResponseMcpListToolsFailed e ->
@@ -1096,7 +1096,7 @@ let ``RateLimitsUpdated event deserialization`` () =
     }"""
     
     let doc = JsonDocument.Parse(rateLimitsUpdatedJson)
-    let serverEvent = Exts.toEvent doc
+    let serverEvent = SerDe.toEvent doc
     
     match serverEvent with
     | ServerEvent.RateLimitsUpdated e ->
