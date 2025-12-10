@@ -2,6 +2,7 @@
 
 open NUnit.Framework
 open System.Text.Json
+open System.Text.Json.Serialization
 open RTOpenAI.Events
 
 [<SetUp>]
@@ -117,6 +118,51 @@ let ``SessionUpdated event deserialization`` () =
         Assert.That(e.event_id, Is.EqualTo("event_456"))
         Assert.That(e.``type``, Is.EqualTo("session.updated"))
     | _ -> Assert.Fail("Expected SessionUpdated event")
+
+[<Test>]
+let ``SessionUpdate serialization includes truncation`` () =
+    let truncationSettings =
+        Truncation.Truncation
+            {| retention_ratio = 0.8
+               ``type`` = "retention_ratio"
+               token_limits = Some { post_instructions = 5000 } |}
+
+    let sessionWithTruncation =
+        { Session.Default with
+            model = Some "gpt-realtime"
+            truncation = Skippable.Include (Some truncationSettings) }
+
+    let sessionUpdateEvent =
+        { SessionUpdateEvent.Default with
+            event_id = "event_trunc"
+            session = sessionWithTruncation }
+
+    let json = JsonSerializer.Serialize(sessionUpdateEvent, SerDe.serOpts)
+
+    Assert.That(json, Does.Contain("\"truncation\""))
+    Assert.That(json, Does.Contain("\"retention_ratio\""))
+    Assert.That(json, Does.Contain("\"token_limits\""))
+    Assert.That(json, Does.Contain("\"post_instructions\""))
+
+    use parsed = JsonDocument.Parse(json)
+    let truncationJson = parsed.RootElement.GetProperty("session").GetProperty("truncation")
+    let retentionRatio = truncationJson.GetProperty("retention_ratio").GetDouble()
+    Assert.That(retentionRatio, Is.EqualTo(0.8).Within(0.000001))
+    let postInstructions = truncationJson.GetProperty("token_limits").GetProperty("post_instructions").GetInt32()
+    Assert.That(postInstructions, Is.EqualTo(5000))
+
+    let deserialized = JsonSerializer.Deserialize<SessionUpdateEvent>(json, SerDe.serOpts)
+    if obj.ReferenceEquals(deserialized, null) then
+        Assert.Fail("Expected round-trip SessionUpdateEvent")
+
+    let evt = deserialized
+    match evt.session.truncation with
+    | Skippable.Include (Some (Truncation.Truncation payload)) ->
+        Assert.That(payload.retention_ratio, Is.EqualTo(0.8).Within(0.000001))
+        match payload.token_limits with
+        | Some limits -> Assert.That(limits.post_instructions, Is.EqualTo(5000))
+        | None -> Assert.Fail("Expected token_limits to deserialize")
+    | other -> Assert.Fail(sprintf "Unexpected truncation payload: %A" other)
 
 // Conversation Item Added Event Tests
 [<Test>]

@@ -216,7 +216,8 @@ and [<JsonConverter(typeof<OutputTokensTypeConverter>)>]
 [<JsonFSharpConverter(BaseUnionEncoding = JsonUnionEncoding.UnwrapRecordCases)>]
 type Truncation =
     | [<JsonName "auto">] Auto
-    | Truncation of {|retention_ratio:float; ``type`` : string; token_limits : TokenLimits|}
+    | [<JsonName "disabled">] Disabled
+    | Truncation of {|retention_ratio:float; ``type`` : string; token_limits : TokenLimits option|}
 
 [<JsonFSharpConverter>]
 type Session =
@@ -233,6 +234,7 @@ type Session =
         tool_choice: Skippable<string>
         tools: Skippable<Tool list>
         tracing : Skippable<Tracing option>
+        truncation : Skippable<Truncation option>
         max_output_tokens : Skippable<OutputTokens option> 
         client_secret : Skippable<Client_Secret option>
         value : Skippable<string>
@@ -252,6 +254,7 @@ type Session =
             tool_choice = Skip //How the model chooses tools. Options are "auto", "none", "required", or specify a function.
             tools = Skip
             tracing = Skip
+            truncation = Skip
             client_secret = Skip
             max_output_tokens = Skip
             value = Skip
