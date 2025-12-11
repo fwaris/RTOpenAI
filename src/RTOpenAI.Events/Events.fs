@@ -399,7 +399,7 @@ type MessageTextContent =
     }
 
 type MessageContent =
-    | [<JsonName("input_audio")>] Input_audio of {|audio:string; transcript:string|}
+    | [<JsonName("input_audio")>] Input_audio of {|audio:Skippable<string>; transcript:string|}
     | [<JsonName("input_text")>] Input_text of {|text:string|}
     | [<JsonName("input_image")>] Input_image of {|image_url:string; detail:string|}
     | [<JsonName("output_audio")>] Output_audio of MessageAudioContent
@@ -427,7 +427,7 @@ type ContentFunctionCall = {
     arguments : string
     call_id : string
     id : string
-    object : string
+    object : Skippable<string>
     status : string
 }
 
@@ -435,13 +435,13 @@ type ContentFunctionCallOutput = {
     call_id : string
     output : string
     id : string
-    object : string option
+    object : Skippable<string>
     status : string
 } with static member Create callId output = {
         call_id = callId
         output = output
         id = Utils.newId()
-        object = None
+        object = Skip
         status = ""
 }
 
@@ -995,6 +995,7 @@ type ServerEvent =
     //others
     | RateLimitsUpdated of RateLimitsUpdatedEvent
     | UnknownEvent of string * JsonDocument
+    | EventHandlingError of string*string*JsonDocument
 
 
 [<RequireQualifiedAccess>]

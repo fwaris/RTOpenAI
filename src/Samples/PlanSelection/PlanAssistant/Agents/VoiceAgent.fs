@@ -83,6 +83,7 @@ module VoiceAgent =
             instructions = Some PlanPrompts.rtInstructions.Value // set, unset, or override other fields as needed 
             tool_choice = Include "auto"            
             tools = Include voiceFunctions
+            expires_at = Skip
         }
         
     let toUpdateEvent (s:Session) =
@@ -130,8 +131,10 @@ module VoiceAgent =
             | SE.SessionUpdated s -> return {st with currentSession = s.session }
             | SE.ResponseOutputItemDone ev when isRunQuery ev  -> st.bus.PostToAgent(Ag_Query(getQuery ev)); return st
             | SE.ResponseOutputItemDone ev when isGetPlanDetails ev -> st.bus.PostToAgent(Ag_GetPlanDetails(getPlanTitle ev)); return st
-            | SE.Error e -> Log.error e.error.message; return st
-            | other ->  (*Log.info $"unhandled event: {other}";*)  return st //log other events
+            | SE.Error e -> Log.error $"Received realtime API error message: `{e.error.message}`"; return st
+            | SE.EventHandlingError (t,msg,j) -> Log.error $"Error when handling event of type {t} - '{msg}'"; Log.error $"{JsonSerializer.Serialize(j)}"; return st
+            | SE.UnknownEvent (t,_) -> Log.info $"Unknown event of type {t} received"; return st
+            | other -> Log.info $"unhandled event: {other.GetType().Name}";  return st //log other events
         }
         
     let startVoice (conn:RTOpenAI.Api.Connection) (bus:WBus<FlowMsg, AgentMsg>) = async {

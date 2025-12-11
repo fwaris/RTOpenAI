@@ -14,6 +14,7 @@ module Client =
     let createAnthropicClient(key:string) =
         let httpClient = new System.Net.Http.HttpClient()
         httpClient.DefaultRequestHeaders.Add("anthropic-beta","computer-use-2025-01-24")
+        httpClient.DefaultRequestHeaders.Add("anthropic-beta","structured-outputs-2025-11-13")
         new AnthropicClient(key,httpClient)
         
     let createClientWithKey(key) : IChatClient =  
@@ -30,4 +31,4 @@ module Client =
         tp
     )
 
-
+    let toSchema(t:Type) = AIJsonUtilities.CreateJsonSchema(t)

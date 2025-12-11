@@ -1,6 +1,7 @@
 namespace RT.Assistant.Plan
 open System.IO
 
+[<CLIMutable>]
 type CodeGenResp =
   {
     Predicates: string

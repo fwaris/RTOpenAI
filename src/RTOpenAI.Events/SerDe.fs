@@ -106,4 +106,4 @@ module SerDe =
             | "rate_limits.updated" -> ServerEvent.RateLimitsUpdated (deserialize<RateLimitsUpdatedEvent> j)
             | x -> ServerEvent.UnknownEvent (eventType,j)
         with ex -> 
-            ServerEvent.UnknownEvent (eventType,j)
+            ServerEvent.EventHandlingError (eventType,ex.Message,j)
