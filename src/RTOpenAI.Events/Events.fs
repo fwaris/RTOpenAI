@@ -371,9 +371,9 @@ type ResponseCreateEvent =
     {
         event_id: string
         ``type``: string  // "response.create"
-        response: Response
+        response: Skippable<Response>
     }
-    static member Default = { event_id = ""; ``type`` = "response.create"; response = Response.Default }
+    static member Default = { event_id = ""; ``type`` = "response.create"; response = Skip }
 
 ///Send this event to cancel an in-progress response.
 type ResponseCancelEvent =
@@ -510,7 +510,7 @@ type Response =
     static member Default = 
         { 
             modalities = None; instructions = None; voice = None; output_audio_format = None; tools = None
-            tool_choice = None; temperature = None; max_output_tokens = None 
+            tool_choice = Some "auto"; temperature = None; max_output_tokens = None 
         }
 
 // Server Event Record Types
@@ -885,14 +885,14 @@ type Conversation =
 type StatusError =
     {
         ``type`` : string //usually "server_error"
-        code : JsonDocument option
-        message : string option
+        code : string option
     }
     
 type StatusDetails =
         {
             ``type`` : string
-            error : StatusError
+            error : Skippable<StatusError>
+            reason : string
         }
         
 

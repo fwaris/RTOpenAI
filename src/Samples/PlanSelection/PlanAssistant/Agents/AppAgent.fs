@@ -18,6 +18,7 @@ module AppAgent =
         | Ag_QueryResult (_,r) -> st.Send(Log_Append r)
         | Ag_FlowError err -> st.Send(Log_Append (err.ErrorText))
         | Ag_FlowDone e -> st.Send(Log_Append $"Flow done abnormal={e.abnormal}")
+        | Ag_Prolog code -> st.Send(SetCode code)
         | _ -> ()
         return st
     }

@@ -112,3 +112,62 @@ let ``conversation item done sample``() =
     | _ -> ()
     Assert.That(d.IsConversationItemDone)
     
+    
+[<Test>]
+let ``response done sample with status`` () =
+    let json = """
+{
+    "type": "response.done",
+    "event_id": "event_Clb8cmQAEyzxia5U94QvZ",
+    "response": {
+        "object": "realtime.response",
+        "id": "resp_Clb8c8yY8MPDK1OyZvYTs",
+        "status": "cancelled",
+        "status_details": {
+            "type": "cancelled",
+            "reason": "turn_detected"
+        },
+        "output": [],
+        "conversation_id": "conv_Clb7UdIzg2XwJQ15Xiffe",
+        "output_modalities": [
+            "audio"
+        ],
+        "max_output_tokens": "inf",
+        "audio": {
+            "output": {
+                "format": {
+                    "type": "audio/pcm",
+                    "rate": 24000
+                },
+                "voice": "alloy"
+            }
+        },
+        "usage": {
+            "total_tokens": 0,
+            "input_tokens": 0,
+            "output_tokens": 0,
+            "input_token_details": {
+                "text_tokens": 0,
+                "audio_tokens": 0,
+                "image_tokens": 0,
+                "cached_tokens": 0,
+                "cached_tokens_details": {
+                    "text_tokens": 0,
+                    "audio_tokens": 0,
+                    "image_tokens": 0
+                }
+            },
+            "output_token_details": {
+                "text_tokens": 0,
+                "audio_tokens": 0
+            }
+        },
+        "metadata": null
+    }
+}
+"""
+    let d = SerDe.toEvent (JsonDocument.Parse json)
+    match d with
+    | ServerEvent.EventHandlingError(t,msg,_) -> Assert.Fail(msg)
+    | _ -> ()
+    Assert.That(d.IsResponseDone)

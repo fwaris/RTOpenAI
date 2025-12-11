@@ -14,7 +14,7 @@ module FlowUtils =
     let catch replyChannel (comp:Async<'t>) =
         async{
             match! Async.Catch(comp) with
-            | Choice2Of2 exn -> Log.exn(exn,"Resps.catch")
+            | Choice2Of2 exn -> Log.exn(exn,"FlowUtils.catch")
                                 replyChannel (W_Err (WE_Exn exn))
             | _              -> ()
         }
