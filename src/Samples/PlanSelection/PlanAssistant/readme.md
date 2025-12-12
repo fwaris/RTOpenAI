@@ -1,8 +1,102 @@
-### RT.Assistant Sample
+# RT.Assistant Sample
 
-This sample is a  voice-enabled assistant that performs question-answering over a
-'database' of mocked (but representative) phone plans (that may be available from a
-typical major telecom company).
+This sample is a voice-enabled assistant that provides question-answering ability over a
+'database' of mocked (but representative) phone plans that may be available from a
+typical major telecom.
+
+## This sample demonstrates: 
+- Use of the RTFlow - a multi-agent framework for realtime applications - written in F#
+- Integration with the OpenAI realtime voice API over the WebRTC protocol via the RTOpenAI framework - also written in F#
+- Native mobile applications (IOS & Android) built with Microsoft Maui and Fabulous (a F# library for Maui controls)
+- Use of the Maui HybridWebView to host a Javascript-based Prolog Engine in a native mobile app
+- Integration with the Anthropic API for Prolog code generation
+
+## Overview
+There is a lot going on here: *generative AI*; *old-school symbolic AI*; *multi-agents*; *realtime voice*; *cross-platform native mobile apps*; to name some. The following explains how these are all stitched together into a comprehensive system.
+
+- Firstly, this is a *voice-enabled* assistant so the user can talk to the assistant to get questions answered about phone plans.
+  - Note that contemporary plans are complex offerings with bundled products and services. It requires some effort to ascertain the best plan for one's needs.
+- The plan information is stored as set of Prolog *facts*.
+- The assistant listens to the user's questions and responds with answers which are grounded in the asserted facts.
+- Internally multiple agents work together to handle the user query:
+  - **Voice Agent**: Connects to the OpenAI realtime API and handles the user queries given to it as tool calls from the voice model.
+    - This agent also wires audio from the realtime API to the device's hardware using platform-native WebRTC libraries and the RTOpenAI wrapper framework.  
+  - **CodeGen Agent**: Translates user queries into Prolog queries via the Anthropic API and then uses the *Tau* Prolog engine to 'solve' for answers against the 'facts' database.
+  - **Query Agent**: Uses the Prolog engine to run simple 'canned' Prolog queries.
+  - **App Agent**: Monitors the communications between other agents and reports them to the UI which is built with Maui+Fabulous.
+- The agent hosting and inter-agent communication services are provided by the **RTFlow** framework.
+
+The following diagram shows the RTFlow agent arrangement for the RT.Assistant sample:
+
+![RTFlow](/src/Samples/PlanSelection/PlanAssistant/imgs/RTflow.png)
+
+As there are multiple framework / technologies in play here, lets briefly delve into each one of them - in the order of perceived importance.
+
+## 1. RTFlow
+RTFlow is a framework for building realtime 'agentic' applications. There are three main parts: `Flow`, `Bus` and `Agents`.
+
+The `Bus` connects the `Agents` and the `Flow` together. All agent messages are broadcast, i.e. all agents receive any agent-intent message thrown on the bus. The `Flow` has its own separate channel.
+
+`Flow` and `Agents` each maintain their own internal states and communication via strongly-typed asynchronous messages. The message 'types' (for agents/flow) are F# discriminated unions (DU) which are custom designed for the flow implementation.
+
+`Flow` is essentially an asynchronous state machine. The state transitions are triggered by messages arriving on the flow input channel. The transitions are deterministic and provide a way to control the overall system to the level desired.
+
+Depending on the application, the `Flow` can be a minimal 3-state [`start`, `run`, `terminate`] machine where the agents mostly interact with each other - without involving the flow much. Contrarily, when more control is required, the agents mostly communicate to the `Flow` which then orchestrates the agents according to the states the flow is in.
+
+LLMs are inherently non-deterministic. This approach offers a way to control non-determinism such that the overall system remains stable. As applications move from being human-centric to being more autonomous, we will need methods to better manage this non-determinism.
+
+The F# language offers a clean way of modeling asynchronous state machines (or more precisely Mealy machines) where the states are functions and transitions happens via pattern matching over DUs or with 'active patterns'. In the snippet below `s_XXX` are functions as states and `M_xxx` are messages that arrive on the `Bus`. The structure `F` packages the next state along with any output messages for agents.
+
+```F#
+let rec s_start msg = async{
+match msg with 
+| M_Start -> return F(s_run,[M_Started]) //transition to run
+| _       -> return F(s_start,[]) //stay in start state
+}
+
+and s_run msg = async {
+  match msg with 
+  | M_DoSomething -> do! doSomething()
+                     return F(s_run,[M_DidSomething])                     
+  | M_Terminate   -> return F(s_terminate,[])
+  | _             -> return F(s_run,[])
+}
+
+and s_terminate msg = async {
+...
+```
+Given the relatively simple building blocks, we can construct rich agentic systems that can support many realtime needs. 
+
+
+## 2. RTOpenAI
+RTOpenAI wraps the OpenAI realtime voice API. Its two key features are a) support for the WebRTC protocol; and b) strongly-typed realtime protocol messages. These are discussed next.
+
+### WebRTC
+The OpenAI voice API can be used via Web Sockets and WebRTC (and now also SIP). Between Web Sockets and WebRTC, WebRTC has some key advantages:
+
+- Firstly, WebRTC is meant for bidirectional realtime communication. It has built-in resiliency for minor network disconnects - which crucially Web Sockets does not.
+
+- WebRTC has separate channels for voice and data. (Also video - which is not currently used). This means that typically the application only needs to  handle the data channel explicitly. The in/out audio channels are wired to the audio hardware by the underlying WebRTC libraries. In the case of Web Sockets, the application explicitly needs to handle in/out audio as well as the data.
+
+- WebRTC transmits audio via the OPUS codec which offers high compression but retains good audio quality. For Web Sockets multiple choices exist. High quality audio is sent as uncompressed 24KHz PCM binary as base64 encoded strings. The bandwidth required is 10X that for OPUS. There other telephony formats available but the audio quality drops significantly.
+
+### Strong Typing
+The RTOpenAI.Events library attempts to define F# types for all OpenAI realtime voice protocol messages (that are currently documented). 
+
+This makes is easier for consuming applications to handle incoming 'server' messages and to send out correctly formatted 'client' messages.
+
+RTOpenAI currently works on IOS/MacOS and Android platfrom
+
+
+
+
+
+
+
+
+
+The agent topology is relatively flat (although there is nothing stopping agents from having their own internal sub-agents). 
+
 
 #### The types of questions that can be asked are:
 - What categories of plans are available?
