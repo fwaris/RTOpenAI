@@ -1,17 +1,9 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
     <TargetFrameworks>net9.0-windows10.0.19041.0;net9.0-android;</TargetFrameworks>
-	  <TargetFrameworks Condition="$(TargetPlatformIdentifier) == 'ios' OR $(TargetPlatformIdentifier) == 'maccatalyst'">net9.0-ios;net9.0-maccatalyst;$(TargetFrameworks)</TargetFrameworks>  
-	  <TargetFrameworks Condition="$(TargetPlatformIdentifier) == 'windows'">net9.0-windows10.0.19041.0;$(TargetFrameworks)</TargetFrameworks>  
-    <!--    <TargetFrameworks>net9.0-ios;net9.0-maccatalyst</TargetFrameworks>-->
-    <!--<TargetFrameworks Condition="$([MSBuild]::IsOSPlatform('windows'))">$(TargetFrameworks);net9.0-windows10.0.19041.0</TargetFrameworks>-->
-    <!-- Uncomment to also build the tizen app. You will need to install tizen by following this: https://github.com/Samsung/Tizen.NET -->
-    <!-- <TargetFrameworks>$(TargetFrameworks);net8.0-tizen</TargetFrameworks> -->
-<!--    <UseMaui>true</UseMaui>-->
+    <TargetFrameworks Condition="$(TargetPlatformIdentifier) == 'ios' OR $(TargetPlatformIdentifier) == 'maccatalyst'">net9.0-ios;net9.0-maccatalyst;$(TargetFrameworks)</TargetFrameworks>  
+	<TargetFrameworks Condition="$(TargetPlatformIdentifier) == 'windows'">net9.0-windows10.0.19041.0;$(TargetFrameworks)</TargetFrameworks>
     <OutputType>Library</OutputType>
-    <SingleProject>true</SingleProject>
-<!--    <EnableDefaultItems>false</EnableDefaultItems>-->
-<!--    <DisableImplicitFSharpCoreReference>true</DisableImplicitFSharpCoreReference>-->
     <TargetPlatformIdentifier Condition=" $(TargetPlatformIdentifier) == '' ">$([MSBuild]::GetTargetPlatformIdentifier('$(TargetFramework)'))</TargetPlatformIdentifier>
     <SupportedOSPlatformVersion Condition="$(TargetPlatformIdentifier) == 'ios'">15.0</SupportedOSPlatformVersion>
     <SupportedOSPlatformVersion Condition="$(TargetPlatformIdentifier) == 'maccatalyst'">15.0</SupportedOSPlatformVersion>
@@ -39,9 +31,11 @@
     <ProjectReference Include="..\WebCme\WebRTCme.Bindings.Maui.iOS\WebRTCme.Bindings.Maui.iOS.csproj" />
   </ItemGroup>
   <ItemGroup Condition="$(TargetPlatformIdentifier) == 'windows'">
-    <PackageReference Include="SIPSorcery" Version="8.0.14" />
+    <PackageReference Include="SIPSorcery" Version="8.0.22" />
+    <PackageReference Include="SIPSorceryMedia.Windows" Version="8.0.14" />
+    <!--
     <PackageReference Include="SIPSorceryMedia.Abstractions" Version="8.0.10" />
-    <PackageReference Include="SIPSorceryMedia.Windows" Version="8.0.11" />
+    -->
   </ItemGroup>
   <ItemGroup>
     <PackageReference Include="Fabulous.MauiControls" Version="9.0.0-pre9" />

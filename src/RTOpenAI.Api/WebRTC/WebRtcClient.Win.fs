@@ -31,13 +31,13 @@ type WebRtcClientWin() =
 
     let audioDelegate (pc:RTCPeerConnection) = EncodedSampleDelegate(fun duration bytes -> pc.SendAudio(duration,bytes))
 
-    let addAudio(pc:RTCPeerConnection) = 
-        let winAudioEP = new WindowsAudioEndPoint(new AudioEncoder(includeOpus=true),-1,-1,false,false)
-        winAudioEP.RestrictFormats(fun x -> x.FormatName = "OPUS")         
+    let addAudio(pc:RTCPeerConnection) =
+        let audioEncoder = new AudioEncoder(AudioCommonlyUsedFormats.OpusWebRTC);
+        let winAudioEP = WindowsAudioEndPoint(audioEncoder)
         winAudioEP.add_OnAudioSinkError(SourceErrorDelegate(fun err -> Log.info $"Audio sink error {err}"))
         let audioDlg = audioDelegate pc
         winAudioEP.add_OnAudioSourceEncodedSample(audioDlg)
-        let audioTrack = new MediaStreamTrack(winAudioEP.GetAudioSourceFormats(), MediaStreamStatusEnum.SendRecv)
+        let audioTrack = new MediaStreamTrack(AudioCommonlyUsedFormats.OpusWebRTC, MediaStreamStatusEnum.SendRecv)
         pc.addTrack(audioTrack)
         pc.add_OnAudioFormatsNegotiated(fun afs -> 
             let af = Seq.head afs
@@ -55,22 +55,15 @@ type WebRtcClientWin() =
                 if state = RTCPeerConnectionState.connected then 
                     do! winAudioEP.StartAudio()
                     do! winAudioEP.StartAudioSink()
+                    do! winAudioEP.Start()
+                elif state = RTCPeerConnectionState.closed || state = RTCPeerConnectionState.disconnected then
+                    do! winAudioEP.Close()
                 }
                 |> ignore)
 
-    let hookAudioStream (winAudioEP:WindowsAudioEndPoint) (pc:RTCPeerConnection) = 
-        pc.add_OnRtpPacketReceived (fun ep media packet -> 
-            if media = SDPMediaTypesEnum.audio then 
-                let ph = packet.Header
-                winAudioEP.GotAudioRtp(
-                    ep,
-                    ph.SyncSource,
-                    uint32 ph.SequenceNumber,
-                    ph.Timestamp,
-                    ph.PayloadType,
-                    ph.MarkerBit = 1,
-                    packet.Payload)
-        )
+    let hookAudioStream (winAudioEP:WindowsAudioEndPoint) (pc:RTCPeerConnection) =
+        //pc.add_OnAudioFrameReceived(fun audioFrame -> winAudioEP.GotEncodedMediaFrame(audioFrame))
+        pc.add_OnAudioFrameReceived(Action<EncodedAudioFrame>(winAudioEP.GotEncodedMediaFrame))
 
     let createPcConnection() = 
         task {
