@@ -1,4 +1,4 @@
-<Project Sdk="Microsoft.NET.Sdk">
+﻿<Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
     <TargetFrameworks>net9.0-ios;net9.0-maccatalyst</TargetFrameworks>
     <Nullable>enable</Nullable>
@@ -15,8 +15,8 @@
     <CodesignKey>iPhone Developer</CodesignKey>
   </PropertyGroup>
   -->
-  
-  <ItemGroup>
+
+  <ItemGroup Condition="'$(TargetPlatformIdentifier)' == 'ios' Or '$(TargetPlatformIdentifier)' == 'maccatalyst'">
     <ObjcBindingApiDefinition Include="ApiDefinitions.cs" />
     <ObjcBindingCoreSource Include="StructsAndEnums.cs" />
   </ItemGroup>

@@ -6,4 +6,4 @@
 type App() =
     inherit FSharp.Maui.WinUICompat.App()
 
-    override this.CreateMauiApp() = RTOpenAI.MauiProgram.CreateMauiApp()
+    override this.CreateMauiApp() = RTOpenAI.Sample.MauiProgram.CreateMauiApp()
