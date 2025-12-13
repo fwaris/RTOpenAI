@@ -48,11 +48,11 @@ LLMs are inherently non-deterministic. This approach offers a way to control non
 The F# language offers a clean way of modeling asynchronous state machines (or more precisely Mealy machines) where the states are functions and transitions happens via pattern matching over DUs or with 'active patterns'. In the snippet below `s_XXX` are functions as states and `M_xxx` are messages that arrive on the `Bus`. The structure `F` packages the next state along with any output messages for agents.
 
 ```F#
-let rec s_start msg = async{
-match msg with 
-| M_Start -> return F(s_run,[M_Started]) //transition to run
-| _       -> return F(s_start,[]) //stay in start state
-}
+let rec s_start msg = async {
+  match msg with 
+  | M_Start -> return F(s_run,[M_Started]) //transition to run
+  | _       -> return F(s_start,[]) //stay in start state
+  }
 
 and s_run msg = async {
   match msg with 
@@ -81,11 +81,11 @@ The OpenAI voice API can be used via Web Sockets and WebRTC (and now also SIP). 
 - WebRTC transmits audio via the OPUS codec which offers high compression but retains good audio quality. For Web Sockets multiple choices exist. High quality audio is sent as uncompressed 24KHz PCM binary as base64 encoded strings. The bandwidth required is 10X that for OPUS. There other telephony formats available but the audio quality drops significantly.
 
 ### Strong Typing
-The RTOpenAI.Events library attempts to define F# types for all OpenAI realtime voice protocol messages (that are currently documented). 
+The RTOpenAI.Events library attempts to define F# types for all OpenAI realtime voice protocol messages (that are currently documented). Further, the client and server message are wrapped in F# DUs. This makes is easier for consuming applications to handle incoming 'server' messages and to send out correctly formatted 'client' messages.
 
-This makes is easier for consuming applications to handle incoming 'server' messages and to send out correctly formatted 'client' messages.
+Once the realtime connection is established, there is a steady flow of incoming messages from the server over the WebRTC data channel. In the case of the sample these messages 
 
-RTOpenAI currently works on IOS/MacOS and Android platfrom
+
 
 
 
