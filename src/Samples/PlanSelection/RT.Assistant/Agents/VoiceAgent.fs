@@ -76,14 +76,25 @@ module VoiceAgent =
             }
         ]               
                                     
-    let updateSession (s:Session) =
+    let updateSession (s:Session) = // set, unset, or override other fields as needed 
         { s with
             id = Skip
             object = Skip
-            instructions = Some PlanPrompts.rtInstructions.Value // set, unset, or override other fields as needed 
+            instructions = Some PlanPrompts.rtInstructions.Value 
             tool_choice = Include "auto"            
             tools = Include voiceFunctions
             expires_at = Skip
+            audio = Include {Audio.Default with
+                                input = Include {AudioInput.Default with
+                                                   transcription = {
+                                                      language = "en"
+                                                      model = "gpt-4o-mini-transcribe"
+                                                      prompt = Some "Expect words related to phone plans"
+                                                   }
+                                                   |> Some
+                                                   |> Include
+                                                 }                                
+            }
         }
         
     let toUpdateEvent (s:Session) =

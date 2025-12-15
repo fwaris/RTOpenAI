@@ -1,20 +1,17 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 	<PropertyGroup>
-		<TargetFrameworks>net9.0-windows10.0.19041.0;net9.0-android;</TargetFrameworks>
+		<TargetFrameworks>net9.0-windows10.0.19041.0;</TargetFrameworks>
+		<TargetFrameworks Condition="$(TargetPlatformIdentifier) == 'android'">net9.0-android;</TargetFrameworks>
 		<TargetFrameworks Condition="$(TargetPlatformIdentifier) == 'ios' OR $(TargetPlatformIdentifier) == 'maccatalyst'">net9.0-ios;net9.0-maccatalyst;$(TargetFrameworks)</TargetFrameworks>
 		<TargetFrameworks Condition="$(TargetPlatformIdentifier) == 'windows'">net9.0-windows10.0.19041.0;$(TargetFrameworks)</TargetFrameworks>
 		<!--<TargetFrameworks Condition="$([MSBuild]::IsOSPlatform('windows'))">$(TargetFrameworks);net9.0-windows10.0.19041.0</TargetFrameworks>-->
 		<!-- Uncomment to also build the tizen app. You will need to install tizen by following this: https://github.com/Samsung/Tizen.NET -->
 		<!-- <TargetFrameworks>$(TargetFrameworks);net8.0-tizen</TargetFrameworks> -->
 		<OutputType>Exe</OutputType>
-		<RootNamespace>RTOpenAI</RootNamespace>
+		<RootNamespace>RTOpenAI</RootNamespace>		
 		<AllowUnsafeBlocks>true</AllowUnsafeBlocks>
-		<!-- Windows packaging -->
-		<!--<WindowsPackageType>None</WindowsPackageType>
-		<WindowsAppSdkUndockedRegFreeWinRTInitialize>false</WindowsAppSdkUndockedRegFreeWinRTInitialize>
-		<UseWinUI>true</UseWinUI>-->
-		
 		<UseMaui>true</UseMaui>
+		<SkipValidateMauiImplicitPackageReferences>true</SkipValidateMauiImplicitPackageReferences>
 		<SingleProject>true</SingleProject>
 		<EnableDefaultItems>false</EnableDefaultItems>
 		<DisableImplicitFSharpCoreReference>true</DisableImplicitFSharpCoreReference>
@@ -100,22 +97,35 @@
 	</ItemGroup>
 	
 	<ItemGroup>
-		<PackageReference Include="Fabulous.MauiControls" Version="9.0.0-pre9" />
+		<!-- <PackageReference Include="Fabulous.MauiControls" Version="9.0.0-pre9" /> -->
 		<PackageReference Include="FSharp.Control.AsyncSeq" Version="3.2.1" />
 		<PackageReference Update="FSharp.Core" Version="9.0.100" />
 		<PackageReference Include="FSharp.SystemTextJson" Version="1.4.36" />
 		<PackageReference Include="Microsoft.Extensions.Logging.Console" Version="9.0.11" />
-		<PackageReference Include="Microsoft.Maui.Controls" Version="9.0.120" />
-		<PackageReference Include="Microsoft.Maui.Controls.Compatibility" Version="9.0.120" />
 		<PackageReference Include="System.Net.Security" Version="4.3.2" />
 		<PackageReference Include="System.Private.Uri" Version="4.3.2" />
 		<PackageReference Include="System.Text.RegularExpressions" Version="4.3.1" />
+	</ItemGroup>
+
+	<ItemGroup>
+		<PackageReference Update="Microsoft.Maui" Version="9.0.120" />
+		<PackageReference Update="Microsoft.Maui.Core" Version="9.0.120" />
+		<PackageReference Update="Microsoft.Maui.Controls" Version="9.0.120" />
+		<PackageReference Update="Microsoft.Maui.Controls.Compatibility" Version="9.0.120" />
 	</ItemGroup>
 	
 	<ItemGroup>
 	  <ProjectReference Include="..\..\..\RTOpenAI.Api\RTOpenAI.Api.fsproj" />
 	</ItemGroup>
-	
 
-
+	<PropertyGroup Condition="$(TargetPlatformIdentifier) == 'windows'">
+		<!--
+			<UseWinUI>true</UseWinUI>
+			<WindowsPackageType>None</WindowsPackageType>
+			<RuntimeIdentifier>win-x64</RuntimeIdentifier>
+			<DisableWinRTAutoInitializer>true</DisableWinRTAutoInitializer>
+    		<WindowsAppSDKSelfContained>false</WindowsAppSDKSelfContained>
+		-->
+		<WindowsAppSdkUndockedRegFreeWinRTInitialize>false</WindowsAppSdkUndockedRegFreeWinRTInitialize>
+	</PropertyGroup>
 </Project>

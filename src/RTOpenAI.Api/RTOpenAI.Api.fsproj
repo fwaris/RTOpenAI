@@ -1,8 +1,9 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
-    <TargetFrameworks>net9.0-windows10.0.19041.0;net9.0-android;</TargetFrameworks>
-    <TargetFrameworks Condition="$(TargetPlatformIdentifier) == 'ios' OR $(TargetPlatformIdentifier) == 'maccatalyst'">net9.0-ios;net9.0-maccatalyst;$(TargetFrameworks)</TargetFrameworks>  
-	<TargetFrameworks Condition="$(TargetPlatformIdentifier) == 'windows'">net9.0-windows10.0.19041.0;$(TargetFrameworks)</TargetFrameworks>
+  	<TargetFrameworks>net9.0-windows10.0.19041.0;</TargetFrameworks>
+		<TargetFrameworks Condition="$(TargetPlatformIdentifier) == 'android'">net9.0-android;</TargetFrameworks>
+		<TargetFrameworks Condition="$(TargetPlatformIdentifier) == 'ios' OR $(TargetPlatformIdentifier) == 'maccatalyst'">net9.0-ios;net9.0-maccatalyst;$(TargetFrameworks)</TargetFrameworks>
+		<TargetFrameworks Condition="$(TargetPlatformIdentifier) == 'windows'">net9.0-windows10.0.19041.0;$(TargetFrameworks)</TargetFrameworks>
     <OutputType>Library</OutputType>
     <TargetPlatformIdentifier Condition=" $(TargetPlatformIdentifier) == '' ">$([MSBuild]::GetTargetPlatformIdentifier('$(TargetFramework)'))</TargetPlatformIdentifier>
     <SupportedOSPlatformVersion Condition="$(TargetPlatformIdentifier) == 'ios'">15.0</SupportedOSPlatformVersion>
@@ -11,6 +12,9 @@
     <SupportedOSPlatformVersion Condition="$(TargetPlatformIdentifier) == 'windows'">10.0.17763.0</SupportedOSPlatformVersion>
     <TargetPlatformMinVersion Condition="$(TargetPlatformIdentifier) == 'windows'">10.0.17763.0</TargetPlatformMinVersion>
     <SupportedOSPlatformVersion Condition="$(TargetPlatformIdentifier) == 'tizen'">6.5</SupportedOSPlatformVersion>
+    <UseMaui>true</UseMaui>
+    <UseMaui>true</UseMaui>
+		<SkipValidateMauiImplicitPackageReferences>true</SkipValidateMauiImplicitPackageReferences>
   </PropertyGroup>
   <ItemGroup>
     <Compile Include="Constants.fs" />
@@ -25,17 +29,14 @@
     <Compile Include="Api\Connection.fs" />
   </ItemGroup>
   <ItemGroup Condition="$(TargetPlatformIdentifier) == 'android'">
-    <ProjectReference Include="..\WebCme\WebRTCme.Bindings.Maui.Android\WebRTCme.Bindings.Maui.Android.csproj" />
+    <ProjectReference Include="..\Bindings\WebRTCme.Bindings.Maui.Android\WebRTCme.Bindings.Maui.Android.csproj" />
   </ItemGroup>
   <ItemGroup Condition="$(TargetPlatformIdentifier) == 'ios' OR $(TargetPlatformIdentifier) == 'maccatalyst'">
-    <ProjectReference Include="..\WebCme\WebRTCme.Bindings.Maui.iOS\WebRTCme.Bindings.Maui.iOS.csproj" />
+    <ProjectReference Include="..\Bindings\WebRTCme.Bindings.Maui.iOS\WebRTCme.Bindings.Maui.iOS.csproj" />
   </ItemGroup>
   <ItemGroup Condition="$(TargetPlatformIdentifier) == 'windows'">
     <PackageReference Include="SIPSorcery" Version="8.0.22" />
     <PackageReference Include="SIPSorceryMedia.Windows" Version="8.0.14" />
-    <!--
-    <PackageReference Include="SIPSorceryMedia.Abstractions" Version="8.0.10" />
-    -->
   </ItemGroup>
   <ItemGroup>
     <PackageReference Include="Fabulous.MauiControls" Version="9.0.0-pre9" />
@@ -44,15 +45,28 @@
     <PackageReference Include="Microsoft.Extensions.Logging.Console" Version="9.0.11" />
     <PackageReference Update="FSharp.Core" Version="9.0.303" />
   </ItemGroup>
+
+	<ItemGroup>
+		<PackageReference Update="Microsoft.Maui" Version="9.0.120" />
+		<PackageReference Update="Microsoft.Maui.Core" Version="9.0.120" />
+		<PackageReference Update="Microsoft.Maui.Controls" Version="9.0.120" />
+		<PackageReference Update="Microsoft.Maui.Controls.Compatibility" Version="9.0.120" />
+	</ItemGroup>
+
   <ItemGroup>
     <ProjectReference Include="..\RTOpenAI.Events\RTOpenAI.Events.fsproj" />
   </ItemGroup>
 
-  <ItemGroup>
-    <!-- Exclude the auto-generated C# file from the Windows App SDK -->
-    <Compile Remove="$(NuGetPackageRoot)microsoft.windowsappsdk/1.7.250310001/include/UndockedRegFreeWinRT-AutoInitializer.cs" />
-    <!--<Compile Remove="C:\Users\Faisa\.nuget\packages\microsoft.windowsappsdk\1.7.250310001\include\UndockedRegFreeWinRT-AutoInitializer.cs" />-->
-  </ItemGroup>
+	<PropertyGroup Condition="$(TargetPlatformIdentifier) == 'windows'">
+		<!--
+			<UseWinUI>true</UseWinUI>
+			<WindowsPackageType>None</WindowsPackageType>
+			<DisableWinRTAutoInitializer>true</DisableWinRTAutoInitializer>
+		    <WindowsAppSDKSelfContained>true</WindowsAppSDKSelfContained>
+		-->
+		<RuntimeIdentifier>win10-x64</RuntimeIdentifier>
+		<WindowsAppSdkUndockedRegFreeWinRTInitialize>false</WindowsAppSdkUndockedRegFreeWinRTInitialize>
+	</PropertyGroup>
 
-  <Target Name="XamlPreCompile" Condition="$(TargetFramework.StartsWith('net6.0-windows10'))" />
+  <Target Name="XamlPreCompile" />
 </Project>

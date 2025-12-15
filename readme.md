@@ -1,114 +1,46 @@
-# RTOpenAI
-A library to build mobile applications in F# / MAUI, which utilizes the
-OpenAI realtime API via the WebRTC protocol.
+# Repo Overview
 
-### Overview
-The [OpenAI realtime API](https://openai.com/index/introducing-the-realtime-api/) enables voice chats against the 'realtime' version of GPT.
-It's ideal for building voice-enabled chat assistants, mainly due to the following features:
+This repo has two main reusable library projects.
 
-- Natural assistant voice:
-  - With intonation, pauses and even an occasional stutter!
-  - Interruptible - carry natural, human-like conversations. VAD (voice activity detection) means that the user can start speaking at any time to provide input. 
-  - Multiple voices available 
-- Speech tone understanding - realtime model receives the speaker's voice embeddings as input and so can detect tone (other features of the voice) and incorporate these in its responses.
-- Fast responses - realtime version of GPT is tuned for faster responses than the reqular version
+- [RTFlow](/src/RTFlow/) - A framework for building realtime multi-agents systems.
+- [RTOpenAI](/src//RTOpenAI.Api/) - A library to interface with the OpenAI realtime voice API via the WebRTC protocol.
 
-This repo is organized as follows:
-- RTOpenAI.Api
-  - The core library for connecting to the realtime API via the WebRTC protocol.
-- WebRTCme.Bindings.Maui.{Android | iOS}
-  - WebRTC bindings for Maui apps referenced by RTOpenAI.Api
-  - Support multiple, bidirectional, streaming channels: 1) for audio input/output (mic/speaker) and 2) for data
-  - Libs connect audio hardware directly to realtime API, via WebRTC
-  - *WebRTC vs. Web Sockets*: Both are supported by OpenAI for realtime. 
-WebRTC is resilient to minor network issues at the protocol level whereas Web Sockets requires application level
-handling for the same. WebRTC sends audio as compressed binary; Web Sockets sends it as raw, binary-encoded strings.
-All things considered, WebRTC is the more suited protocol for voice chat applications running on mobile devices.
-- Samples
-  - RTOpenAI.Sample
-    - A minimal sample for voice chatting via the realtime API (no function calling) 
-  - RT.Assistant 
-    - A voice assistant for question-answering 
-    - Showcases function calling
-    - More details [here](src/Samples/PlanSelection/PlanAssistant/readme.md)
-  - Note: The sample UIs are designed to enhance the visibility and transparency of the underlying activity and data. 
-While these are not fully polished applications, the underlying Fabulous/MAUI technology 
-is capable of creating sophisticated mobile applications.   
+The two are complementary. Please read the [RT.Assistant sample write-up](/src/Samples/PlanSelection/RT.Assistant/writeup.md) included in this repo first. It showcases the use of these libraries in a realtime voice-assistant app.
 
-### Challenges 
-Building against the realtime API is very different from building traditional chat applications.
-There is a steady flow of events from the server. Not all events need to be explicitly handled, but a different, 
-'stateful', architecture/approach is needed here.
+The libraries are available in source form for now. The plan is to distribute them as nuget packages after the source starts to stabilize.
 
-The RTOpenAI.Api library surfaces the server events to the consumer application via a dotnet 'channel'. 
-It also servers as a conduit for sending client events to the server.
-The server and client events are available as strongly-typed F# discriminated unions structures to ease event handling.
+## Other Projects
 
-Note that audio from the server is automatically routed to the default output audio device (speaker/headset). 
-Similarly, the recorded audio is sent directly to the server. All this is done by the underlying WebRTC libs.
-The client application is notified of these actions in detail via server messages.
+In addition to the three projects mentioned above, the following projects are also included in this repo:
 
-### Architecture / Approach
-The stateful nature of the realtime interaction is handled by an **asynchronous state machine** pattern, which is quite easy to implement in the F# language.
+- [WebRTCme.Bindings.Maui.Android](/src/Bindings/WebRTCme.Bindings.Maui.Android/): Maui bindings for WebRTC Android
+- [WebRTCme.Bindings.Maui.iOS](/src/Bindings/WebRTCme.Bindings.Maui.iOS/): Maui bindings for WebRTC IOS and MacCatalyst
+- [OpenAI.Events](/src/RTOpenAI.Events/): Strongly-typed message wrappers for the OpenAI realtime API messages
+- [RTOpenAI.Sample](/src/Samples/Minimal/RTOpenAI.Sample/): Minimal sample for realtime voice applications
+- [SwiplcsCore](/src/Samples/PlanSelection/SwiPlcsCore/): Revamped C# bindings for SWI-Prolog to run under dotnet core (the original bindings are for .Net Framework)
 
-The general flow is as follows:
-- Attach to the event channel where server events are being thrown, by castings it to an AsyncSeq (from IAsyncEnumerable)  
-- Use AsyncSeq.scanAsync with a start state and the state update function
-- The update function generally uses F# pattern matching over server events to take action (or to ignore events)
-- The update function can send clients events, UI events and/or update the application state as required.
-- Iter over all events until the channel disconnects.
+## Build and Run Notes
+- System requirements:
+    - .Net 9 SDK
+    - `[sudo] dotnet workload install maui`
+    - [XCode and related](https://developer.apple.com/xcode/resources/) required on MacOS to target IOS and MacCatalyst app builds
+    - [Android Studio](https://developer.android.com/studio) for Android app target
+    - OpenAI API Key
+    - Anthropic API Key (for RT.Assistant sample)
+- F# Maui projects cannot be debugged currently with VS Code. You will need either [Visual Studio](https://visualstudio.microsoft.com/) or [JetBrains Rider](https://www.jetbrains.com/rider/). For MacOs, Rider is the only viable option.
+- Although you cannot debug in VS Code, you can launch the included samples apps using VS Code tasks included with solution.
+- Build twice if necessary. Sometimes Maui projects have to be built twice for build errors to go away
+- The solution cannot be built for all platforms as the same time so `dotnet build` at the solution root will not work. There are windows-only and IOS/MacCatalyst-specific projects that can only be built on their respective platforms.
 
-The following F# snippet depicts this flow:
-```F#
-module Machine =
- 
-    // accepts old state and next event - return new state; optionally dispatch UI messages or client events to server
-    let update dispatch conn (st:State) ev =
-        async {
-            match ev with
-            | SessionCreated s when not st.initialized -> sendUpdateSession conn s.session; return {st with initialized = true} 
-            | SessionUpdated s -> return {st with currentSession = s.session }
-            | ResponseOutputItemDone ev when isFunctionCall ev  -> callFunction ev; return st            
-            | ResponseOutputItemDone ev when isFunctionResult ev  -> dispatch (extractUIInfo ev); return st
-            | ...            
-            | other -> (* Log.info $"unhandled event: {other}"; *) return st //log other events
-        }
-        
-    //continuously process server events
-    let run (conn:RTOpenAI.Api.Connection) dispatch =
-        let comp = 
-            conn.WebRtcClient.OutputChannel.Reader.ReadAllAsync()
-            |> AsyncSeq.ofAsyncEnum
-            |> AsyncSeq.map Api.Exts.toEvent //convert raw json to typed server event
-            |> AsyncSeq.scanAsync (update dispatch conn) ssInit   //handle actual event (above), ssInit = initial state
-            |> AsyncSeq.iter (fun s -> ())
-        async {
-            match! Async.Catch comp with
-            | Choice1Of2 _ -> Log.info "server events completed"
-            | Choice2Of2 exn -> Log.exn(exn,"Error: Machine.run")
-        }
-        |> Async.Start
-```
+- When launching from the command line (or running in Visual Studio or Rider
+) specify the target framework. Specifically, the MacOS/IOS components cannot be built in Windows and Windows components cannot be built in MacOS. So on Windows you can build bwith 
 
-Many variations of this approach are possible. For instance, the server event channel can be 
-combined with a local application event channel. This allows the update function to handle 
-both types of events, enabling long-running processes or workflows, replete with timeout and exception
-handling. By centralizing workflow event tracking within the update function, race conditions 
-are eliminated, and overall complexity is reduced.
+## Acknowledgements
 
-### Build Notes
-Get set up for [Maui development](https://learn.microsoft.com/en-us/dotnet/maui/?view=net-maui-9.0).
-VS Code does not yet work for F#/Maui so need either Visual Studio or JetBrains Rider.
-Most of the development was done on MacOS with JetBrains Rider (EAP version).
-
-The solution works for Android, iOS and MacOS (maccatalyst). Windows requires a WebRTC implementation. 
-WebRTC for Windows is available from [SipSorcery](https://www.nuget.org/packages/SIPSorcery) 
-but it has not been integrated yet.
-
-There is some quirkiness in building the WebRTC Android and IOS binding project (under WebCme). Sometimes need to clean and re-build the solution.
-
-### Acknowledgements
-
-- Tim Lariviere for [Fabulous Maui](https://github.com/fabulous-dev/Fabulous.MauiControls)  
+- Tim Lariviere and others for [Fabulous Maui](https://github.com/fabulous-dev/Fabulous.MauiControls)  
 - [WebRTCme](https://github.com/melihercan/WebRTCme) - provided the base bindings for Maui WebRTC. These where modified (significantly for IOS) to make them work for RTOpenAI.
-- [Tau Prolog](http://tau-prolog.org/) - a javascript Prolog interpreter used in the function calling sample RT.Assistant. 
+- [Tau Prolog](http://tau-prolog.org/) - a javascript Prolog interpreter used in the RT.Assistant sample. 
+- Loïc Denuzière and others for [FSharp.SystemTextJson](https://github.com/Tarmil/FSharp.SystemTextJson) - for F# types definitions
+ and the accompanying serialization/de-serialization logic needed to handle OpenAI realtime protocol messages in  strongly-typed way.
+- [SWI-Prolog](https://github.com/SWI-Prolog/swipl-devel) team for the base Prolog implementation that was instrumental in developing the Prolog-RAG approach used in RT.Assistant sample.
+

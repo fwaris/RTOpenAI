@@ -1,0 +1,51 @@
+{
+  "version": "2.0.0",
+  "tasks": [
+    {
+      "label": "RTOpenAI.Sample Win",
+      "type": "shell",
+      //"command": "dotnet",
+      "command": "dotnet",
+      "args": [
+        "run",       
+        "${workspaceFolder}/src/Samples/Minimal/RTOpenAI.Sample",
+        "-f",
+        "net9.0-windows10.0.19041.0"
+      ],      
+      "problemMatcher": "$msCompile"
+    },
+    {
+      "label": "Run MAUI iOS Simulator",
+      "type": "shell",
+      //"command": "/Users/Faisal.Waris1/dotnet9/dotnet",
+      "command": "dotnet",
+      "args": [
+        "build",
+        "${workspaceFolder}/src/PortWebTest",
+        "-t:Run",
+        "-f",
+        "net9.0-ios",
+        "-p:RuntimeIdentifier=iossimulator-arm64",
+//        "-p:_DeviceName=v2:udid=7D49444B-6AE9-473B-A2D3-850BCBEF7F18", //E1652AF2-D4EB-4678-A39F-D26E548730CD
+        "-p:_DeviceName=v2:udid=E1652AF2-D4EB-4678-A39F-D26E548730CD",
+        "-p:Configuration=Debug"
+      ],
+      "problemMatcher": "$msCompile"
+    },
+    {
+      "label": "Run MAUI Android",
+      "type": "shell",
+      "command": "/Users/Faisal.Waris1/dotnet9/dotnet",
+      //"command": "dotnet",
+      "args": [
+        "build",
+        "${workspaceFolder}/src/PortWebTest",
+        "-t:Run",
+        "-f",
+        "net9.0-android",
+        "-p:Configuration=Debug"
+      ],
+      "problemMatcher": "$msCompile"
+    }
+  ]
+}

@@ -94,7 +94,7 @@ module CodeGenAgent =
                 let! code = sendRequest state msgs
                 try
                     let! ans = QueryService.evalQuery state.viewRef code
-                    state.bus.PostToAgent(Ag_Prolog code)
+                    state.bus.PostToAgent(Ag_Prolog code)                    
                     return ans
                 with
                 | TimeoutException -> return "query timed out"

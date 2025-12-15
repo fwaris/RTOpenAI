@@ -1,6 +1,7 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 	<PropertyGroup>
-		<TargetFrameworks>net9.0-windows10.0.19041.0;net9.0-android;</TargetFrameworks>
+  	<TargetFrameworks>net9.0-windows10.0.19041.0;</TargetFrameworks>
+		<TargetFrameworks Condition="$(TargetPlatformIdentifier) == 'android'">net9.0-android;</TargetFrameworks>
 		<TargetFrameworks Condition="$(TargetPlatformIdentifier) == 'ios' OR $(TargetPlatformIdentifier) == 'maccatalyst'">net9.0-ios;net9.0-maccatalyst;$(TargetFrameworks)</TargetFrameworks>
 		<TargetFrameworks Condition="$(TargetPlatformIdentifier) == 'windows'">net9.0-windows10.0.19041.0;$(TargetFrameworks)</TargetFrameworks>
 		<OutputType>Exe</OutputType>
@@ -11,6 +12,7 @@
 		<WindowsAppSdkUndockedRegFreeWinRTInitialize>false</WindowsAppSdkUndockedRegFreeWinRTInitialize>
 		<UseWinUI>true</UseWinUI>-->
 		<UseMaui>true</UseMaui>
+		<SkipValidateMauiImplicitPackageReferences>true</SkipValidateMauiImplicitPackageReferences> 
 		<SingleProject>true</SingleProject>
 		<EnableDefaultItems>false</EnableDefaultItems>
 		<DisableImplicitFSharpCoreReference>true</DisableImplicitFSharpCoreReference>
@@ -32,7 +34,7 @@
 	</PropertyGroup>
 	<ItemGroup>
 		<None Include="Resources\Raw\plan_schema.pl" />
-		<None Include="readme.md" />
+		<None Include="writeup.md" />
 		<Content Include="scripts\BasePlanStructure.pl" />
 		<Content Include="scripts\PLANS.json" />
 		<None Include="scripts\packages.fsx" />
@@ -131,8 +133,6 @@
 		<PackageReference Include="FSharp.SystemTextJson" Version="1.4.36" />
 		<PackageReference Include="Lost.SemanticKernel.Connectors.Anthropic" Version="1.25.0-alpha3" />
 		<PackageReference Include="Microsoft.Extensions.Logging.Console" Version="9.0.11" />
-		<PackageReference Include="Microsoft.Maui.Controls" Version="9.0.120" />
-		<PackageReference Include="Microsoft.Maui.Controls.Compatibility" Version="9.0.120" />
 		<PackageReference Include="Microsoft.SemanticKernel" Version="1.68.0" />
 		<PackageReference Include="Microsoft.SemanticKernel.Connectors.Google" Version="1.68.0-alpha" />
 		<PackageReference Include="System.Net.Http" Version="4.3.4" />
@@ -142,7 +142,14 @@
 		<PackageReference Include="System.Text.RegularExpressions" Version="4.3.1" />
 		<PackageReference Update="FSharp.Core" Version="9.0.100" />
 	</ItemGroup>
-	
+
+	<ItemGroup>
+		<PackageReference Update="Microsoft.Maui" Version="9.0.120" />
+		<PackageReference Update="Microsoft.Maui.Core" Version="9.0.120" />
+		<PackageReference Update="Microsoft.Maui.Controls" Version="9.0.120" />
+		<PackageReference Update="Microsoft.Maui.Controls.Compatibility" Version="9.0.120" />
+	</ItemGroup>
+
 	<ItemGroup>
 	  <ProjectReference Include="..\..\..\RTFlow\RTFlow.fsproj" />
 	  <ProjectReference Include="..\..\..\RTOpenAI.Api\RTOpenAI.Api.fsproj" />
