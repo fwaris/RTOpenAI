@@ -30,9 +30,6 @@ valid_plan_for_military_veteran(Title, Lines, Features) :-
             sessionState = RTOpenAI.WebRTC.State.Disconnected
             log = []
             isActive = false
-            conversation = []
-            modelId = RTOpenAI.Api.C.OPENAI_RT_MODEL_GPT4O_MINI
-            item = ""
             hybridView = ViewRef<Microsoft.Maui.Controls.HybridWebView>()
             code = {CodeGenResp.Predicates=testConsult; CodeGenResp.Query=testQuery}
             fontSize = 11.0
@@ -63,8 +60,6 @@ valid_plan_for_military_veteran(Title, Lines, Features) :-
         | BackButtonPressed -> model, Navigation.navigateBack nav
         | Active -> {model with isActive = true},Cmd.none
         | InActive -> {model with isActive = false},Cmd.none
-        | ItemStarted -> {model with item=""}, Cmd.none
-        | ItemAdded txt -> {model with item = model.item + txt}, Cmd.none
         | SubmitCode -> model,Cmd.OfAsync.either submitCode (model.code,model.hybridView) Log_Append EventError
         | SetQuery q -> {model with code = {model.code with Query=q}}, Cmd.none
         | SetConsult q -> {model with code = {model.code with Predicates=q}}, Cmd.none

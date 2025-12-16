@@ -59,8 +59,6 @@ module Chat =
                 .alignStartHorizontal()
                 .gridColumn(0)
             (HStack() {
-                Button("+",FontLarger).background(Colors.Transparent).font(size=25.0, fontFamily=C.FONT_REG).textColor(Colors.Magenta)
-                Button("-",FontSmaller).background(Colors.Transparent).font(size=25.0, fontFamily=C.FONT_REG).textColor(Colors.Magenta)
             })
                 .gridColumn(1)
                 .centerHorizontal()
@@ -84,8 +82,8 @@ module Chat =
             .gridColumnSpan(2)
                         
     let logView (model:Model) =
-        ((Grid([Dimension.Star],[Dimension.Absolute 35.; Dimension.Star])) {
-            Button("Clear",Log_Clear)
+        ((Grid([Dimension.Star],[Dimension.Absolute 38.; Dimension.Star])) {
+            Button("Clear Log",Log_Clear)
                 .font(size=15.0)
                 .margin(1)
             ((CollectionView model.log)
@@ -98,32 +96,44 @@ module Chat =
         })
             .gridColumn(1)
             .gridRow(1)
+            .margin(1)
 
 
     let controlsView (model:Model) =
-        (Grid([Dimension.Star],[Dimension.Absolute 0.0;Dimension.Absolute 35.0;Dimension.Star; Dimension.Star]) {
+        (Grid(
+            [Dimension.Star],
+            [Dimension.Absolute 0.0 //hybrid view 
+             Dimension.Absolute 30.0 //label 
+             Dimension.Star          //pred edit
+             Dimension.Absolute 30.0 //label 
+             Dimension.Star          //query edit
+             Dimension.Absolute 38.0]) { //tool bar
             (HybridWebView())
                 .gridRow(0)
                 .reference(model.hybridView)
                 .margin(5.)
-            Button("Submit",SubmitCode)
-                .font(size=15.0)
-                .margin(1)
-                .centerVertical()               
-                .gridRow(1)
-                
+            Label("Predicates:").gridRow(1)            
             (Editor(model.code.Predicates,SetConsult))                                
                 .font(size=model.fontSize)
                 .gridRow(2)
-                .margin(5.)
-                .placeholder("consult")
-                .background(SolidColorBrush(if Controls.Application.Current.RequestedTheme = ApplicationModel.AppTheme.Light then Colors.Bisque else Colors.Navy))             
+                .margin(5,0,5,5)
+                .placeholder("predicates")
+                .background(SolidColorBrush(if Controls.Application.Current.RequestedTheme = ApplicationModel.AppTheme.Light then Colors.Bisque else Colors.Navy))
+            Label("Query:").gridRow(3)
             (Editor(model.code.Query,SetQuery))
                 .font(size=model.fontSize)
-                .gridRow(3)
-                .margin(5.)
+                .gridRow(4)
+                .margin(5,0,5,5)
                 .placeholder("query")
                 .background(SolidColorBrush(if Controls.Application.Current.RequestedTheme = ApplicationModel.AppTheme.Light then Colors.Bisque else Colors.Navy))
+            (HStack() {
+                Button("Submit",SubmitCode)
+                    .font(size=15.0)
+                    .margin(1,1,5,1)
+                    .centerVertical()
+                Button("+",FontLarger).background(Colors.Transparent).font(size=15.0, fontFamily=C.FONT_REG).textColor(Colors.Magenta).centerVertical()
+                Button("-",FontSmaller).background(Colors.Transparent).font(size=15.0, fontFamily=C.FONT_REG).textColor(Colors.Magenta).centerVertical()     
+            }).gridRow(5)               
         })
             .gridRow(1)
             .gridColumn(0)
@@ -135,7 +145,7 @@ module Chat =
                     (Grid([Dimension.Star; Dimension.Star],[Dimension.Absolute 53.0; Dimension.Star]) {
                         controlsView model
                         logView model
-                        headerView model //needed for android
+                        headerView model //needed at bottom for android
                     })
                         .margin(5.)
               )

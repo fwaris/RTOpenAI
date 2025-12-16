@@ -16,9 +16,6 @@ type Model =
         sessionState : RTOpenAI.WebRTC.State
         log : string list
         isActive : bool
-        conversation : string list
-        modelId : string
-        item : string
         hybridView : ViewRef<Microsoft.Maui.Controls.HybridWebView>
         code : CodeGenResp
         fontSize : float
@@ -39,8 +36,6 @@ and Msg =
     | Active
     | InActive
     | BackButtonPressed
-    | ItemStarted
-    | ItemAdded of string
     | SubmitCode
     | SetQuery of string
     | SetConsult of string
