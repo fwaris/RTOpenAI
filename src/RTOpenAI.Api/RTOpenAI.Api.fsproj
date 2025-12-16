@@ -1,9 +1,10 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
-  	<TargetFrameworks>net9.0-windows10.0.19041.0;</TargetFrameworks>
-		<TargetFrameworks Condition="$(TargetPlatformIdentifier) == 'android'">net9.0-android;</TargetFrameworks>
-		<TargetFrameworks Condition="$(TargetPlatformIdentifier) == 'ios' OR $(TargetPlatformIdentifier) == 'maccatalyst'">net9.0-ios;net9.0-maccatalyst;$(TargetFrameworks)</TargetFrameworks>
-		<TargetFrameworks Condition="$(TargetPlatformIdentifier) == 'windows'">net9.0-windows10.0.19041.0;$(TargetFrameworks)</TargetFrameworks>
+		<TargetFrameworks>net9.0-android</TargetFrameworks>
+		<!-- 
+		<TargetFrameworks>net9.0-ios;net9.0-maccatalyst;net9.0-android</TargetFrameworks>
+		<TargetFrameworks>net9.0-windows10.0.19041.0;net9.0-android</TargetFrameworks>
+		-->
     <OutputType>Library</OutputType>
     <TargetPlatformIdentifier Condition=" $(TargetPlatformIdentifier) == '' ">$([MSBuild]::GetTargetPlatformIdentifier('$(TargetFramework)'))</TargetPlatformIdentifier>
     <SupportedOSPlatformVersion Condition="$(TargetPlatformIdentifier) == 'ios'">15.0</SupportedOSPlatformVersion>

@@ -2,15 +2,17 @@
   "version": "2.0.0",
   "tasks": [
     {
-      "label": "RTOpenAI.Sample Win",
+      "label": "RTOpenAI.Sample Android",
       "type": "shell",
       //"command": "dotnet",
       "command": "dotnet",
       "args": [
-        "run",       
+        "build",       
         "${workspaceFolder}/src/Samples/Minimal/RTOpenAI.Sample",
+        "-t:Run",
         "-f",
-        "net9.0-windows10.0.19041.0"
+        "net9.0-android",
+        "-p:Configuration=Debug"
       ],      
       "problemMatcher": "$msCompile"
     },

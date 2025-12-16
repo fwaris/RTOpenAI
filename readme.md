@@ -27,13 +27,22 @@ In addition to the three projects mentioned above, the following projects are al
     - [Android Studio](https://developer.android.com/studio) for Android app target
     - OpenAI API Key
     - Anthropic API Key (for RT.Assistant sample)
-- F# Maui projects cannot be debugged currently with VS Code. You will need either [Visual Studio](https://visualstudio.microsoft.com/) or [JetBrains Rider](https://www.jetbrains.com/rider/). For MacOs, Rider is the only viable option.
-- Although you cannot debug in VS Code, you can launch the included samples apps using VS Code tasks included with solution.
-- Build twice if necessary. Sometimes Maui projects have to be built twice for build errors to go away
-- The solution cannot be built for all platforms as the same time so `dotnet build` at the solution root will not work. There are windows-only and IOS/MacCatalyst-specific projects that can only be built on their respective platforms.
+    - *F# Maui projects cannot be debugged currently with VS Code*. You will need either [Visual Studio](https://visualstudio.microsoft.com/) or [JetBrains Rider](https://www.jetbrains.com/rider/). Both have free editions. For MacOs, Rider is the only viable option.
 
-- When launching from the command line (or running in Visual Studio or Rider
-) specify the target framework. Specifically, the MacOS/IOS components cannot be built in Windows and Windows components cannot be built in MacOS. So on Windows you can build bwith 
+> ### Important Note:
+> You will have to update the `<TargetPlatforms>...</TargetPlatforms>` in the following `.fsproj` files, depending on which platform (MacOs,Windows) your are *building on* and what you are *targeting* (IOS,MacCatalyst,Android,Windows):
+> - [`RTOpenAI.Api.fsproj`](/src/RTOpenAI.Api/RTOpenAI.Api.fsproj)
+> - [`RTOpenAI.Sample.fsproj`](/src/Samples/Minimal/RTOpenAI.Sample/RTOpenAI.Sample.fsproj)
+> - [`RT.Assistant.fsproj`](/src/Samples//PlanSelection/RT.Assistant/RT.Assistant.fsproj)
+>
+> For example, if you are on MacOs then set `<TargetPlatforms>` to:
+> -  `net9.0-ios;net9.0-maccatalyst`
+> - On Windows use `net9.0-windows10.0.19041.0`
+> - Add `net9.0-android` to the list if you have Android Studio or Rider with the Android plugin installed.
+> - The default is `net9.0-android` as it can work on both MacOs and Windows.
+> - For convenience, commented-out versions of the `<TargetFrameworks>` are included in the `.fsproj` files.
+- Build twice if necessary. Sometimes Maui projects have to be built twice for build errors to go away
+- Note that `dotnet build` at the solution root level is not likely to succeed as there are too many variations possible. Instead set the `<TargetFrameworks>` and use targeted builds in Rider or Visual Studio.
 
 ## Acknowledgements
 
@@ -41,6 +50,6 @@ In addition to the three projects mentioned above, the following projects are al
 - [WebRTCme](https://github.com/melihercan/WebRTCme) - provided the base bindings for Maui WebRTC. These where modified (significantly for IOS) to make them work for RTOpenAI.
 - [Tau Prolog](http://tau-prolog.org/) - a javascript Prolog interpreter used in the RT.Assistant sample. 
 - Loïc Denuzière and others for [FSharp.SystemTextJson](https://github.com/Tarmil/FSharp.SystemTextJson) - for F# types definitions
- and the accompanying serialization/de-serialization logic needed to handle OpenAI realtime protocol messages in  strongly-typed way.
+ and the accompanying serialization/de-serialization logic needed to handle OpenAI realtime protocol messages in a strongly-typed way.
 - [SWI-Prolog](https://github.com/SWI-Prolog/swipl-devel) team for the base Prolog implementation that was instrumental in developing the Prolog-RAG approach used in RT.Assistant sample.
 
