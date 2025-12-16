@@ -63,7 +63,6 @@
 		<Compile Include="Model\Audio.fs" />
 		<Compile Include="Model\PlanQuery.fs" />
 		<Compile Include="Model\PlanFunctions.fs" />
-		<Compile Include="Model\PlanMachine.fs" />
 		<Compile Include="Agents\AnthropicClient.fs" />
 		<Compile Include="Agents\VoiceAgent.fs" />
 		<Compile Include="Agents\QueryService.fs" />
