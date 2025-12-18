@@ -41,7 +41,7 @@ module Connection =
     let defaultHandleServerEvent (connection:Connection) (ev:ServerEvent) =
         match ev with
         | ServerEvent.SessionCreated s ->
-            {SessionUpdateEvent.Default with
+            { SessionUpdate.Default with
                 event_id = Utils.newId()
                 session =
                     {s.session with

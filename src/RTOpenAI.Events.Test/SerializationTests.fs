@@ -133,7 +133,7 @@ let ``SessionUpdate serialization includes truncation`` () =
             truncation = Skippable.Include (Some truncationSettings) }
 
     let sessionUpdateEvent =
-        { SessionUpdateEvent.Default with
+        { SessionUpdate.Default with
             event_id = "event_trunc"
             session = sessionWithTruncation }
 
@@ -151,7 +151,7 @@ let ``SessionUpdate serialization includes truncation`` () =
     let postInstructions = truncationJson.GetProperty("token_limits").GetProperty("post_instructions").GetInt32()
     Assert.That(postInstructions, Is.EqualTo(5000))
 
-    let deserialized = JsonSerializer.Deserialize<SessionUpdateEvent>(json, SerDe.serOpts)
+    let deserialized = JsonSerializer.Deserialize<SessionUpdate>(json, SerDe.serOpts)
     if obj.ReferenceEquals(deserialized, null) then
         Assert.Fail("Expected round-trip SessionUpdateEvent")
 

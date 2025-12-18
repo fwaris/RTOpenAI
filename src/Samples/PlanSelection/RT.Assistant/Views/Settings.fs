@@ -10,8 +10,16 @@ open RT.Assistant
 
 module Settings =   
     type SettingsModel = { settings: Settings.SettingsModel; isActive : bool; hidden : bool}        
-    type SettingsMsg = BackButtonPressed | Active | InActive | Nop | ToggleVisbilty
-    
+    type SettingsMsg =
+        | BackButtonPressed
+        | Active
+        | InActive
+        | Nop
+        | ToggleVisibility
+        | Set_Key_Anthropic of string
+        | Set_Key_OpenAI of string
+        | Set_UseCodex of bool
+
     let init settings =
         { settings = settings; isActive=false; hidden = true}, Cmd.none        
 
@@ -22,7 +30,10 @@ module Settings =
         | Active -> {model with isActive = true}, Cmd.none
         | InActive -> {model with isActive = false}, Cmd.none
         | Nop -> model, Cmd.none
-        | ToggleVisbilty -> {model with hidden = not model.hidden}, Cmd.none        
+        | ToggleVisibility -> {model with hidden = not model.hidden}, Cmd.none
+        | Set_Key_Anthropic k -> model.settings.AnthropicKey <- k; model,Cmd.none
+        | Set_Key_OpenAI k -> model.settings.OpenAIKey <- k; model,Cmd.none
+        | Set_UseCodex v-> model.settings.UseCodex <- v; model,Cmd.none
 
     let subscribe (appMsgDispatcher: IAppMessageDispatcher) model =
         let localAppMsgSub dispatch =
@@ -43,18 +54,18 @@ module Settings =
             let! settings = EnvironmentObject(Settings.Values.settingsKey)
             let! model = Context.Mvu(program nav appMsDispatcher, settings) 
             (ContentPage(
-                Grid([Dimension.Absolute 100.0; Dimension.Star; Dimension.Absolute 55.0],
-                     [Dimension.Absolute 50.0;Dimension.Absolute 50.0;]) {
+                Grid([Dimension.Absolute 120.0; Dimension.Star; Dimension.Absolute 55.0],
+                     [Dimension.Absolute 50.0;Dimension.Absolute 50.0;Dimension.Absolute 50.0;]) {
                     Label($"OpenAI Key:")
                         .gridColumn(0)
                         .alignEndHorizontal()
                         .centerVertical()
                         .margin(2.)
-                    Entry(settings.OpenAIKey,(fun v -> settings.OpenAIKey <- v.Trim(); Nop))
+                    Entry(settings.OpenAIKey,Set_Key_OpenAI)
                        .gridColumn(1)
                        .isPassword(model.hidden)
                        .margin(2.)
-                    Button((if model.hidden then Icons.visible else Icons.visibility_off),ToggleVisbilty)
+                    Button((if model.hidden then Icons.visible else Icons.visibility_off), ToggleVisibility)
                         .gridColumn(2)
                         .font(size=25.0, fontFamily=C.FONT_SYMBOLS)
                         .background(Colors.Transparent)
@@ -66,10 +77,20 @@ module Settings =
                         .alignEndHorizontal()
                         .centerVertical()
                         .margin(2.)
-                    Entry(settings.AnthropicKey,(fun v -> settings.AnthropicKey <- v.Trim(); Nop))
+                    Entry(settings.AnthropicKey,Set_Key_Anthropic)
                        .gridRow(1)
                        .gridColumn(1)
                        .isPassword(model.hidden)
+                       .margin(2.)
+                    Label($"Use Codex for code gen:")
+                        .gridRow(2)
+                        .gridColumn(0)
+                        .alignEndHorizontal()
+                        .centerVertical()
+                        .margin(2.)
+                    CheckBox(settings.UseCodex,Set_UseCodex)
+                       .gridRow(2)
+                       .gridColumn(1)
                        .margin(2.)
                 })
                     .padding(5.)

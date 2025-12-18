@@ -1,10 +1,10 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
-		<TargetFrameworks>net9.0-android</TargetFrameworks>
-		<!-- 
-		<TargetFrameworks>net9.0-ios;net9.0-maccatalyst;net9.0-android</TargetFrameworks>
-		<TargetFrameworks>net9.0-windows10.0.19041.0;net9.0-android</TargetFrameworks>
-		-->
+    <TargetFrameworks>net9.0-windows10.0.19041.0;net9.0-android</TargetFrameworks>
+    <!-- 
+    <TargetFrameworks>net9.0-ios;net9.0-maccatalyst;net9.0-android</TargetFrameworks>
+    <TargetFrameworks>net9.0-windows10.0.19041.0;net9.0-android</TargetFrameworks>
+    -->
     <OutputType>Library</OutputType>
     <TargetPlatformIdentifier Condition=" $(TargetPlatformIdentifier) == '' ">$([MSBuild]::GetTargetPlatformIdentifier('$(TargetFramework)'))</TargetPlatformIdentifier>
     <SupportedOSPlatformVersion Condition="$(TargetPlatformIdentifier) == 'ios'">15.0</SupportedOSPlatformVersion>
@@ -14,9 +14,10 @@
     <TargetPlatformMinVersion Condition="$(TargetPlatformIdentifier) == 'windows'">10.0.17763.0</TargetPlatformMinVersion>
     <SupportedOSPlatformVersion Condition="$(TargetPlatformIdentifier) == 'tizen'">6.5</SupportedOSPlatformVersion>
     <UseMaui>true</UseMaui>
-    <UseMaui>true</UseMaui>
-		<SkipValidateMauiImplicitPackageReferences>true</SkipValidateMauiImplicitPackageReferences>
+    <SkipValidateMauiImplicitPackageReferences>true</SkipValidateMauiImplicitPackageReferences>
+    <PublishAot>false</PublishAot>
   </PropertyGroup>
+    
   <ItemGroup>
     <Compile Include="Constants.fs" />
     <Compile Include="RTOpenAI.Log.fs" />
@@ -24,30 +25,34 @@
     <Compile Include="WebRTC/IWebRtcClient.fs" />
     <Compile Include="WebRTC/WebRtcClient.IOS.fs" />
     <Compile Include="WebRTC/WebRtcClient.Android.fs" />
-    <Compile Include="WebRTC\WebRtcClient.Win.fs" />
+    <Compile Include="WebRTC/WebRtcClient.Win.fs" />
     <Compile Include="WebRTC/WebRTC.fs" />
-    <Compile Include="Api\Ext.fs" />
-    <Compile Include="Api\Connection.fs" />
+    <Compile Include="Api/Ext.fs" />
+    <Compile Include="Api/Connection.fs" />
   </ItemGroup>
+    
   <ItemGroup Condition="$(TargetPlatformIdentifier) == 'android'">
     <ProjectReference Include="..\Bindings\WebRTCme.Bindings.Maui.Android\WebRTCme.Bindings.Maui.Android.csproj" />
   </ItemGroup>
+    
   <ItemGroup Condition="$(TargetPlatformIdentifier) == 'ios' OR $(TargetPlatformIdentifier) == 'maccatalyst'">
     <ProjectReference Include="..\Bindings\WebRTCme.Bindings.Maui.iOS\WebRTCme.Bindings.Maui.iOS.csproj" />
   </ItemGroup>
-  <ItemGroup Condition="$(TargetPlatformIdentifier) == 'windows'">
-    <PackageReference Include="SIPSorcery" Version="8.0.22" />
-    <PackageReference Include="SIPSorceryMedia.Windows" Version="8.0.14" />
-  </ItemGroup>
-  <ItemGroup>
-    <PackageReference Include="Fabulous.MauiControls" Version="9.0.0-pre9" />
-    <PackageReference Include="FSharp.SystemTextJson" Version="1.4.36" />
-    <PackageReference Include="System.Text.Json" Version="9.0.2" />
-    <PackageReference Include="Microsoft.Extensions.Logging.Console" Version="9.0.11" />
-    <PackageReference Update="FSharp.Core" Version="9.0.303" />
-  </ItemGroup>
-
-	<ItemGroup>
+    
+   <ItemGroup Condition="$(TargetPlatformIdentifier) == 'windows'">
+        <PackageReference Include="SIPSorcery" Version="8.0.22" />
+        <PackageReference Include="SIPSorceryMedia.Windows" Version="8.0.14" />
+   </ItemGroup>
+    
+    <ItemGroup>
+        <PackageReference Include="Fabulous.MauiControls" Version="9.0.0-pre9" />
+        <PackageReference Include="FSharp.SystemTextJson" Version="1.4.36" />
+        <PackageReference Include="System.Text.Json" Version="9.0.2" />
+        <PackageReference Include="Microsoft.Extensions.Logging.Console" Version="9.0.11" />
+        <PackageReference Update="FSharp.Core" Version="9.0.303" />
+    </ItemGroup>
+    
+    <ItemGroup>
 		<PackageReference Update="Microsoft.Maui" Version="9.0.120" />
 		<PackageReference Update="Microsoft.Maui.Core" Version="9.0.120" />
 		<PackageReference Update="Microsoft.Maui.Controls" Version="9.0.120" />

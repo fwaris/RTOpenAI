@@ -82,28 +82,41 @@ module SerDe =
             //response
             | "response.created" -> ServerEvent.ResponseCreated(deserialize<ResponseCreated> j)
             | "response.done"    -> ServerEvent.ResponseDone(deserialize<ResponseDone> j)
-            | "response.output_item.added" -> ServerEvent.ResponseOutputItemAdded(deserialize<ResponseOutputItemEvent> j)
-            | "response.output_item.done" -> ServerEvent.ResponseOutputItemDone(deserialize<ResponseOutputItemEvent> j)
-            | "response.content_part.added" -> ServerEvent.ResponseContentPartAdded(deserialize<ResponseContentPartEvent> j)
-            | "response.content_part.done" -> ServerEvent.ResponseContentPartDone(deserialize<ResponseContentPartEvent> j)            
-            | "response.output_text.delta" -> ServerEvent.ResponseOutputTextDelta(deserialize<ResponseOutputTextDeltaEvent> j)
-            | "response.output_text.done" -> ServerEvent.ResponseOutputTextDone(deserialize<ResponseOutputTextDoneEvent> j)
-            | "response.output_audio_transcript.delta" -> ServerEvent.ResponseOutputAudioTranscriptDelta(deserialize<ResponseOutputAudioTranscriptDeltaEvent> j)
-            | "response.output_audio_transcript.done" -> ServerEvent.ResponseOutputAudioTranscriptDone(deserialize<ResponseOutputAudioTranscriptDoneEvent> j)
-            | "response.output_audio.delta" -> ServerEvent.ResponseOutputAudioDelta(deserialize<ResponseOutputAudioDeltaEvent> j)
-            | "response.output_audio.done" -> ServerEvent.ResponseOutputAudioDone(deserialize<ResponseOutputAudioDoneEvent> j)
-            | "response.function_call_arguments.delta" -> ServerEvent.ResponseFunctionCallArgumentsDelta(deserialize<ResponseFunctionCallArgumentsDeltaEvent> j)
-            | "response.function_call_arguments.done" -> ServerEvent.ResponseFunctionCallArgumentsDone(deserialize<ResponseFunctionCallArgumentsDoneEvent> j)
-            | "response.mcp_call_arguments.delta" -> ServerEvent.ResponseMcpCallArgumentsDelta(deserialize<ResponseMcpCallArgumentsDeltaEvent> j)
-            | "response.mcp_call_arguments.done" -> ServerEvent.ResponseMcpCallArgumentsDone(deserialize<ResponseMcpCallArgumentsDoneEvent> j)
-            | "response.mcp_call.in_progress" -> ServerEvent.ResponseMcpCallInProgress(deserialize<ResponseMcpEvent> j)
-            | "response.mcp_call.completed" -> ServerEvent.ResponseMcpCallCompleted(deserialize<ResponseMcpEvent> j)
-            | "response.mcp_call.failed" -> ServerEvent.ResponseMcpCallFailed(deserialize<ResponseMcpEvent> j)
-            | "mcp_list_tools.in_progress" -> ServerEvent.ResponseMcpListToolsInProgress(deserialize<ResponseMcpEvent> j)
-            | "mcp_list_tools.completed" -> ServerEvent.ResponseMcpListToolsCompleted(deserialize<ResponseMcpEvent> j)
-            | "mcp_list_tools.failed" -> ServerEvent.ResponseMcpListToolsFailed(deserialize<ResponseMcpEvent> j)
+            | "response.output_item.added" -> ServerEvent.ResponseOutputItemAdded(deserialize<ResponseOutputItem> j)
+            | "response.output_item.done" -> ServerEvent.ResponseOutputItemDone(deserialize<ResponseOutputItem> j)
+            | "response.content_part.added" -> ServerEvent.ResponseContentPartAdded(deserialize<ResponseContentPart> j)
+            | "response.content_part.done" -> ServerEvent.ResponseContentPartDone(deserialize<ResponseContentPart> j)            
+            | "response.output_text.delta" -> ServerEvent.ResponseOutputTextDelta(deserialize<ResponseOutputTextDelta> j)
+            | "response.output_text.done" -> ServerEvent.ResponseOutputTextDone(deserialize<ResponseOutputTextDone> j)
+            | "response.output_audio_transcript.delta" -> ServerEvent.ResponseOutputAudioTranscriptDelta(deserialize<
+                                                                                                             ResponseOutputAudioTranscriptDelta
+                                                                                                             > j)
+            | "response.output_audio_transcript.done" -> ServerEvent.ResponseOutputAudioTranscriptDone(deserialize<
+                                                                                                           ResponseOutputAudioTranscriptDone
+                                                                                                           > j)
+            | "response.output_audio.delta" -> ServerEvent.ResponseOutputAudioDelta(deserialize<ResponseOutputAudioDelta
+                                                                                        > j)
+            | "response.output_audio.done" -> ServerEvent.ResponseOutputAudioDone(deserialize<ResponseOutputAudioDone> j)
+            | "response.function_call_arguments.delta" -> ServerEvent.ResponseFunctionCallArgumentsDelta(deserialize<
+                                                                                                             ResponseFunctionCallArgumentsDelta
+                                                                                                             > j)
+            | "response.function_call_arguments.done" -> ServerEvent.ResponseFunctionCallArgumentsDone(deserialize<
+                                                                                                           ResponseFunctionCallArgumentsDone
+                                                                                                           > j)
+            | "response.mcp_call_arguments.delta" -> ServerEvent.ResponseMcpCallArgumentsDelta(deserialize<
+                                                                                                   ResponseMcpCallArgumentsDelta
+                                                                                                   > j)
+            | "response.mcp_call_arguments.done" -> ServerEvent.ResponseMcpCallArgumentsDone(deserialize<
+                                                                                                 ResponseMcpCallArgumentsDone
+                                                                                                 > j)
+            | "response.mcp_call.in_progress" -> ServerEvent.ResponseMcpCallInProgress(deserialize<ResponseMcp> j)
+            | "response.mcp_call.completed" -> ServerEvent.ResponseMcpCallCompleted(deserialize<ResponseMcp> j)
+            | "response.mcp_call.failed" -> ServerEvent.ResponseMcpCallFailed(deserialize<ResponseMcp> j)
+            | "mcp_list_tools.in_progress" -> ServerEvent.ResponseMcpListToolsInProgress(deserialize<ResponseMcp> j)
+            | "mcp_list_tools.completed" -> ServerEvent.ResponseMcpListToolsCompleted(deserialize<ResponseMcp> j)
+            | "mcp_list_tools.failed" -> ServerEvent.ResponseMcpListToolsFailed(deserialize<ResponseMcp> j)
             //others
-            | "rate_limits.updated" -> ServerEvent.RateLimitsUpdated (deserialize<RateLimitsUpdatedEvent> j)
+            | "rate_limits.updated" -> ServerEvent.RateLimitsUpdated (deserialize<RateLimitsUpdated> j)
             | x -> ServerEvent.UnknownEvent (eventType,j)
         with ex -> 
             ServerEvent.EventHandlingError (eventType,ex.Message,j)

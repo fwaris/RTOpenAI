@@ -14,7 +14,7 @@ open System.Text.Json.Serialization
 - Strongly typed properties and json converters added manually
 - o1 missed response.audio_... and later events (maybe due to token limit set in the codegen api call)
 
-- Update: Manually updated to match API changes
+- Update: Manually updated to match OpenAI realtime API version change
 *)
 
 module Utils =
@@ -32,7 +32,7 @@ type InputAudioTranscription =
     {
         model: string
     }
-    static member Default = { model = "whisper-1"}
+    static member Default = { model = "gpt-4o-mini-transcribe"}
 
 type TurnDetection =
     {
@@ -111,7 +111,9 @@ type Transcription = {
     UnionTagName = "type",
     UnionUnwrapRecordCases = true
 )>]
-type VAD =
+
+//voice activity detection
+type VAD = 
     | [<JsonName "server_vad">] Server_Vad of
                     {|create_response     : bool
                       idle_timeout_ms     : Skippable<int option>
@@ -131,6 +133,7 @@ type VAD =
     UnionTagName = "type",
     UnionUnwrapRecordCases = true
 )>]
+
 [<RequireQualifiedAccess>]
 type AudioFormat =
     | [<JsonName("audio/pcm")>] PCM of {|rate:int|} //24000
@@ -282,7 +285,7 @@ type Usage = {
 
 /// Send this event to update the session’s default configuration.
 [<JsonFSharpConverter>]
-type SessionUpdateEvent =
+type SessionUpdate =
     {
         event_id: string
         ``type``: string  // "session.update"
@@ -291,7 +294,7 @@ type SessionUpdateEvent =
     static member Default = { event_id = ""; ``type`` = "session.update"; session = Session.Default }
 
 ///Send this event to append audio bytes to the input audio buffer.
-type InputAudioBufferAppendEvent =
+type InputAudioBufferAppend =
     {
         event_id: string
         ``type``: string  // "input_audio_buffer.append"
@@ -300,7 +303,7 @@ type InputAudioBufferAppendEvent =
     static member Default = { event_id = ""; ``type`` = "input_audio_buffer.append"; audio = "" }
 
 ///Send this event to commit audio bytes to a user message.
-type InputAudioBufferCommitEvent =
+type InputAudioBufferCommit =
     {
         event_id: string
         ``type``: string  // "input_audio_buffer.commit"
@@ -308,7 +311,7 @@ type InputAudioBufferCommitEvent =
     static member Default = { event_id = ""; ``type`` = "input_audio_buffer.commit" }
 
 ///Send this event to clear the audio bytes in the buffer.
-type InputAudioBufferClearEvent =
+type InputAudioBufferClear =
     {
         event_id: string
         ``type``: string  // "input_audio_buffer.clear"
@@ -316,7 +319,7 @@ type InputAudioBufferClearEvent =
     static member Default = { event_id = ""; ``type`` = "input_audio_buffer.clear" }
 
 ///Send this event when adding an item to the conversation.
-type ConversationItemCreateEvent =
+type ConversationItemCreate =
     {
         event_id: string
         ``type``: string  // "conversation.item.create"
@@ -330,7 +333,7 @@ type ConversationItemCreateEvent =
                               }
 
 ///Send this event when adding an item to the conversation.
-type ConversationItemRetrieveEvent =
+type ConversationItemRetrieve =
     {
         event_id: string
         item_id : string
@@ -340,7 +343,7 @@ type ConversationItemRetrieveEvent =
 
 
 ///Send this event when you want to truncate a previous assistant message’s audio.
-type ConversationItemTruncateEvent =
+type ConversationItemTruncate =
     {
         event_id: string
         ``type``: string  // "conversation.item.truncate"
@@ -350,7 +353,7 @@ type ConversationItemTruncateEvent =
     }
     static member Default = { event_id = ""; ``type`` = "conversation.item.truncate"; item_id = ""; content_index = 0; audio_end_ms = 0 }
 
-type OutputAudioBufferClearEvent = {
+type OutputAudioBufferClear = {
     event_id : string
     response_id : string
     ``type`` : string
@@ -358,7 +361,7 @@ type OutputAudioBufferClearEvent = {
 with static member Default = {event_id=""; ``type``="response.cancel"; response_id=""}
 
 ///Send this event when you want to remove any item from the conversation history.
-type ConversationItemDeleteEvent =
+type ConversationItemDelete =
     {
         event_id: string
         ``type``: string  // "conversation.item.delete"
@@ -367,7 +370,7 @@ type ConversationItemDeleteEvent =
     static member Default = { event_id = ""; ``type`` = "conversation.item.delete"; item_id = "" }
 
 ///Send this event to trigger a response generation.
-type ResponseCreateEvent =
+type ResponseCreate =
     {
         event_id: string
         ``type``: string  // "response.create"
@@ -376,7 +379,7 @@ type ResponseCreateEvent =
     static member Default = { event_id = ""; ``type`` = "response.create"; response = Skip }
 
 ///Send this event to cancel an in-progress response.
-type ResponseCancelEvent =
+type ResponseCancel =
     {
         event_id: string
         ``type``: string  // "response.cancel"
@@ -515,7 +518,7 @@ type Response =
 
 // Server Event Record Types
 
-///These are events emitted from the OpenAI Realtime WebSocket server to the client.
+///These are events emitted from the OpenAI Realtime server to the client.
 type Error =
     {
         event_id: string
@@ -711,7 +714,7 @@ type ResponseDone =
 
 ///Returned when a new Item is created during response generation.
 ///Also when an Item is done streaming. Also emitted when a Response is interrupted, incomplete, or cancelled.
-type ResponseOutputItemEvent =
+type ResponseOutputItem =
     {
         event_id: string
         item: ConversationItem
@@ -722,7 +725,7 @@ type ResponseOutputItemEvent =
 
 ///Returned when a new content part is added to an assistant message item during response generation.
 ///Also when a content part is done streaming in an assistant message item. Also emitted when a Response is interrupted, incomplete, or cancelled.
-type ResponseContentPartEvent =
+type ResponseContentPart =
     {
         content_index: int
         event_id: string
@@ -734,7 +737,7 @@ type ResponseContentPartEvent =
     }
 
 ///Returned when the text value of a "text" content part is updated.
-type ResponseOutputTextDeltaEvent =
+type ResponseOutputTextDelta =
     {
         content_index: int
         delta: string
@@ -746,7 +749,7 @@ type ResponseOutputTextDeltaEvent =
     }
 
 ///Returned when the text value of a "text" content part is done streaming. Also emitted when a Response is interrupted, incomplete, or cancelled.
-type ResponseOutputTextDoneEvent =
+type ResponseOutputTextDone =
     {
         content_index: int
         event_id: string
@@ -758,7 +761,7 @@ type ResponseOutputTextDoneEvent =
     }
 
 ///Returned when the model-generated transcription of audio output is updated.
-type ResponseOutputAudioTranscriptDeltaEvent =
+type ResponseOutputAudioTranscriptDelta =
     {
         content_index: int
         delta: string
@@ -770,7 +773,7 @@ type ResponseOutputAudioTranscriptDeltaEvent =
     }
 
 ///Returned when the model-generated transcription of audio output is done streaming. Also emitted when a Response is interrupted, incomplete, or cancelled.
-type ResponseOutputAudioTranscriptDoneEvent =
+type ResponseOutputAudioTranscriptDone =
     {
         content_index: int
         event_id: string
@@ -783,7 +786,7 @@ type ResponseOutputAudioTranscriptDoneEvent =
 
 
 ///Returned when the model-generated function call arguments are done streaming. Also emitted when a Response is interrupted, incomplete, or cancelled.
-type ResponseFunctionCallArgumentsDoneEvent = 
+type ResponseFunctionCallArgumentsDone = 
     {
         arguments: string
         call_id: string
@@ -795,7 +798,7 @@ type ResponseFunctionCallArgumentsDoneEvent =
     }
 
 ///Returned when the model-generated audio is done. Also emitted when a Response is interrupted, incomplete, or cancelled.
-type ResponseFunctionCallArgumentsDeltaEvent = 
+type ResponseFunctionCallArgumentsDelta = 
     {
         call_id: string
         delta: string
@@ -807,7 +810,7 @@ type ResponseFunctionCallArgumentsDeltaEvent =
     }
 
 ///Returned when the model-generated audio is updated.
-type ResponseOutputAudioDeltaEvent = 
+type ResponseOutputAudioDelta = 
     {
         content_index: int
         delta: string
@@ -819,7 +822,7 @@ type ResponseOutputAudioDeltaEvent =
     }
 
 ///Returned when the model-generated audio is done. Also emitted when a Response is interrupted, incomplete, or cancelled.
-type ResponseOutputAudioDoneEvent = 
+type ResponseOutputAudioDone = 
     {
         content_index: int
         event_id: string
@@ -829,7 +832,7 @@ type ResponseOutputAudioDoneEvent =
         ``type``: string //response.output_audio.done
     }
  
-type ResponseMcpCallArgumentsDeltaEvent =
+type ResponseMcpCallArgumentsDelta =
     {
         delta : string
         event_id : string
@@ -840,7 +843,7 @@ type ResponseMcpCallArgumentsDeltaEvent =
         ``type`` : string
     }
     
-type ResponseMcpCallArgumentsDoneEvent =
+type ResponseMcpCallArgumentsDone =
     {
         arguments : string
         event_id : string
@@ -851,7 +854,7 @@ type ResponseMcpCallArgumentsDoneEvent =
     }
     
 //overloaded for multiple mcp events
-type ResponseMcpEvent =
+type ResponseMcp =
     {    
         event_id : string
         item_id : string
@@ -869,7 +872,7 @@ type RateLimit =
     }
  
 ///Emitted after every "response.done" event to indicate the updated rate limits.
-type RateLimitsUpdatedEvent =
+type RateLimitsUpdated =
     {
         event_id: string
         rate_limits: RateLimit list
@@ -972,43 +975,45 @@ type ServerEvent =
     //response
     | ResponseCreated of ResponseCreated
     | ResponseDone of ResponseDone
-    | ResponseOutputItemAdded of ResponseOutputItemEvent
-    | ResponseOutputItemDone of ResponseOutputItemEvent
-    | ResponseContentPartAdded of ResponseContentPartEvent
-    | ResponseContentPartDone of ResponseContentPartEvent
-    | ResponseOutputTextDelta of ResponseOutputTextDeltaEvent
-    | ResponseOutputTextDone of ResponseOutputTextDoneEvent
-    | ResponseOutputAudioTranscriptDelta of ResponseOutputAudioTranscriptDeltaEvent
-    | ResponseOutputAudioTranscriptDone of ResponseOutputAudioTranscriptDoneEvent
-    | ResponseOutputAudioDelta of ResponseOutputAudioDeltaEvent
-    | ResponseOutputAudioDone of ResponseOutputAudioDoneEvent
-    | ResponseFunctionCallArgumentsDelta of ResponseFunctionCallArgumentsDeltaEvent
-    | ResponseFunctionCallArgumentsDone of ResponseFunctionCallArgumentsDoneEvent
-    | ResponseMcpCallArgumentsDelta of ResponseMcpCallArgumentsDeltaEvent
-    | ResponseMcpCallArgumentsDone of ResponseMcpCallArgumentsDoneEvent
-    | ResponseMcpCallInProgress of ResponseMcpEvent
-    | ResponseMcpCallCompleted of ResponseMcpEvent
-    | ResponseMcpCallFailed of ResponseMcpEvent
-    | ResponseMcpListToolsInProgress of ResponseMcpEvent
-    | ResponseMcpListToolsCompleted of ResponseMcpEvent
-    | ResponseMcpListToolsFailed of ResponseMcpEvent    
-    //others
-    | RateLimitsUpdated of RateLimitsUpdatedEvent
-    | UnknownEvent of string * JsonDocument
-    | EventHandlingError of string*string*JsonDocument
+    | ResponseOutputItemAdded of ResponseOutputItem
+    | ResponseOutputItemDone of ResponseOutputItem
+    | ResponseContentPartAdded of ResponseContentPart
+    | ResponseContentPartDone of ResponseContentPart
+    | ResponseOutputTextDelta of ResponseOutputTextDelta
+    | ResponseOutputTextDone of ResponseOutputTextDone
+    | ResponseOutputAudioTranscriptDelta of ResponseOutputAudioTranscriptDelta
+    | ResponseOutputAudioTranscriptDone of ResponseOutputAudioTranscriptDone
+    | ResponseOutputAudioDelta of ResponseOutputAudioDelta
+    | ResponseOutputAudioDone of ResponseOutputAudioDone
+    | ResponseFunctionCallArgumentsDelta of ResponseFunctionCallArgumentsDelta
+    | ResponseFunctionCallArgumentsDone of ResponseFunctionCallArgumentsDone
+    | ResponseMcpCallArgumentsDelta of ResponseMcpCallArgumentsDelta
+    | ResponseMcpCallArgumentsDone of ResponseMcpCallArgumentsDone
+    | ResponseMcpCallInProgress of ResponseMcp
+    | ResponseMcpCallCompleted of ResponseMcp
+    | ResponseMcpCallFailed of ResponseMcp
+    | ResponseMcpListToolsInProgress of ResponseMcp
+    | ResponseMcpListToolsCompleted of ResponseMcp
+    | ResponseMcpListToolsFailed of ResponseMcp
 
+    //others
+    | RateLimitsUpdated of RateLimitsUpdated
+    ///No predefined type can be mapped to this event
+    | UnknownEvent of string * JsonDocument
+    ///Error occured while trying to parse the event. Usually it's a serialization error.
+    | EventHandlingError of string*string*JsonDocument
 
 [<RequireQualifiedAccess>]
 type ClientEvent =
-    | SessionUpdate of SessionUpdateEvent
-    | InputAudioBufferAppend of InputAudioBufferAppendEvent
-    | InputAudioBufferCommit of InputAudioBufferCommitEvent
-    | InputAudioBufferClear of InputAudioBufferClearEvent
-    | ConversationItemCreate of ConversationItemCreateEvent
-    | ConversationItemRetrieve of ConversationItemRetrieveEvent
-    | ConversationItemTruncate of ConversationItemTruncateEvent
-    | ConversationItemDelete of ConversationItemDeleteEvent
-    | ResponseCreate of ResponseCreateEvent
-    | ResponseCancel of ResponseCancelEvent
-    | OutputAudioBufferClear of OutputAudioBufferClearEvent
+    | SessionUpdate of SessionUpdate
+    | InputAudioBufferAppend of InputAudioBufferAppend
+    | InputAudioBufferCommit of InputAudioBufferCommit
+    | InputAudioBufferClear of InputAudioBufferClear
+    | ConversationItemCreate of ConversationItemCreate
+    | ConversationItemRetrieve of ConversationItemRetrieve
+    | ConversationItemTruncate of ConversationItemTruncate
+    | ConversationItemDelete of ConversationItemDelete
+    | ResponseCreate of ResponseCreate
+    | ResponseCancel of ResponseCancel
+    | OutputAudioBufferClear of OutputAudioBufferClear
 

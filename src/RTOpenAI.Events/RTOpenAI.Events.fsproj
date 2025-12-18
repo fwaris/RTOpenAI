@@ -8,6 +8,7 @@
   <ItemGroup>
     <Compile Include="Events.fs" />
     <Compile Include="SerDe.fs" />
+    <Content Include="readme.md" />
   </ItemGroup>
 
   <ItemGroup>

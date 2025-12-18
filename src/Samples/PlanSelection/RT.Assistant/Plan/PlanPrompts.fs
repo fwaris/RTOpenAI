@@ -7,6 +7,7 @@ type CodeGenResp =
     Predicates: string
     Query: string
   }
+  with static member Default = {Predicates="";Query=""}
 
 module PlanPrompts =
 
@@ -71,7 +72,7 @@ The plan names are:
 PROLOG_GENERATION_RULES:
 Generally, if the number of lines is mentioned assume its the minimum number of lines the customer needs.
 Likewise, unless specified, assume a given price is the maximum price. Other rules:
-- Don't filter on dec("...") fields, only retrieve desc values as and when needed.
+- Don't filter on desc("...") fields, only retrieve desc values as and when needed.
 - Do not use writeln in Proloq queries.
 - Refer to PLAN_TEMPLATE for description of Features as the structure of each feature type is different
 - Remember that the list of lines is under 'lines', e.g. lines([(line(...), ...])
@@ -82,14 +83,14 @@ Likewise, unless specified, assume a given price is the maximum price. Other rul
 - Assume Prolog engine to be the ISO compliant tau prolog with the list module loaded
 - Optionally generate predicates (i.e. `consult` code) to make queries less complex and to avoid retrieving intermediate variable values.
 - To find the price for a number lines use monthly_price for that number of lines. No accumulation is needed. 
-- Instead of accumulating all solutions explicitly, rely on the Prolog system to get all solutions. Generate the query/predicates that can a solution.
+- Instead of accumulating all solutions explicitly, rely on the Prolog system to get all solutions. Generate the query/predicates to 'solve' the query.
 
 Respond with the following JSON structure:
 ```{{
   "Query" : "...",
   "Predicates" : "..."
 }}```
-Ensure any predicates are returned int Predicates field and the query is return in Query. 
+Ensure any predicates are returned in Predicates field and the query is return in Query. 
 """)
   
   let fixCodePrompt (code:string) (err:string) = $"""
@@ -120,18 +121,18 @@ The PLAN_TEMPLATE 'features' list contains all available feature types.
 Individual plans will have a subset of the available features.
 Note that a feature attached to plan may apply to all lines (e.g. ```applies_to_lines(all)``` or to a subset of lines e.g. ``` applies_to_lines(lines(1,1))```.
 
-You can user your knowledge of the plans above to ask probing questions to narrow down the choices.
+You can user your knowledge of the PLAN_TEMPLATE above to ask probing questions to narrow down the choices.
 
 The plan categories are: {planCategories}
 The plan names are:
 {planNames}
 
-To query for available plans and related info, invoke the function 'planQuery' as and when required.
+To query for available plans and related info, invoke the `planQuery` tool as and when required.
 Don't generate Prolog code; just generate the instructions.
 
-Answer Plan questions from only the retrieved plan information from function call results.
+Answer plan questions from only the tool call results and the high level plan information given earlier.
 
-Invoke the planDetails functions as often as needed to retrieve additional details about a specific plan.
+Invoke the `planDetails` tool to retrieve additional details about a specific plan.
 
 If the user substantially changes the query then use the planQuery function again to fresh results.
 

@@ -20,6 +20,8 @@ module StateMachine =
         CodeGenAgent.start ss.viewRef ss.bus
         VoiceAgent.start ss.conn ss.bus
     }
+    
+    /// log that a message was ignored in some state
     let ignoreMsg s msg name =
         Log.warn $"{name}: ignored message {msg}"
         F(s,[])
@@ -34,15 +36,13 @@ module StateMachine =
         |> Async.Start
         F(s_terminate ss, [Ag_FlowDone {|abnormal=isAbnormal|}])
           
-    /// log that a message was ignored in some state
-    
     and (|Txn|M|)  (s_ret,ss:SubState,msg) = //common message processing for each state
         match msg with
-        | W_Err e                       -> Txn(terminate true ss)                            //error: switch to s_terminate; send error to app
-        | W_Msg (Fl_Usage usg)          -> let ss = {ss with usage = Usage.combineUsage ss.usage usg}               //accumulate token usage
+        | W_Err e                       -> Txn(terminate true ss)          //error: switch to s_terminate; send error to app
+        | W_Msg (Fl_Usage usg)          -> let ss = {ss with usage = Usage.combineUsage ss.usage usg}  //accumulate token usage
                                            Txn(F(s_ret ss, []))                  
         | W_Msg (Fl_Terminate x)        -> Txn(terminate x.abnormal ss)    //done: switch to s_terminate; send results to app
-        | W_Msg msg                     -> M msg                                                                   //to be handled by the current state 
+        | W_Msg msg                     -> M msg                           //to be handled by the current state 
 
     and s_start ss msg = async {
         Log.info $"{nameof s_start}"

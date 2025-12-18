@@ -1,7 +1,9 @@
 namespace RT.Assistant.WorkFlow
 
+open RT.Assistant.Plan
+
 module CodeGenPrompts =
-    let sysMsg = lazy($"""
+    let planTemplate = lazy($"""
 You are given a collection of phone plans as Prolog language 'facts' (i.e. a plan database).
 Each plan matches the plan structure given in PLAN_TEMPLATE.
 Your goal is to convert a natural language query - given in the field `query` - into equivalent Prolog code.
@@ -17,12 +19,16 @@ P = Current monthly price for the N number of lines (i.e. the sale price)
 O = Original price (i.e. not the current sale price). Ignore this price
 The PLAN_TEMPLATE 'features' list contains all available feature types.
 Individual plans will have a subset of the available features.
-Note that a feature attached to plan may apply to all lines (e.g. ```applies_to_lines(all)``` or to a subset of lines e.g. ``` applies_to_lines(lines(1,1))```.
+Note that a feature attached to plan may apply to all lines (e.g. `applies_to_lines(all)` or to a subset of lines e.g. ` applies_to_lines(lines(1,5))`, i.e. `applies_to_lines(LOWER_BOUND,UPPER_BOUND)`.
 See PLAN_TEMPLATE for a list of available features of a plan.
 
 The plan categories are: {RT.Assistant.Plan.PlanPrompts.planCategories}
 The plan names are:
-{RT.Assistant.Plan.PlanPrompts.planNames}
+{RT.Assistant.Plan.PlanPrompts.planNames}                            
+ """)    
+        
+    let sysMsg = lazy($"""
+{planTemplate.Value}
 
 PROLOG_GENERATION_RULES:
 Generally, if the number of lines is mentioned assume its the minimum number of lines the customer needs.
@@ -39,6 +45,7 @@ Likewise, unless specified, assume a given price is the maximum price. Other rul
 - Optionally generate predicates (i.e. `consult` code) to make queries less complex and to avoid retrieving intermediate variable values.
 - To find the price for a number lines use monthly_price for that number of lines. No accumulation is needed. 
 - Instead of accumulating all solutions explicitly, rely on the Prolog system to get all solutions. Generate the query/predicates that can a solution.
+- To the extent possible, try to reduce the content returned by the query so that its easily understood. Avoid queries that dump the entire database.
 
 Respond with the following JSON structure:
 ```{{
@@ -61,4 +68,8 @@ ERROR```
 {err}
 ```
 """
-      
+    let summarizationPrompt = lazy($"""
+{planTemplate.Value}
+Given the fields `query`, `generatedCode` and `prologResults`, summarize the results in relation to the query.
+`query` is a natural language query from with the Prolog code was generated and evaluated.
+ """)

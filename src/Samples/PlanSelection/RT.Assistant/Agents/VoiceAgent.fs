@@ -22,16 +22,17 @@ module VoiceAgent =
     
     //sends 'response.create' to prompt the LLM to generate audio (otherwise it seems to wait).
     let sendResponseCreate conn=
-        (ClientEvent.ResponseCreate {ResponseCreateEvent.Default with
+        (ClientEvent.ResponseCreate { ResponseCreate.Default with
                                         event_id = Utils.newId()
                                         //response.modalities = Some [M_AUDIO; M_TEXT]
                                         })
         |> Api.Connection.sendClientEvent conn
                 
-    let inline sendFunctionResponse conn (callId:CallId) result =
+    let inline sendFunctionResponse conn (callId:CallId) result =        
         let rslt = JsonSerializer.Serialize(result)
+        debug result
         let outEv =
-            { ConversationItemCreateEvent.Default with
+            { ConversationItemCreate.Default with
                 item = ConversationItem.Function_call_output
                             (ContentFunctionCallOutput.Create callId.id rslt)
             }
@@ -84,21 +85,10 @@ module VoiceAgent =
             tool_choice = Include "auto"            
             tools = Include voiceFunctions
             expires_at = Skip
-            audio = Include {Audio.Default with
-                                input = Include {AudioInput.Default with
-                                                   transcription = {
-                                                      language = "en"
-                                                      model = "gpt-4o-mini-transcribe"
-                                                      prompt = Some "Expect words related to phone plans"
-                                                   }
-                                                   |> Some
-                                                   |> Include
-                                                 }                                
-            }
         }
         
     let toUpdateEvent (s:Session) =
-        { SessionUpdateEvent.Default with
+        { SessionUpdate.Default with
             event_id = Utils.newId()
             session = s}
         |> ClientEvent.SessionUpdate
@@ -109,22 +99,22 @@ module VoiceAgent =
         |> toUpdateEvent
         |> Api.Connection.sendClientEvent conn
             
-    let  isRunQuery (ev:ResponseOutputItemEvent) =
+    let  isRunQuery (ev: ResponseOutputItem) =
         match ev.item with
         | Function_call fc when fc.name = PLAN_QUERY_FUNCTION -> true
         | _ -> false
 
-    let isGetPlanDetails (ev:ResponseOutputItemEvent) =
+    let isGetPlanDetails (ev: ResponseOutputItem) =
         match ev.item with
         | Function_call fc when fc.name = PLAN_DETAILS_FUNCTION -> true
         | _ -> false
         
-    let  getQuery (ev:ResponseOutputItemEvent) =
+    let  getQuery (ev: ResponseOutputItem) =
         match ev.item with
-        | Function_call fc when fc.name = PLAN_QUERY_FUNCTION -> CallId fc.call_id, fc.arguments
+        | Function_call fc when fc.name = PLAN_QUERY_FUNCTION -> {CodeGenReq.callId=CallId fc.call_id; query= fc.arguments}
         | _ -> failwith "no query: incorrect response type"
             
-    let  getPlanTitle (ev:ResponseOutputItemEvent) =
+    let  getPlanTitle (ev: ResponseOutputItem) =
         match ev.item with
         | Function_call fc when fc.name = PLAN_DETAILS_FUNCTION ->
             CallId fc.call_id, fc.arguments
@@ -151,9 +141,21 @@ module VoiceAgent =
     let startVoice (conn:RTOpenAI.Api.Connection) (bus:WBus<FlowMsg, AgentMsg>) = async {
         let initState = VoState.Create bus
         if conn.WebRtcClient.State.IsDisconnected then
-                let keyReq = KeyReq.Default                
-                let! ephemKey = Connection.getEphemeralKey (Settings.Values.openaiKey()) keyReq |> Async.AwaitTask
-                do! Connection.connect ephemKey conn |> Async.AwaitTask
+            let audio = {Audio.Default with
+                            input = Include {AudioInput.Default with
+                                               transcription = {
+                                                  language = "en"
+                                                  model = "gpt-4o-mini-transcribe"
+                                                  prompt = Some "Expect words related to phone plans"
+                                               }
+                                               |> Some
+                                               |> Include
+                                             }                                
+                            }
+            let keyReq = {KeyReq.Default with
+                                session = {KeyReq.Default.session with audio = Include audio}}                                                       
+            let! ephemKey = Connection.getEphemeralKey (Settings.Values.openaiKey()) keyReq |> Async.AwaitTask
+            do! Connection.connect ephemKey conn |> Async.AwaitTask
         let comp = 
             conn.WebRtcClient.OutputChannel.Reader.ReadAllAsync()
             |> AsyncSeq.ofAsyncEnum

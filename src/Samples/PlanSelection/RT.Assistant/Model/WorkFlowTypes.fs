@@ -17,8 +17,9 @@ type AgentMsg =
     //msgs from flow to agents 
     | Ag_FlowError of WErrorType
     | Ag_FlowDone of {|abnormal:bool; |}
-    | Ag_Query of CallId * string
+    | Ag_Query of CodeGenReq
     | Ag_Prolog of CodeGenResp
+    | Ag_PrologAnswer of string
     | Ag_QueryResult of CallId * string
     | Ag_GetPlanDetails of CallId * string
     | Ag_PlanDetails of CallId * string
@@ -32,3 +33,4 @@ type AgentMsg =
             | Ag_PlanDetails _ -> "Ag_PlanDetails"
             | Ag_GetPlanDetails _ -> "Ag_GetPlanDetails"
             | Ag_Prolog _ -> "Ag_Prolog"
+            | Ag_PrologAnswer _ -> "Ag_SummarizedResults"

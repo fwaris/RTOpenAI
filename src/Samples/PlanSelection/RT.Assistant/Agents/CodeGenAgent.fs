@@ -2,6 +2,7 @@ namespace RT.Assistant.WorkFlow
 open System.Text.Json
 open Microsoft.Extensions.AI
 open Fabulous
+open RT.Assistant
 open RT.Assistant.Plan
 open RTFlow
 open RTFlow.Functions
@@ -10,7 +11,10 @@ exception FlowException of exn * Microsoft.Extensions.AI.ChatMessage list
 
 module CodeGenAgent = 
     open FSharp.Control
- 
+     type PrologParseError = {
+        Error : string
+        Code : string
+    }
      type internal State = {viewRef:ViewRef<Microsoft.Maui.Controls.HybridWebView>; bus:WBus<FlowMsg,AgentMsg>}
         with
             static member Create viewRef bus = {viewRef = viewRef; bus=bus}
@@ -54,20 +58,38 @@ module CodeGenAgent =
           RTFlow.Usage.output_tokens = output
           RTFlow.Usage.total_tokens = total
         }
-
-    let internal sendRequest state (history : ChatMessage list)= async {
-        let client = Anthropic.Client.createClient()
-        let opts = ChatOptions()
-        opts.ResponseFormat <- ChatResponseFormat.ForJsonSchema(AIJsonUtilities.CreateJsonSchema typeof<RT.Assistant.Plan.CodeGenResp>)
-        opts.ModelId <- Anthropic.SDK.Constants.AnthropicModels.Claude45Sonnet
-        let! resp = client.GetResponseAsync<RT.Assistant.Plan.CodeGenResp>(history,opts,useJsonSchemaResponseFormat=true) |> Async.AwaitTask
-        let asstMsg = asstMsg resp
-        let text = textContent (Some asstMsg) |> Option.defaultWith (fun _ -> failwith "code not found")
-        let code = AICore.extractCode text
-        let prolog = JsonSerializer.Deserialize<RT.Assistant.Plan.CodeGenResp>(code)
-        let usage = [resp.ModelId,mapUsage resp.Usage] |> Map.ofList
-        state.bus.PostToFlow(W_Msg (Fl_Usage usage))
-        return prolog
+    let MAX_RETRY = 2
+    
+    let rec internal sendRequest count state (history : ChatMessage list)= async {
+        try
+            let opts = ChatOptions()
+            opts.ResponseFormat <- ChatResponseFormat.ForJsonSchema(AIJsonUtilities.CreateJsonSchema typeof<CodeGenResp>)
+            let useCodex = Settings.Values.useCodex()
+            let client =
+                if useCodex then 
+                    OpenAIClient.createClient()
+                else 
+                    opts.ModelId <- Anthropic.SDK.Constants.AnthropicModels.Claude45Sonnet
+                    AnthropicClient.createClient()
+            let! resp = client.GetResponseAsync<CodeGenResp>(history,opts,useJsonSchemaResponseFormat=true) |> Async.AwaitTask
+            let prolog =
+                if useCodex then
+                    resp.Result
+                else
+                    let asstMsg = asstMsg resp
+                    let text = textContent (Some asstMsg) |> Option.defaultWith (fun _ -> failwith "code not found")
+                    let code = AICore.extractCode text
+                    JsonSerializer.Deserialize<CodeGenResp>(code)
+            let usage = [resp.ModelId,mapUsage resp.Usage] |> Map.ofList
+            state.bus.PostToFlow(W_Msg (Fl_Usage usage))
+            return prolog
+        with ex ->
+            if count < MAX_RETRY then
+                do! Async.Sleep 1000
+                return! sendRequest (count+1) state history
+            else
+                Log.exn(ex,"sendRequest")
+                return raise ex
     }
     
     type Query = {query:string}
@@ -78,26 +100,31 @@ module CodeGenAgent =
             ChatMessage(ChatRole.User, JsonSerializer.Serialize({query=query}))
         ]
         
-    let createFixRequest query (pe:RT.Assistant.Plan.Functions.PrologParseError)=
+    let createFixRequest query (pe:PrologParseError)=
          [
              ChatMessage(ChatRole.System, CodeGenPrompts.fixCodePrompt pe.Code pe.Error)
              ChatMessage(ChatRole.User, JsonSerializer.Serialize({query=query}))
          ]
          
-    let MAX_RETRY = 2         
+    let createSummarizeRequest (codeGenReq:CodeGenReq) (codeGenResp:CodeGenResp) (prologAnswer:string) =
+         [
+             ChatMessage(ChatRole.System, CodeGenPrompts.summarizationPrompt.Value)
+             ChatMessage(ChatRole.User, $"`query`:{codeGenReq.query}\n`generatedCode`:{JsonSerializer.Serialize codeGenResp}\n`prologResults`:{prologAnswer}")
+         ]        
+      
     open RT.Assistant.Plan
     //evaluate LLM generated Prolog code (predicates and query)
-    let rec internal runQuery count state query (prologError:RT.Assistant.Plan.Functions.PrologParseError option)=
+    let rec internal runQuery count state query (prologError:PrologParseError option)=
         async {
             try
                 let msgs = match prologError with Some pe -> createFixRequest query pe | _ -> createRequest query
-                let! code = sendRequest state msgs
+                let! code = sendRequest 0 state msgs
                 try
                     let! ans = QueryService.evalQuery state.viewRef code
                     state.bus.PostToAgent(Ag_Prolog code)                    
-                    return ans
+                    return code,ans
                 with
-                | TimeoutException -> return "query timed out"
+                | TimeoutException -> return CodeGenResp.Default,"query timed out"
                 | PrologError ex when count < MAX_RETRY ->
                     Log.info $"Prolog err: {ex}. Regenerating code."
                     return! runQuery (count+1) state query  (Some {Code=code.Query; Error=ex})
@@ -105,13 +132,33 @@ module CodeGenAgent =
             with ex ->
                 return raise ex
         }
+        
+    let rec internal summarizeResults count codeGenReq codeGenResp prologAns = async {
+        try
+            let client = AnthropicClient.createClient()
+            let opts = ChatOptions()
+            opts.ModelId <- Anthropic.SDK.Constants.AnthropicModels.Claude45Sonnet
+            let history = createSummarizeRequest codeGenReq codeGenResp prologAns
+            let! resp = client.GetResponseAsync(history,opts) |> Async.AwaitTask
+            let asstMsg = asstMsg resp
+            let text = textContent (Some asstMsg) |> Option.defaultWith (fun _ -> failwith "no summary generated")            
+            return text
+        with ex ->
+            if count < MAX_RETRY then
+                do! Async.Sleep 1000
+                return! summarizeResults (count+1) codeGenReq codeGenResp prologAns
+            else
+                return raise ex           
+    }
                 
     let internal update state cuaMsg =
         async {
             match cuaMsg with
-            | Ag_Query (callId,query) ->
-                let! result = runQuery 0 state query None                
-                state.bus.PostToAgent(Ag_QueryResult (callId,result))
+            | Ag_Query codeGenReq ->
+                let! codeGenResp,prologAns = runQuery 0 state codeGenReq.query None
+                state.bus.PostToAgent(Ag_PrologAnswer(prologAns))
+                //let! result = summarizeResults 0 codeGenReq codeGenResp prologAns
+                state.bus.PostToAgent(Ag_QueryResult (codeGenReq.callId,prologAns))
                 return state
             | _ -> return state
         }

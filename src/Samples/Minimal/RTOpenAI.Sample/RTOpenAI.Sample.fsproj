@@ -1,6 +1,6 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 	<PropertyGroup>
-
+		<!-- Note: RTOpenAI.Api project should have same TargetFrameworks as here -->
 		<TargetFrameworks>net9.0-android</TargetFrameworks>
 		<!-- 
 		<TargetFrameworks>net9.0-ios;net9.0-maccatalyst;net9.0-android</TargetFrameworks>

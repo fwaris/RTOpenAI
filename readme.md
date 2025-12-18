@@ -48,8 +48,9 @@ In addition to the three projects mentioned above, the following projects are al
 
 - Tim Lariviere and others for [Fabulous Maui](https://github.com/fabulous-dev/Fabulous.MauiControls)  
 - [WebRTCme](https://github.com/melihercan/WebRTCme) - provided the base bindings for Maui WebRTC. These where modified (significantly for IOS) to make them work for RTOpenAI.
+- Aaron Clauson and team for [SipSorcery](https://github.com/sipsorcery-org/sipsorcery) - WebRTC for the Windows platform.
 - [Tau Prolog](http://tau-prolog.org/) - a javascript Prolog interpreter used in the RT.Assistant sample. 
 - Loïc Denuzière and others for [FSharp.SystemTextJson](https://github.com/Tarmil/FSharp.SystemTextJson) - for F# types definitions
  and the accompanying serialization/de-serialization logic needed to handle OpenAI realtime protocol messages in a strongly-typed way.
 - [SWI-Prolog](https://github.com/SWI-Prolog/swipl-devel) team for the base Prolog implementation that was instrumental in developing the Prolog-RAG approach used in RT.Assistant sample.
-
+- Microsoft and [.Net Foundation](https://dotnetfoundation.org/) - for [dotnet](https://dotnet.microsoft.com/en-us/), [F#](https://fsharp.org/), [Maui](https://dotnet.microsoft.com/en-us/apps/maui) and [Microsoft.Extensions.AI](https://learn.microsoft.com/en-us/dotnet/ai/microsoft-extensions-ai)
