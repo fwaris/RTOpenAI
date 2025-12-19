@@ -1,7 +1,5 @@
 ﻿namespace RT.Assistant
-
 open Fabulous
-open RT.Assistant.Plan
 open RT.Assistant.WorkFlow
 open RTFlow
 open RTOpenAI.Events

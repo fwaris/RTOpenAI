@@ -3,7 +3,6 @@ open System.Text.Json
 open Microsoft.Extensions.AI
 open Fabulous
 open RT.Assistant
-open RT.Assistant.Plan
 open RTFlow
 open RTFlow.Functions
 
@@ -112,7 +111,6 @@ module CodeGenAgent =
              ChatMessage(ChatRole.User, $"`query`:{codeGenReq.query}\n`generatedCode`:{JsonSerializer.Serialize codeGenResp}\n`prologResults`:{prologAnswer}")
          ]        
       
-    open RT.Assistant.Plan
     //evaluate LLM generated Prolog code (predicates and query)
     let rec internal runQuery count state query (prologError:PrologParseError option)=
         async {
@@ -158,7 +156,8 @@ module CodeGenAgent =
                 let! codeGenResp,prologAns = runQuery 0 state codeGenReq.query None
                 state.bus.PostToAgent(Ag_PrologAnswer(prologAns))
                 //let! result = summarizeResults 0 codeGenReq codeGenResp prologAns
-                state.bus.PostToAgent(Ag_QueryResult (codeGenReq.callId,prologAns))
+                let resp = {solutions=[prologAns]}
+                state.bus.PostToAgent(Ag_QueryResult (codeGenReq.callId,resp))
                 return state
             | _ -> return state
         }

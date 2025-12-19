@@ -2,7 +2,7 @@
 	<PropertyGroup>
 		<PublishAot>false</PublishAot>
 		<!-- Note: RTOpenAI.Api project should have same TargetFrameworks as here -->
-		<TargetFrameworks>net9.0-windows10.0.19041.0;net9.0-android</TargetFrameworks>
+		<TargetFrameworks>net9.0-ios;net9.0-maccatalyst;net9.0-android</TargetFrameworks>
 		<!-- 
 		<TargetFrameworks>net9.0-ios;net9.0-maccatalyst;net9.0-android</TargetFrameworks>
 		<TargetFrameworks>net9.0-windows10.0.19041.0;net9.0-android</TargetFrameworks>
@@ -34,6 +34,7 @@
 		<SupportedOSPlatformVersion Condition="$(TargetPlatformIdentifier) == 'windows'">10.0.17763.0</SupportedOSPlatformVersion>
 		<TargetPlatformMinVersion Condition="$(TargetPlatformIdentifier) == 'windows'">10.0.17763.0</TargetPlatformMinVersion>
 		<SupportedOSPlatformVersion Condition="$(TargetPlatformIdentifier) == 'tizen'">6.5</SupportedOSPlatformVersion>
+		<EnableWindowsTargeting>true</EnableWindowsTargeting>
 	</PropertyGroup>
 	<ItemGroup>
 		<None Include="Resources\Raw\plan_schema.pl" />
@@ -55,19 +56,18 @@
 		<Compile Include="Log.fs" />
 		<Compile Include="Utils.fs" />
 		<Compile Include="SettingsModel.fs" />
-		<Compile Include="Plan\AICore.fs" />
-		<Compile Include="Plan\AsyncExt.fs" />
-		<Compile Include="Plan\PlanPrompts.fs" />
 		<Compile Include="Model\AppMsg.fs" />
 		<Compile Include="Model\Navigation.fs" />
 		<Compile Include="Model\WorkFlowTypes.fs" />
 		<Compile Include="Model\Model.fs" />
 		<Compile Include="Model\Audio.fs" />
 		<Compile Include="Model\PlanQuery.fs" />
+		<Compile Include="Agents\AICore.fs" />
+		<Compile Include="Agents\PlanPrompts.fs" />
+		<Compile Include="Agents\CodeGenPrompts.fs" />
 		<Compile Include="Agents\AnthropicClient.fs" />
 		<Compile Include="Agents\VoiceAgent.fs" />
 		<Compile Include="Agents\QueryService.fs" />
-		<Compile Include="Agents\CodeGenPrompts.fs" />
 		<Compile Include="Agents\CodeGenAgent.fs" />
 		<Compile Include="Agents\QueryAgent.fs" />
 		<Compile Include="Agents\AppAgent.fs" />

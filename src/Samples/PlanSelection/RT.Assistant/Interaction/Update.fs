@@ -1,8 +1,8 @@
 namespace RT.Assistant
 open Fabulous
 open type Fabulous.Maui.View
-open RT.Assistant.Plan
 open RT.Assistant.Navigation
+open RT.Assistant.WorkFlow
 
 module Update =
     let testConsultBad = """
@@ -39,7 +39,7 @@ valid_plan_for_military_veteran(Title, Lines, Features) :-
     let submitCode (code,viewRef) =
         async {
             let temp = PlanPrompts.planTemplate.Value    
-            let! str = PlanQuery.evalQuery viewRef code
+            let! str = QueryService.evalQuery viewRef code
             return str
         }
         

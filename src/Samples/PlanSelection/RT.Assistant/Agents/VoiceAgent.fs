@@ -3,7 +3,6 @@ namespace RT.Assistant.WorkFlow
 open System.Text.Json
 open System.Text.Json.Serialization
 open FSharp.Control
-open RT.Assistant.Plan
 open RT.Assistant.WorkFlow
 open RTFlow
 open RTFlow.Functions
@@ -19,6 +18,21 @@ module VoiceAgent =
     let M_TEXT = "text"
     let FUNCTION_CALL = "function_call"
     let FUNCTION_CALL_OUTPUT = "function_call_output"
+    
+    type PlanTitle = {planTitle: string}
+    
+    let sessionAudio =
+        {Audio.Default with
+            input = Include {AudioInput.Default with
+                               transcription = {
+                                  language = "en"
+                                  model = "gpt-4o-mini-transcribe"
+                                  prompt = Some "Expect words related to phone plans"
+                               }
+                               |> Some
+                               |> Include
+                             }                                
+            }
     
     //sends 'response.create' to prompt the LLM to generate audio (otherwise it seems to wait).
     let sendResponseCreate conn=
@@ -61,7 +75,7 @@ module VoiceAgent =
         [
             {Tool.Default with
                 name = PLAN_QUERY_FUNCTION
-                description = "Accepts a set of English instructions that are to be converted to a Prolog query to query the plan database. Responds with results of the query"
+                description = "Accepts a set of English instructions that are to be converted to a Prolog query to query the plan database. The Prolog query is executed and the results returned."
                 parameters = {Parameters.Default with
                                 properties = Map.ofList ["query", JsProperty.String {description = Some"detailed steps in English"; enum = None}]
                                 required = ["query"]
@@ -69,7 +83,7 @@ module VoiceAgent =
             }
             {Tool.Default with
                 name = PLAN_DETAILS_FUNCTION
-                description = "Plan title or name for which detail is required"
+                description = "Accepts a plan name or title and responds with the dump of the plan fact from the Prolog database"
                 parameters = {Parameters.Default with
                                 properties = Map.ofList ["planTitle", JsProperty.String {description = Some "Plan title or name for which detail is required"; enum = None}]
                                 required = ["planTitle"]
@@ -81,7 +95,8 @@ module VoiceAgent =
         { s with
             id = Skip
             object = Skip
-            instructions = Some PlanPrompts.rtInstructions.Value 
+            audio = Include sessionAudio
+            instructions = Some PlanPrompts.voiceInstructions.Value 
             tool_choice = Include "auto"            
             tools = Include voiceFunctions
             expires_at = Skip
@@ -117,7 +132,8 @@ module VoiceAgent =
     let  getPlanTitle (ev: ResponseOutputItem) =
         match ev.item with
         | Function_call fc when fc.name = PLAN_DETAILS_FUNCTION ->
-            CallId fc.call_id, fc.arguments
+            let title = JsonSerializer.Deserialize<PlanTitle>(fc.arguments)
+            CallId fc.call_id, title.planTitle
         |_ ->
             failwith "no plan title: incorrect response type"
             
@@ -141,19 +157,7 @@ module VoiceAgent =
     let startVoice (conn:RTOpenAI.Api.Connection) (bus:WBus<FlowMsg, AgentMsg>) = async {
         let initState = VoState.Create bus
         if conn.WebRtcClient.State.IsDisconnected then
-            let audio = {Audio.Default with
-                            input = Include {AudioInput.Default with
-                                               transcription = {
-                                                  language = "en"
-                                                  model = "gpt-4o-mini-transcribe"
-                                                  prompt = Some "Expect words related to phone plans"
-                                               }
-                                               |> Some
-                                               |> Include
-                                             }                                
-                            }
-            let keyReq = {KeyReq.Default with
-                                session = {KeyReq.Default.session with audio = Include audio}}                                                       
+            let keyReq = {KeyReq.Default with session.audio = Include sessionAudio}
             let! ephemKey = Connection.getEphemeralKey (Settings.Values.openaiKey()) keyReq |> Async.AwaitTask
             do! Connection.connect ephemKey conn |> Async.AwaitTask
         let comp = 

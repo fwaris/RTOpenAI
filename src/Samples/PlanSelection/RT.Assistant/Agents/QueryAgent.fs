@@ -1,8 +1,6 @@
 namespace RT.Assistant.WorkFlow
-
 open FSharp.Control
 open Fabulous
-open RT.Assistant.Plan
 open RTFlow
 open RTFlow.Functions
 
@@ -11,8 +9,8 @@ module QueryAgent =
     let getPlanDetails hybridWebView (planTile:string) =
         async {
             try
-                let prolog = {Predicates=""; Query= $"plan('{planTile}',Category,Lines,Features)."}
-                let! ans = PlanQuery.evalQuery hybridWebView prolog
+                let prolog = {Predicates=""; Query= $"plan(`{planTile}`,Category,Lines,Features)."}
+                let! ans = QueryService.evalQuery hybridWebView prolog
                 return ans
             with ex ->
                 Log.exn (ex,"getPlanDetails")

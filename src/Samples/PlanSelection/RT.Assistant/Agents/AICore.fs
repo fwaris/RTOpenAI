@@ -1,18 +1,8 @@
-namespace RT.Assistant.Plan
+namespace RT.Assistant
 open System
 open System.IO
 
-type ApiParms = {Model:string; Key:string}
-
-module AICore =    
-    module models =
-        let gpt_4o = "gpt-4o"
-        let gpt_4o_mini = "gpt-4o-mini"
-        let sonnet_37 = "claude-3-7-sonnet-20250219"
-        let o3_mini = "o3-mini"
-        let gemini_think = "gemini-2.0-flash-thinking-exp"
-        let gemini_flash = "gemini-2.0-flash"
-        let isReasoning model = model = gemini_think || model = o3_mini || model = sonnet_37
+module AICore = 
 
     let skipLineComment (s:string) = let i = s.IndexOf('%') in if i >= 0 then s.Substring(0,i) else s
 
@@ -77,10 +67,3 @@ module AICore =
                 
     let removeDot (inp:string) = let s = inp.Trim() in if s.EndsWith('.') then s.TrimEnd('.') else s
   
-    let endpoint model =
-        if model = models.gpt_4o then None
-        elif model = models.o3_mini then None
-        elif model = models.gemini_think || model = models.gemini_flash then Some("google")
-        elif model = models.sonnet_37 then Some("anthropic")
-        else None            
-        

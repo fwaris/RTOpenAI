@@ -3,11 +3,8 @@ open System
 open System.Text.Json
 open System.Threading
 open type Fabulous.Maui.View
-open Microsoft.Extensions.DependencyInjection
 open Microsoft.Maui.Controls
-open Microsoft.Maui.ApplicationModel
 open FSharp.Control
-open RT.Assistant.Plan
 open RTOpenAI.Events  
 
 [<RequireQualifiedAccess>]

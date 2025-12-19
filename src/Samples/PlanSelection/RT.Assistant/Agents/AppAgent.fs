@@ -16,7 +16,6 @@ module AppAgent =
         match msg with
         | Ag_Query codeGenReq -> st.Send(Log_Append codeGenReq.query)
         | Ag_PrologAnswer s -> st.Send(Log_Append s)
-        | Ag_QueryResult (_,r) -> st.Send(Log_Append r)
         | Ag_FlowError err -> st.Send(Log_Append (err.ErrorText))
         | Ag_FlowDone e -> st.Send(Log_Append $"Flow done abnormal={e.abnormal}")
         | Ag_Prolog code -> st.Send(SetCode code); st.Send(Log_Append $"Prolog Query:\r\npredicates:\r\n{code.Predicates}\r\nquery:\r\n{code.Query}")

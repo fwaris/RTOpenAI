@@ -11,7 +11,7 @@ plan(
                 desc("<summary of property values>"),
                 included_in_monthly_price(yes | no)
             ),
-            applies_to_lines(all)
+            applies_to_lines([all | lines(LOWER_BOUND,UPPER_BOUND)])
         ),
         feature(autopay_monthly_discount(
                desc("<summary of property values>"),

@@ -5,8 +5,7 @@ open System.Threading
 open Fabulous
 open Microsoft.Maui.ApplicationModel
 open RT.Assistant
-open RT.Assistant.Plan
-open RT.Assistant.Plan.PlanQuery
+open RT.Assistant.PlanQuery
 
 module QueryService =
             
