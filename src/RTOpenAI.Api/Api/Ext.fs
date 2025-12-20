@@ -4,8 +4,30 @@ open System.Net.Http
 open System.Net.Http.Json
 open System.Net.Http.Headers
 open System.Text.Json
+open System.Text.Json.Serialization
 open RTOpenAI.Events
 
+[<JsonFSharpConverter>]
+type ExpiresAfter = {anchor: string option; seconds: Skippable<int option>}
+
+[<JsonFSharpConverter>]
+type KeyReq = {
+    expires_at : Skippable<ExpiresAfter> 
+    session : Session
+}
+with static member Default = {
+        expires_at = Skip
+        session = { Session.Default with
+                     model = Some C.OPENAI_RT_MODEL_GPT_REALTIME
+                     instructions = Some "You are a helpful AI assistant"
+                    }
+    }
+
+type KeyResp = {
+   value : string
+   expires_at : int64
+   session : Session
+}
 ///RTOpenAI.Api helpers
 module Exts =
 

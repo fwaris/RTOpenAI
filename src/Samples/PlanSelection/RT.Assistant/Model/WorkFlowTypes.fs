@@ -7,12 +7,12 @@ type CodeGenReq = {query:string; callId:CallId}
 [<CLIMutable>]
 type CodeGenResp =
   {
-    Predicates: string
-    Query: string
+    predicates: string
+    query: string
   }
-  with static member Default = {Predicates="";Query=""}
+  with static member Default = { predicates=""; query=""}
   
-type QueryResult = {solutions:string list}
+type QueryResult = {solutions:string list;}
   
   ///Input to Flow
 type FlowMsg =
@@ -34,7 +34,7 @@ type AgentMsg =
     | Ag_PrologAnswer of string
     | Ag_QueryResult of CallId * QueryResult
     | Ag_GetPlanDetails of CallId * string
-    | Ag_PlanDetails of CallId * string
+    | Ag_PlanDetails of CallId * string list
     
     with override this.ToString() =
             match this with

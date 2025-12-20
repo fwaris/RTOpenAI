@@ -18,7 +18,8 @@ module AppAgent =
         | Ag_PrologAnswer s -> st.Send(Log_Append s)
         | Ag_FlowError err -> st.Send(Log_Append (err.ErrorText))
         | Ag_FlowDone e -> st.Send(Log_Append $"Flow done abnormal={e.abnormal}")
-        | Ag_Prolog code -> st.Send(SetCode code); st.Send(Log_Append $"Prolog Query:\r\npredicates:\r\n{code.Predicates}\r\nquery:\r\n{code.Query}")
+        | Ag_Prolog code -> st.Send(SetCode code); st.Send(Log_Append $"Prolog Query:\r\npredicates:\r\n{code.predicates
+                                                               }\r\nquery:\r\n{code.query}")
         | Ag_GetPlanDetails (_,t) -> st.Send(Log_Append $"Details requested for plan:\n{t}")
         | _ -> ()
         return st

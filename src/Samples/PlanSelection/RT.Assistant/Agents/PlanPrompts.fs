@@ -46,20 +46,21 @@ Connect Military
 ```
 
 ## High level structure
-```plan(Title,category(Category),lines(line(N,monthly_price(P), original_price(O)), ...]),features([feature(F1,applies_to_lines(all),feature(F2,...),...]))```
+```plan(Title,category(Category),prices([line(N,monthly_price(P), original_price(O)), ...]),features([feature(F1,applies_to_lines(all),feature(F2,...),...]))```
 where:
- - N = Number of lines
- - P = Current monthly price for the N number of lines (i.e. the sale price)
+ - N = Number of lines 
+ - P = Current sale price for N lines.
  - O = Original price (i.e. not the current sale price). Ignore this price
-The PLAN_TEMPLATE 'features' list contains all available feature types across all plans.
-Any individual plan will have a subset of the available features.
+Use `prices` for finding the *price* for the requested number of lines.
 
 ## Understanding 'feature'
+The PLAN_TEMPLATE 'features' list contains all available feature types across all plans.
+Any individual plan will have a subset of the available features.
 - Each feature is of the from `feature(<some feature>,applies_to_lines(Applicability)`
   - if Applicability is `applies_to_lines(all)` then the feature applies to all lines.
   - if Applicability is of the form `applies_to_lines(lines(1,5))` then the feature applies to lines 1-5, etc.
   - Each feature 'type' has different set of attributes.
-                              
+Use `applies_to_lines` for determining if a feature is available for the requested number of lines. 
   """)
   
   let voiceInstructions = lazy($"""
@@ -79,24 +80,23 @@ Use your knowledge of the PLAN_TEMPLATE above to ask probing questions to narrow
 {planNames}
 
 # Query Handling
-- To query for available plans and related info, invoke the `planQuery` tool as and when required.
-- Don't generate Prolog code; just generate the query in English.
-- Internally, the natural language query is converted to a Prolog query and run to find solutions.
-- `planQuery` result is Prolog query output wrapped in JSON:
+- Use the `planQuery` tool to query about available plans.
+- Don't generate Prolog code; just generate English instructions.
+- Internally, the natural language query is converted to a Prolog code and run to find solutions.
+- `planQuery` result is found solutions wrapped in JSON:
   - Example Query: "Find all plans that support netflix for a single line and 15 GB of mobile hotspot data."
   - Example Response: ```json
-    {{queryResponse = "
-Title = Connect Plus First Responder, Price = 75, HotspotLimit = 15
-Title = Connect Plus Military, Price = 75, HotspotLimit = 15
-Title = Connect Next, Price = 100, HotspotLimit = 15
-    "
+    {{"solutions" = [
+      "Title = Connect Plus First Responder, Price = 75, HotspotLimit = 15",
+      "Title = Connect Plus Military, Price = 75, HotspotLimit = 15",
+      "Title = Connect Next, Price = 100, HotspotLimit = 15"
+    ]
     }}
     ```
-- *A non-empty `queryResponse` means one of more solutions where found
-- Answer the user query from only the tool call results, PLAN_CATEGORIES and PLAN_NAMES.
+- *A non-empty `solutions` list means one or more solutions where found; use them to generate the answer.*  
+- Answer the user query from only the `solutions`, PLAN_CATEGORIES and PLAN_NAMES.
 
 # Plan Details
 - Invoke the `planDetails` tool to retrieve additional details about a specific plan.
 - This will dump the Prolog 'fact' for the plan that conforms to the PLAN_TEMPLATE.
-
-""")
+ """)

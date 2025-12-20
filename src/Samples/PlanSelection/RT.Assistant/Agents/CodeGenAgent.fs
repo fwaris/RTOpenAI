@@ -122,10 +122,10 @@ module CodeGenAgent =
                     state.bus.PostToAgent(Ag_Prolog code)                    
                     return code,ans
                 with
-                | TimeoutException -> return CodeGenResp.Default,"query timed out"
+                | TimeoutException -> return CodeGenResp.Default,["query timed out"]
                 | PrologError ex when count < MAX_RETRY ->
                     Log.info $"Prolog err: {ex}. Regenerating code."
-                    return! runQuery (count+1) state query  (Some {Code=code.Query; Error=ex})
+                    return! runQuery (count+1) state query  (Some {Code=code.query; Error=ex})
                 | ex -> return raise ex
             with ex ->
                 return raise ex
@@ -154,9 +154,9 @@ module CodeGenAgent =
             match cuaMsg with
             | Ag_Query codeGenReq ->
                 let! codeGenResp,prologAns = runQuery 0 state codeGenReq.query None
-                state.bus.PostToAgent(Ag_PrologAnswer(prologAns))
+                state.bus.PostToAgent(Ag_PrologAnswer(prologAns |> String.concat "\n"))
                 //let! result = summarizeResults 0 codeGenReq codeGenResp prologAns
-                let resp = {solutions=[prologAns]}
+                let resp = {solutions=prologAns}
                 state.bus.PostToAgent(Ag_QueryResult (codeGenReq.callId,resp))
                 return state
             | _ -> return state

@@ -1,5 +1,5 @@
 ﻿# RTOpenAI.Events
-Defines strongly-typed wrappers for OpenAI realtime API protocol messages.
+ Defines strongly-typed wrappers for [OpenAI realtime API](https://platform.openai.com/docs/api-reference/realtime?_clear=true) protocol messages.
 
 All currently documented (12/16/2025) messages have been accounted for.
 

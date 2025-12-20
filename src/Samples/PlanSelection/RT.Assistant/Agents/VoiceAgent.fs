@@ -35,12 +35,13 @@ module VoiceAgent =
             }
     
     //sends 'response.create' to prompt the LLM to generate audio (otherwise it seems to wait).
-    let sendResponseCreate conn=
-        (ClientEvent.ResponseCreate { ResponseCreate.Default with
-                                        event_id = Utils.newId()
-                                        //response.modalities = Some [M_AUDIO; M_TEXT]
-                                        })
-        |> Api.Connection.sendClientEvent conn
+    let sendResponseCreate conn instructions=
+        let rc = { ResponseCreate.Default with event_id = Utils.newId()}
+        let rc =            
+            instructions
+            |> Option.map (fun i ->  {rc with response = Include {Response.Default with instructions = Include i }})
+            |> Option.defaultValue rc
+        rc |> ClientEvent.ResponseCreate |> Api.Connection.sendClientEvent conn
                 
     let inline sendFunctionResponse conn (callId:CallId) result =        
         let rslt = JsonSerializer.Serialize(result)
@@ -52,8 +53,19 @@ module VoiceAgent =
             }
             |> ClientEvent.ConversationItemCreate
         Api.Connection.sendClientEvent conn outEv  //send prolog query results (or error)
-        sendResponseCreate conn                    //prompt the LLM to respond now
-    
+        sendResponseCreate conn None               //prompt the LLM to respond now
+        
+    ///
+    let inline sendQueryResponse conn (callId:CallId) (result:QueryResult) =        
+        let rslt = JsonSerializer.Serialize(result)
+        let output = ConversationItem.Function_call_output
+                         (ContentFunctionCallOutput.Create callId.id rslt)
+        let outEv =
+            { ConversationItemCreate.Default with item = output}                
+            |> ClientEvent.ConversationItemCreate
+        Api.Connection.sendClientEvent conn outEv  //send prolog query results (or error)
+        sendResponseCreate conn   (Some $"{result.solutions.Length} plans found")                 //prompt the LLM to respond now
+        
     type VoState = {
         initialized : bool
         currentSession : Session
@@ -139,7 +151,7 @@ module VoiceAgent =
             
     type SE = ServerEvent
              
-    // accepts old state and next event - returns new state
+    // accepts old state and next event; processes event; returns new state
     let updateVoice conn (st: VoState) ev =
         async {
             match ev with
@@ -148,7 +160,7 @@ module VoiceAgent =
             | SE.SessionUpdated s -> return {st with currentSession = s.session }
             | SE.ResponseOutputItemDone ev when isRunQuery ev  -> st.bus.PostToAgent(Ag_Query(getQuery ev)); return st
             | SE.ResponseOutputItemDone ev when isGetPlanDetails ev -> st.bus.PostToAgent(Ag_GetPlanDetails(getPlanTitle ev)); return st
-            | SE.Error e -> Log.error $"Received realtime API error message: `{e.error.message}`"; return st
+            | SE.Error e -> Log.error $"**************> Received realtime API error message: `{e.error.message}`"; return st
             | SE.EventHandlingError (t,msg,j) -> Log.error $"Error when handling event of type {t} - '{msg}'"; Log.error $"{JsonSerializer.Serialize(j)}"; return st
             | SE.UnknownEvent (t,_) -> Log.info $"Unknown event of type {t} received"; return st
             | other -> Log.info $"unhandled event: {other.GetType().Name}";  return st //log other events
@@ -173,7 +185,7 @@ module VoiceAgent =
     
     let handleFlow (st:FlState) msg = async {
         match msg with
-        | Ag_QueryResult(callId, s) -> sendFunctionResponse st.conn callId s;  return st
+        | Ag_QueryResult(callId, s) -> sendQueryResponse  st.conn callId s;  return st
         | Ag_PlanDetails (callId, s) -> sendFunctionResponse st.conn callId s;  return st
         | _ -> return st
     }

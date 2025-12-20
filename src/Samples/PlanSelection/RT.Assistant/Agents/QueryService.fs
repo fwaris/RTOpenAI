@@ -13,9 +13,9 @@ module QueryService =
     let evalQuery (hybridView:ViewRef<Microsoft.Maui.Controls.HybridWebView>) (genCode:CodeGenResp) =         
       async {
         try
-            if Utils.isEmpty genCode.Query then failwith "query is empty"
-            let genCode = if genCode.Predicates = null then {genCode with Predicates=""} else genCode
-            let genCode = {genCode with Predicates = fixCode genCode.Predicates; Query = fixCode genCode.Query}
+            if Utils.isEmpty genCode.query then failwith "query is empty"
+            let genCode = if genCode.predicates = null then {genCode with predicates=""} else genCode
+            let genCode = {genCode with predicates = fixCode genCode.predicates; query = fixCode genCode.query }
             use signal = new ManualResetEvent(false)
             let respHndlr = new JSResponseHandler(signal)
             let serCode = JsonSerializer.Serialize(genCode,Utils.serOptionsFSharp)
@@ -25,7 +25,7 @@ module QueryService =
             if r then
               Log.info $"query resp: '{respHndlr.Resp.result}'"
               if respHndlr.Resp.error then
-                return raise (PrologError respHndlr.Resp.result)
+                return raise (PrologError (respHndlr.Resp.result |> String.concat "\n"))
               else 
                 return respHndlr.Resp.result
             else

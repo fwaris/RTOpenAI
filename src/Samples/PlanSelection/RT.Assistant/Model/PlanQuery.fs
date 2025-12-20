@@ -12,9 +12,9 @@ module PlanQuery =
     type JSResp =
         {
             error : bool
-            result : string
+            result : string list
         }
-        with static member Default = {error=false; result=""}
+        with static member Default = {error=false; result=[]}
 
     type JSResponseHandler(w:ManualResetEvent) =
       member val Resp : JSResp = JSResp.Default with get, set

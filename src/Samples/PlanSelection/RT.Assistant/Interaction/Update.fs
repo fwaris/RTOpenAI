@@ -16,13 +16,13 @@ has_premium_data(plan(_, _, _, features(A))) :-
     let testQueryBad = "findall(Plan, has_premium_data(Plan), Plans)."
     
     let testConsult = """
-valid_plan_for_military_veteran(Title, Lines, Features) :-
-    plan(Title, category(military_veteran), lines(Lines), features(Features)),
-    member(line(4, monthly_price(MonthPrice), _), Lines),
+valid_plan_for_military_veteran(Title, Prices, Features) :-
+    plan(Title, category(military_veteran), prices(Prices), features(Features)),
+    member(line(4, monthly_price(MonthPrice), _), Prices),
     % Assuming 'around $100' means a maximum of $100 total monthly price
     MonthPrice =< 120.
 """
-    let testQuery = "valid_plan_for_military_veteran(Title,Lines, Features)."
+    let testQuery = "valid_plan_for_military_veteran(Title, Prices, Features)."
     
     let initModel() = 
         {
@@ -31,7 +31,7 @@ valid_plan_for_military_veteran(Title, Lines, Features) :-
             log = []
             isActive = false
             hybridView = ViewRef<Microsoft.Maui.Controls.HybridWebView>()
-            code = {CodeGenResp.Predicates=testConsult; CodeGenResp.Query=testQuery}
+            code = {CodeGenResp.predicates=testConsult; CodeGenResp.query=testQuery}
             fontSize = 11.0
             flow = None
         }, Cmd.none
@@ -40,7 +40,7 @@ valid_plan_for_military_veteran(Title, Lines, Features) :-
         async {
             let temp = PlanPrompts.planTemplate.Value    
             let! str = QueryService.evalQuery viewRef code
-            return str
+            return str |> String.concat "\n"
         }
         
     let update nav msg model =
@@ -61,8 +61,8 @@ valid_plan_for_military_veteran(Title, Lines, Features) :-
         | Active -> {model with isActive = true},Cmd.none
         | InActive -> {model with isActive = false},Cmd.none
         | SubmitCode -> model,Cmd.OfAsync.either submitCode (model.code,model.hybridView) Log_Append EventError
-        | SetQuery q -> {model with code = {model.code with Query=q}}, Cmd.none
-        | SetConsult q -> {model with code = {model.code with Predicates=q}}, Cmd.none
+        | SetQuery q -> {model with code = {model.code with query=q}}, Cmd.none
+        | SetConsult q -> {model with code = {model.code with predicates=q}}, Cmd.none
         | SetCode code -> {model with code = code}, Cmd.none
         | FontLarger -> {model with fontSize = model.fontSize + 1.0}, Cmd.none
         | FontSmaller -> {model with fontSize = model.fontSize - 1.0}, Cmd.none

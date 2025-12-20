@@ -264,6 +264,52 @@ type Session =
             expires_at = Skip
         }
 
+///Overload of client and server versions of Response
+[<JsonFSharpConverter>]
+type Response =
+    {
+        
+        audio : Skippable<Audio>
+        conversation : Skippable<string>
+        conversation_id : Skippable<string>
+        id : Skippable<string>
+        input : Skippable<ConversationItem list>
+        output : Skippable<ConversationItem list>
+        instructions: Skippable<string>
+        max_output_tokens : Skippable<OutputTokens option> 
+        metadata : Skippable<Map<string,string>>
+        output_modalities: Skippable<string list>
+        prompt : Skippable<Prompt option>
+        tool_choice: Skippable<string>
+        tools: Skippable<Tool list>
+        object : Skippable<string>
+        status : Skippable<string>
+        status_details : Skippable<StatusDetails>
+        usage : Skippable<Usage>
+        
+    }
+    static member Default : Response = 
+        {
+            audio = Skip
+            id = Skip
+            conversation = Skip
+            conversation_id = Skip
+            input = Skip
+            output = Skip
+            instructions = Skip
+            max_output_tokens = Skip 
+            metadata = Skip
+            output_modalities = Skip
+            prompt = Skip
+            tool_choice = Skip
+            tools = Skip
+            object = Skip
+            status = Skip
+            status_details = Skip
+            usage = Skip
+        }
+
+
 type ErrorDetail =
     {
         ``type``: string
@@ -323,12 +369,12 @@ type ConversationItemCreate =
     {
         event_id: string
         ``type``: string  // "conversation.item.create"
-        previous_item_id: string option
+        previous_item_id: Skippable<string>
         item: ConversationItem
     }
     static member Default = { event_id = ""
                               ``type`` = "conversation.item.create"
-                              previous_item_id = None
+                              previous_item_id = Skip
                               item = ConversationItem.Message ContentMessage.Default
                               }
 
@@ -413,15 +459,15 @@ type MessageContent =
 type ContentMessage = {
     content : MessageContent List
     role : string
-    id : string
+    id : Skippable<string>
     object : Skippable<string>
     status : string
 }
 with static member Default : ContentMessage = {
             role = "user"
-            id = ""
+            id = Skip
             object = Skip
-            status = ""                        
+            status = "completed"
             content = [Input_text {|text="hello"|}]
     }
 
@@ -445,7 +491,7 @@ type ContentFunctionCallOutput = {
         output = output
         id = Utils.newId()
         object = Skip
-        status = ""
+        status = "completed"
 }
 
 type ContentMcpApprovalResponse = {
@@ -498,27 +544,9 @@ type ConversationItem =
     | [<JsonName "mcp_call">] Mcp_call of ContentMcpToolCall
     | [<JsonName "mcp_list_tools">] Mcp_list_tools of ContentMcpListTools    
     | [<JsonName "mcp_approval_request">] Mcp_approval_request of ContentMcpApprovalRequest
+    
 
-type Response =
-    {
-        modalities: string list option
-        instructions: string option
-        voice: string option
-        output_audio_format: string option
-        tools: Tool list option
-        tool_choice: string option
-        temperature: float option
-        max_output_tokens: int option
-    }
-    static member Default = 
-        { 
-            modalities = None; instructions = None; voice = None; output_audio_format = None; tools = None
-            tool_choice = Some "auto"; temperature = None; max_output_tokens = None 
-        }
-
-// Server Event Record Types
-
-///These are events emitted from the OpenAI Realtime server to the client.
+//Error event
 type Error =
     {
         event_id: string
@@ -542,14 +570,7 @@ type SessionUpdated =
         session: Session
     }
 
-///Returned when a conversation item is created.
-type ConversationCreatedEvent =
-    {
-        event_id: string
-        ``type``: string  // "conversation.created"
-        conversation: Conversation
-    }
-    
+
 ///Overloaded: Sent by the server when an Item is added|done|retrieved to the default Conversation
 type ConversationItemEvent =
     {
@@ -557,15 +578,6 @@ type ConversationItemEvent =
         item : ConversationItem
         ``type``: string  // "conversation.item.[added|done|retrieved]"
         previous_item_id : Skippable<string option>
-    }
-
-///Returned when a conversation item is created.
-type ConversationItemCreatedEvent =
-    {
-        event_id: string
-        ``type``: string  // "conversation.item.created"
-        previous_item_id: string option
-        item: ConversationItem
     }
    
 type LogProbs = {bytes:int list; logprob:float; token:string}
@@ -924,25 +936,7 @@ type ContentPart =
         transcript: Skippable<string option>
         ``type``: string //[audio | text ]
     }
-        
-[<JsonFSharpConverter>]
-type ExpiresAfter = {anchor: string option; seconds: Skippable<int option>}
 
-[<JsonFSharpConverter>]
-type KeyReq = {
-    expires_at : Skippable<ExpiresAfter> 
-    session : Session
-}
-with static member Default = {
-        expires_at = Skip
-        session = {Session.Default with model=Some "gpt-realtime"; instructions=Some "You are a helpful AI assistant"}
-    }
-
-type KeyResp = {
-   value : string
-   expires_at : int64
-   session : Session
-}
 
 [<RequireQualifiedAccess>]
 type ServerEvent =

@@ -9,7 +9,7 @@ module QueryAgent =
     let getPlanDetails hybridWebView (planTile:string) =
         async {
             try
-                let prolog = {Predicates=""; Query= $"plan(`{planTile}`,Category,Lines,Features)."}
+                let prolog = { predicates=""; query= $"plan(`{planTile}`,Category,Prices,Features)."}
                 let! ans = QueryService.evalQuery hybridWebView prolog
                 return ans
             with ex ->
