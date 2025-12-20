@@ -713,7 +713,7 @@ type ResponseCreated =
     {
         event_id: string
         ``type``: string  // "response.created"
-        response: ResponseDetails
+        response: Response
     }
 
 ///Returned when a Response is done streaming. Always emitted, no matter the final state.
@@ -721,7 +721,7 @@ type ResponseDone =
     {
         event_id: string
         ``type``: string  // "response.done"
-        response: ResponseDetails
+        response: Response
     }
 
 ///Returned when a new Item is created during response generation.
@@ -910,23 +910,6 @@ type StatusDetails =
             reason : string
         }
         
-
-type ResponseDetails =
-    {
-        audio : Skippable<Audio>
-        conversation_id : string       
-        id: string
-        max_output_tokens : OutputTokens
-        metadata : Skippable<Map<string,string> option>  
-        ``object``: string
-        output: ConversationItem list
-        output_modalities : string list
-        status: string
-        status_details: Skippable<StatusDetails option>
-        usage: Skippable<Usage option>
-        ``type`` : Skippable<string>
-    }
-    
 
 ///Returned when a new content part is added to an assistant message item during response generation.
 type ContentPart =

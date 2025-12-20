@@ -65,7 +65,7 @@
 		<Compile Include="Agents\AICore.fs" />
 		<Compile Include="Agents\PlanPrompts.fs" />
 		<Compile Include="Agents\CodeGenPrompts.fs" />
-		<Compile Include="Agents\AnthropicClient.fs" />
+		<Compile Include="Agents\Clients.fs" />
 		<Compile Include="Agents\VoiceAgent.fs" />
 		<Compile Include="Agents\QueryService.fs" />
 		<Compile Include="Agents\CodeGenAgent.fs" />
