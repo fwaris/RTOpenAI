@@ -171,3 +171,73 @@ let ``response done sample with status`` () =
     | ServerEvent.EventHandlingError(t,msg,_) -> Assert.Fail(msg)
     | _ -> ()
     Assert.That(d.IsResponseDone)
+
+
+[<Test>]
+let ``response done sample with status details`` () =
+    let json = """
+{
+    "type": "response.done",
+    "event_id": "event_Cp0zTLKyWns5p8Er3DwCH",
+    "response": {
+        "object": "realtime.response",
+        "id": "resp_Cp0zPfggltLKoly0LJBEi",
+        "status": "completed",
+        "status_details": null,
+        "output": [
+            {
+                "id": "item_Cp0zPhs7xvoKPhK6t4YWs",
+                "type": "message",
+                "status": "completed",
+                "role": "assistant",
+                "content": [
+                    {
+                        "type": "output_audio",
+                        "transcript": "Here are the plans that support four lines for 200 dollars or less and also include Netflix: \n\n1. Connect Plus \u2013 Price: 185 dollars for four lines\n2. Connect Next First Responder \u2013 Price: 200 dollars for four lines\n\nBoth of these plans meet your criteria."
+                    }
+                ]
+            }
+        ],
+        "conversation_id": "conv_Cp0yNKRUDKGziRbZRKJd5",
+        "output_modalities": [
+            "audio"
+        ],
+        "max_output_tokens": "inf",
+        "audio": {
+            "output": {
+                "format": {
+                    "type": "audio/pcm",
+                    "rate": 24000
+                },
+                "voice": "alloy"
+            }
+        },
+        "usage": {
+            "total_tokens": 1099,
+            "input_tokens": 684,
+            "output_tokens": 415,
+            "input_token_details": {
+                "text_tokens": 455,
+                "audio_tokens": 229,
+                "image_tokens": 0,
+                "cached_tokens": 0,
+                "cached_tokens_details": {
+                    "text_tokens": 0,
+                    "audio_tokens": 0,
+                    "image_tokens": 0
+                }
+            },
+            "output_token_details": {
+                "text_tokens": 83,
+                "audio_tokens": 332
+            }
+        },
+        "metadata": null
+    }
+}
+"""
+    let d = SerDe.toEvent (JsonDocument.Parse json)
+    match d with
+    | ServerEvent.EventHandlingError(t,msg,_) -> Assert.Fail(msg)
+    | _ -> ()
+    Assert.That(d.IsResponseDone)

@@ -29,14 +29,6 @@ module Utility =
 
     let fixEmpty s = if isEmpty s then "" else s
 
-    let newId() =
-        Guid.NewGuid().ToByteArray()
-        |> Convert.ToBase64String
-        |> Seq.takeWhile (fun c -> c <> '=')
-        |> Seq.map (function '/' -> 'a' | c -> c)
-        |> Seq.toArray
-        |> String
-
     let (@@) (a:string) (b:string) = Path.Combine(a,b)
 
     /// String comparison that ignores case

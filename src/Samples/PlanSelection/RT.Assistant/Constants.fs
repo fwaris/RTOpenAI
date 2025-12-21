@@ -2,7 +2,7 @@
 
 module C = 
     let MAX_LOG = 100
-    let USE_CODEX = "USE_CODEX"
+    let USE_SONNET = "USE_CODEX"
     let OPEN_API_KEY = "OPEN_API_KEY"
     let ANTHROPIC_API_KEY = "ANTHROPIC_API_KEY"
     let SETTINGS_KEY = "Settings"

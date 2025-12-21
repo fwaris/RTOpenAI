@@ -18,7 +18,7 @@ module Settings =
         | ToggleVisibility
         | Set_Key_Anthropic of string
         | Set_Key_OpenAI of string
-        | Set_UseCodex of bool
+        | Set_UseSonnet of bool
 
     let init settings =
         { settings = settings; isActive=false; hidden = true}, Cmd.none        
@@ -33,7 +33,7 @@ module Settings =
         | ToggleVisibility -> {model with hidden = not model.hidden}, Cmd.none
         | Set_Key_Anthropic k -> model.settings.AnthropicKey <- k; model,Cmd.none
         | Set_Key_OpenAI k -> model.settings.OpenAIKey <- k; model,Cmd.none
-        | Set_UseCodex v-> model.settings.UseCodex <- v; model,Cmd.none
+        | Set_UseSonnet v-> model.settings.UseSonnet <- v; model,Cmd.none
 
     let subscribe (appMsgDispatcher: IAppMessageDispatcher) model =
         let localAppMsgSub dispatch =
@@ -82,13 +82,13 @@ module Settings =
                        .gridColumn(1)
                        .isPassword(model.hidden)
                        .margin(2.)
-                    Label($"Use Codex for code gen:")
+                    Label($"Use Sonnet for code gen:")
                         .gridRow(2)
                         .gridColumn(0)
                         .alignEndHorizontal()
                         .centerVertical()
                         .margin(2.)
-                    CheckBox(settings.UseCodex,Set_UseCodex)
+                    CheckBox(settings.UseSonnet, Set_UseSonnet)
                        .gridRow(2)
                        .gridColumn(1)
                        .margin(2.)

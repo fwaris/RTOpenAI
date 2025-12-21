@@ -23,7 +23,7 @@ module Utils =
         Guid.NewGuid().ToByteArray() 
         |> Convert.ToBase64String 
         |> Seq.takeWhile (fun c -> c <> '=') 
-        |> Seq.map (function '/' -> 'a' | c -> c)
+        |> Seq.collect (function '/' -> ['_';'_'] | '\\' -> ['-';'-'] | '+' -> ['_';'-'] | c -> [c])
         |> Seq.toArray 
         |> String
 
@@ -277,15 +277,15 @@ type Response =
         output : Skippable<ConversationItem list>
         instructions: Skippable<string>
         max_output_tokens : Skippable<OutputTokens option> 
-        metadata : Skippable<Map<string,string>>
+        metadata : Skippable<Map<string,string> option>
         output_modalities: Skippable<string list>
         prompt : Skippable<Prompt option>
         tool_choice: Skippable<string>
         tools: Skippable<Tool list>
         object : Skippable<string>
         status : Skippable<string>
-        status_details : Skippable<StatusDetails>
-        usage : Skippable<Usage>
+        status_details : Skippable<StatusDetails option>
+        usage : Skippable<Usage option>
         
     }
     static member Default : Response = 

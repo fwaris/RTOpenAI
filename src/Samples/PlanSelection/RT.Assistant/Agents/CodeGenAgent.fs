@@ -63,22 +63,22 @@ module CodeGenAgent =
         try
             let opts = ChatOptions()
             opts.ResponseFormat <- ChatResponseFormat.ForJsonSchema(AIJsonUtilities.CreateJsonSchema typeof<CodeGenResp>)
-            let useCodex = Settings.Values.useCodex()
+            let useSonnet45 = Settings.Values.useSonnet45()
             let client =
-                if useCodex then 
-                    OpenAIClient.createClient()
-                else 
+                if useSonnet45 then 
                     opts.ModelId <- Anthropic.SDK.Constants.AnthropicModels.Claude45Sonnet
-                    AnthropicClient.createClient()
+                    AnthropicClient.createClient()           
+                else 
+                    OpenAIClient.createClient()
             let! resp = client.GetResponseAsync<CodeGenResp>(history,opts,useJsonSchemaResponseFormat=true) |> Async.AwaitTask
             let prolog =
-                if useCodex then
-                    resp.Result
-                else
+                if useSonnet45 then
                     let asstMsg = asstMsg resp
                     let text = textContent (Some asstMsg) |> Option.defaultWith (fun _ -> failwith "code not found")
                     let code = AICore.extractCode text
-                    JsonSerializer.Deserialize<CodeGenResp>(code)
+                    JsonSerializer.Deserialize<CodeGenResp>(code)                  
+                else
+                    resp.Result
             let usage = [resp.ModelId,mapUsage resp.Usage] |> Map.ofList
             state.bus.PostToFlow(W_Msg (Fl_Usage usage))
             return prolog
@@ -131,6 +131,7 @@ module CodeGenAgent =
                 return raise ex
         }
         
+       ///not currently used
     let rec internal summarizeResults count codeGenReq codeGenResp prologAns = async {
         try
             let client = AnthropicClient.createClient()

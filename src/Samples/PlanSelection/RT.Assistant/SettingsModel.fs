@@ -12,10 +12,10 @@ type SettingsModel() =
             Preferences.Default.Set(C.OPEN_API_KEY, v.Trim())
             this.NotifyChanged()
             
-    member this.UseCodex
-        with get () = Values.useCodex()
+    member this.UseSonnet
+        with get () = Values.useSonnet45()
         and set (v:bool) =
-            Preferences.Default.Set(C.USE_CODEX, v)
+            Preferences.Default.Set(C.USE_SONNET, v)
             this.NotifyChanged()            
             
     member this.AnthropicKey
@@ -29,4 +29,4 @@ module Values =
     let settingsKey = EnvironmentKey<SettingsModel>(C.SETTINGS_KEY)
     let openaiKey () = Preferences.Default.Get(C.OPEN_API_KEY, "").Trim()
     let anthropicKey () = Preferences.Default.Get(C.ANTHROPIC_API_KEY, "").Trim()
-    let useCodex() = Preferences.Default.Get(C.USE_CODEX, false)
+    let useSonnet45 () = Preferences.Default.Get(C.USE_SONNET, false)

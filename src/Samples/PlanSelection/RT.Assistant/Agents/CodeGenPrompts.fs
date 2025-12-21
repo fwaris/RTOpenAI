@@ -31,6 +31,7 @@ PROLOG_GENERATION_RULES:
 - To extent possible, generate Prolog that retrieves only the relevant information. Avoid retrieving information that has not be requested, unless its relevant in some way.
 - Always retrieve the plan Title(s).
 - Also retrieve the quantities and features mentioned in the English query, e.g. if hotspot data is mentioned, ensure that the Prolog query returns XX in `high_speed_data_limit_gb(XX)`
+- If referenced feature has the `desc` clause then retrieve the description value to aid the understanding of the feature detail.
 - When feasible, generate predicates (i.e. `consult` code) to make queries less complex and to avoid retrieving intermediate variable values.
 - Ensure there are no singleton variables in generated Prolog
 - In general, abstract any constants (e.g. number of lines, data GB, etc.) out of any generated Predicates. Make Predicates parameterized. Put constant values in the query.
