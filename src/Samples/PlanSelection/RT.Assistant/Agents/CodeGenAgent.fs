@@ -155,12 +155,17 @@ module CodeGenAgent =
         async {
             match cuaMsg with
             | Ag_Query codeGenReq ->
-                let! codeGenResp,prologAns = runQuery 0 state codeGenReq.query None
-                state.bus.PostToAgent(Ag_PrologAnswer(prologAns |> String.concat "\n"))
-                //let! result = summarizeResults 0 codeGenReq codeGenResp prologAns
-                let resp = {solutions=prologAns}
-                state.bus.PostToAgent(Ag_QueryResult (codeGenReq.callId,resp))
-                return state
+                match Utils.checkEmpty codeGenReq.query with
+                | Some q -> 
+                    let! codeGenResp,prologAns = runQuery 0 state codeGenReq.query None
+                    state.bus.PostToAgent(Ag_PrologAnswer(prologAns |> String.concat "\n"))
+                    //let! result = summarizeResults 0 codeGenReq codeGenResp prologAns
+                    let resp = {solutions=prologAns}
+                    state.bus.PostToAgent(Ag_QueryResult (codeGenReq.callId,resp))
+                    return state
+                | None -> //sometimes the query can be empty, handle it gracefully
+                    state.bus.PostToAgent(Ag_VoiceToolError (codeGenReq.callId,"query is empty"))
+                    return state
             | _ -> return state
         }
             

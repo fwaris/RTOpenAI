@@ -187,6 +187,7 @@ module VoiceAgent =
         match msg with
         | Ag_QueryResult(callId, s) -> sendQueryResponse  st.conn callId s;  return st
         | Ag_PlanDetails (callId, s) -> sendFunctionResponse st.conn callId s;  return st
+        | Ag_VoiceToolError(callId, err) -> sendFunctionResponse st.conn callId err; return st
         | _ -> return st
     }
     

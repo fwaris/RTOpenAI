@@ -20,10 +20,7 @@ type FlowMsg =
     | Fl_Start
     | Fl_Terminate of {|abnormal:bool|}
     | Fl_Usage of Map<string,RTFlow.Usage> 
-    //agent messages flow
-    | CGi_Code of CodeGenResp
-    | VOi_Query of string
-    
+
  ///Agent broadcast messages
 type AgentMsg =
     //msgs from flow to agents 
@@ -33,6 +30,7 @@ type AgentMsg =
     | Ag_Prolog of CodeGenResp
     | Ag_PrologAnswer of string
     | Ag_QueryResult of CallId * QueryResult
+    | Ag_VoiceToolError of CallId * string
     | Ag_GetPlanDetails of CallId * string
     | Ag_PlanDetails of CallId * string list
     
