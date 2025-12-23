@@ -2,7 +2,23 @@
   "version": "2.0.0",
   "tasks": [
     {
-      "label": "RTOpenAI.Sample Android",
+      "label": "Mac: RT.Assistant",
+      "type": "shell",
+      //"command": "dotnet",
+      "command": "dotnet",
+      "args": [
+        "build",       
+        "${workspaceFolder}/src/Samples/PlanSelection/RT.Assistant",
+        "-t:Run",
+        "-f",
+        "net9.0-maccatalyst",
+        "-c",
+        "Debug"
+      ],      
+      "problemMatcher": "$msCompile"
+    },
+    {
+      "label": "Mac: RTOpenAI.Sample",
       "type": "shell",
       //"command": "dotnet",
       "command": "dotnet",
@@ -11,8 +27,9 @@
         "${workspaceFolder}/src/Samples/Minimal/RTOpenAI.Sample",
         "-t:Run",
         "-f",
-        "net9.0-android",
-        "-p:Configuration=Debug"
+        "net9.0-maccatalyst",
+        "-c",
+        "Debug"
       ],      
       "problemMatcher": "$msCompile"
     }
