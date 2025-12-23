@@ -62,6 +62,7 @@ module CodeGenAgent =
     let rec internal sendRequest count state (history : ChatMessage list)= async {
         try
             let opts = ChatOptions()
+            opts.Temperature <- 0.2f
             opts.ResponseFormat <- ChatResponseFormat.ForJsonSchema(AIJsonUtilities.CreateJsonSchema typeof<CodeGenResp>)
             let useSonnet45 = Settings.Values.useSonnet45()
             let client =

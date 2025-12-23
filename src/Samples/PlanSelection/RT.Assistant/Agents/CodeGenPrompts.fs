@@ -28,8 +28,9 @@ PROLOG_GENERATION_RULES:
 - Do not use writeln in Proloq queries.
 - Refer to PLAN_TEMPLATE for description of Features as the structure of each feature type is different.
 - NOTE ARITY feature/2, e.g. feature(Feature,AppliesToLines). Also each Feature type can have different arities. Look at the PLAN_STRUCTURE to correctly generate code for a particular feature.
-- To extent possible, generate Prolog that retrieves only the relevant information. Avoid retrieving information that has not be requested, unless its relevant in some way.
+- To extent possible, generate Prolog that retrieves only the relevant information. Avoid retrieving information that is not requested, unless its relevant in some way.
 - Always retrieve the plan Title(s).
+- Always retrieve the price for the number of lines selected in the query.
 - Also retrieve the quantities and features mentioned in the English query, e.g. if hotspot data is mentioned, ensure that the Prolog query returns XX in `high_speed_data_limit_gb(XX)`
 - If referenced feature has the `desc` clause then retrieve the description value to aid the understanding of the feature detail.
 - When feasible, generate predicates (i.e. `consult` code) to make queries less complex and to avoid retrieving intermediate variable values.
