@@ -44,3 +44,4 @@ type AgentMsg =
             | Ag_GetPlanDetails _ -> "Ag_GetPlanDetails"
             | Ag_Prolog _ -> "Ag_Prolog"
             | Ag_PrologAnswer _ -> "Ag_SummarizedResults"
+            | Ag_VoiceToolError _ -> "Ag_VoiceToolError"

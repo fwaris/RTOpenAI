@@ -1,4 +1,4 @@
-# RT.Assistant Sample
+# RT.Assistant - a realtime, multi-agent voice bot
 
 This sample is a voice-enabled assistant that allows one to determine the best phone plan for ones needs from a set of available plans. The assistant can be conversed with via voice to discover the types of plans & features available and their prices, to make a selection.
 
@@ -25,7 +25,7 @@ This sample highlights the integration of the following frameworks and technolog
 - **RTOpenAI**: F# library for interfacing with the OpenAI realtime API via the WebRTC protocol
 - **Fabulous** for Maui: F# library for building native mobile applications (IOS, Android, +) with Microsoft Maui
 - **Tau**: JavaScript-based Prolog engine and its use in a native mobile app via the Maui HybridWebView control.
-- Integration with the Anthropic API for Prolog code generation with the **Microsoft.Extensions.AI** library
+- Integration with the OpenAI & Anthropic 'chat' APIs for Prolog code generation with the **Microsoft.Extensions.AI** library
 
 ## Overview
 There is a lot going on here: *generative AI*; *old-school symbolic AI*; *multi-agents*; *realtime voice*; *cross-platform native mobile apps*; to name some. The following explains how these are all stitched together into a comprehensive system.
@@ -36,9 +36,9 @@ There is a lot going on here: *generative AI*; *old-school symbolic AI*; *multi-
 
 - Internally, multiple specialized agents work together to process and respond to user queries:
 
-    - **Voice Agent** – Connects to the OpenAI Realtime API, enabling natural voice conversations about phone plans. The voice model generates natural language queries and passes them to the Voice Agent as tool calls. These queries are then routed to other agents, and the resulting answers are returned to the voice model, which conveys them back to the user in audio form.
+    - **Voice Agent** – Maintains a connection to the OpenAI realtime 'voice' API, enabling natural voice conversations about phone plans. It handles the steady stream of messages from the API, include tool calls containing natural language queries. These queries are then routed to other agents, and the resulting answers are returned to the voice model, which conveys them back to the user in audio form.
 
-    - **CodeGen Agent** – Converts natural language queries into Prolog statements using the Anthropic API, then leverages the Tau Prolog engine to evaluate those statements against the knowledge base of facts.
+    - **CodeGen Agent** – Converts natural language queries into Prolog statements using another LLM API, then leverages the Tau Prolog engine to evaluate those statements against the knowledge base of facts.
 
     - **Query Agent** – Executes predefined (“canned”) Prolog queries directly against the Prolog engine for quick, structured lookups.
 
@@ -70,7 +70,7 @@ This separation allows agent collaboration to occur independently of system-leve
 
 ### Messages and State
 
-Both **Flow** and **Agents** maintain private internal state and communicate exclusively via strongly typed, asynchronous messages. Message schemas are defined using F#  [*discriminated unions (DUs)*](https://learn.microsoft.com/en-us/dotnet/fsharp/language-reference/discriminated-unions)  and are fixed at implementation time, providing:
+Both **Flow** and **Agents** maintain private internal state and communicate exclusively via strongly typed, asynchronous messages. Message 'schemas' are defined as F#  [*discriminated unions (DUs)*](https://learn.microsoft.com/en-us/dotnet/fsharp/language-reference/discriminated-unions) types and are fixed at implementation time, providing:
 
 - Compile-time exhaustiveness checking  
 - Explicit modeling of intent and system events  
@@ -99,7 +99,7 @@ From a multi-agent systems perspective, RTFlow employs a hybrid **bus–star** [
 
 This hybrid model balances scalability and decoupling with deterministic system control.
 
-The F# language offers a clean way to model asynchronous state machines (or more precisely [Mealy machines](https://www.tutorialspoint.com/automata_theory/moore_and_mealy_machines.htm)) where the states are functions and transitions happen via pattern matching over messages (DUs) or with ['active patterns'](https://zetcode.com/fsharp/active-patterns/). In the snippet below `s_XXX` are functions as states and `M_xxx` are messages that arrive on the `Bus`. The structure [`F`](/src/RTFlow/Workflow.fs#L76) packages the next state along with any output messages to be sent to agents.
+The F# language offers a clean way to model asynchronous state machines (or more precisely [Mealy machines](https://www.tutorialspoint.com/automata_theory/moore_and_mealy_machines.htm)) where the states are functions and transitions happen via pattern matching over messages (DUs) or with ['active patterns'](https://zetcode.com/fsharp/active-patterns/). In the snippet below `s_XXX` are functions as states and `M_xxx` are messages that arrive on the `Bus`. The structure [`F`](/src/RTFlow/Workflow.fs#L35) packages the next state along with any output messages to be sent to agents.
 
 ```F#
 let rec s_start msg = async {
@@ -122,7 +122,7 @@ and s_terminate msg = async {
 
 LLMs are inherently non-deterministic. RTFlow offers a way to control non-determinism to keep the overall system stable. As applications move from being human-centric to being more autonomous, we will need increasingly sophisticated methods to manage non-determinism. RTFlow's approach is to inject a deterministic state machine in the mix to effect such control.
 
-Given the relatively simple building blocks of RTFlow, we can construct rich agentic systems that can support many realtime needs with the ability to dial-in the desired degree of control, as needed.
+Given the relatively simple building blocks of RTFlow, we can construct rich agentic systems that can support many realtime needs with the ability to dial-in the desired degree of control, when needed.
 
 ## 2. RTOpenAI
 RTOpenAI wraps the OpenAI realtime voice API for native mobile(+) apps. Its two key features are a) support for the [WebRTC](https://webrtc.org/) protocol; and b) **strongly-typed realtime protocol messages**. These are discussed next.
@@ -137,9 +137,9 @@ The OpenAI voice API can be used via Web Sockets or WebRTC, where WebRTC has som
 - WebRTC transmits audio via the OPUS codec that has excellent compression but also retains good audio quality. For Web Sockets multiple choices exist. High quality audio is sent as uncompressed 24KHz [PCM](https://www.tutorialspoint.com/digital_communication/digital_communication_pulse_code_modulation.htm) binary as base64 encoded strings. The bandwidth required is 10X that for OPUS. There other telephony formats available but the audio quality drops significantly.
 
 ### Strongly-Typed Event Handling
-The [RTOpenAI.Events](/src/RTOpenAI.Events/Events.fs#L945) library attempts to define F# types for all OpenAI realtime API protocol messages (that are currently documented). 
+The [RTOpenAI.Events](/src/RTOpenAI.Events/Events.fs#L925) library attempts to define F# types for all OpenAI realtime API protocol messages (that are currently documented). 
 
-Additionally, the server (and client) messages are wrapped in DUs, which is convenient for consuming applications; incoming events can be handled with simple pattern matching. After the realtime connection is established, there is a steady flow of incoming events from the server that the application needs to accept and handle. The following snippet is an impressionistic version of how the [Voice Agent](/src/Samples/PlanSelection/RT.Assistant/Agents/VoiceAgent.fs#L137) handles server events:
+Additionally, the server (and client) messages are wrapped in DUs, which is convenient for consuming applications; incoming events can be handled with simple pattern matching. After the realtime connection is established, there is a steady flow of incoming events from the server that the application needs to accept and handle. The following snippet is an impressionistic version of how the [Voice Agent](/src/Samples/PlanSelection/RT.Assistant/Agents/VoiceAgent.fs#L155) handles server events:
 
 ```F#          
 let handleEvent (ev:ServerEvent) = async {
@@ -227,21 +227,21 @@ A Prolog 'database' consists of facts (e.g. plans and their features) and rules 
 
 The 'schema' for the plan and its features is in [plan_schema.pl](/src/Samples/PlanSelection/RT.Assistant/Resources/Raw/plan_schema.pl). The skeletal form is:
 ```prolog
-plan(title,category,lines,features)
+plan(title,category,prices,features)
 % where each feature may have a different attribute set
 ```
 
-An example fact for the 'Connect' plan is given below:
+An partial fact for the 'Connect' plan is given below:
 
 ```Prolog
 plan(
     "Connect",
     category("all"),
-    [
-        line(1, monthly_price(75),  original_price(80)),
-        line(2, monthly_price(130), original_price(140)),
-        ...
-    ],
+    prices([
+      line(1, monthly_price(20), original_price(25)),
+      line(2, monthly_price(40), original_price(26)),
+      ...
+    ]),
     features([
 
         feature(
@@ -268,7 +268,7 @@ plan(
 
 ```
 
-> While the above Prolog fact may seem complex, the same rules expressed in a relational database schema would be far more complex to understand and query. The *metadata* (columns,tables,relations) required to represent the rules and facts will be far greater than what is required for Prolog.
+> The [full Prolog fact](/src/Samples/PlanSelection/RT.Assistant/Resources/Raw/plan_schema.pl) may seem complex, however the same rules expressed in a relational database schema would be far more complex to understand and query. The *metadata* (columns,tables,relations) required to represent the rules and facts will be far greater than what is required under Prolog.
 
 
 ### Query Processing
@@ -298,11 +298,11 @@ Find the plans in the category 'military_veteran' for 2 lines and list their cos
 ```Prolog
 plan(Title,
      category(military_veteran),
-     lines(Lines),
+     prices(Lines),
      _),
-member(line(2, monthly_price(Price), _), Lines).
+member(price(2, monthly_price(Price), _), Lines).
 ```
-> Note: In Prolog, uppercase-starting variables are 'free' variables that can be bound to values. For example, 'Title' above will bind to each plan title, respecting other constraints. One obvious constraint is 'category=military_veteran' so only Military Veteran plans will be considered.
+> Note: In Prolog, uppercase-starting names are 'free' variables that can be bound to values. For example, 'Title' above will bind to each of the plan titles for the found solutions. A solutions satisfies all constraints. One obvious constraint is 'category=military_veteran' so only Military Veteran plans will be considered.
 - #### Results:
 ```
 Title = Connect Next Military, Lines =
@@ -312,13 +312,20 @@ Title = Connect Next Military, Lines =
  line(4,monthly_price(200),original_price(220)),
  line(5,monthly_price(235),original_price(260))],
 Price = 130
-[...]
+
+Title = Core, Lines = ...
   ```
 
  If a Prolog error occurs, the system regenerates the Prolog query but this time includes the Prolog error message along with the original query. This cycle may be repeated up to a limit.
 
 ### Prolog Code Generation and Results
-With current models - Claude *Sonnet 4.5* for Prolog code generation and *gpt-realtime* for realtime voice, the results are quite satisfactory. This was not the case about a year. This approach was not workable when I first started testing it in late 2024. But now (late 2025) the models have advanced enough for this approach to be viable for real applications.
+For code generation, the application allows for a choice between Claud Sonnet 4.5 and GPT 5.1 (via the app Settings). The GPT Codex model was also tested but there the latency is too high for realtime needs.
+
+First-off, both - Sonnet and GPT - work well but GPT has the edge here. For some reason Sonnet does not produce Prolog 'predicate' code which GPT does. Sonnet only produces 'query' code. If the query is complex Sonnet's approach can bring back unnecessary results, bloating the context. 
+
+GPT divides the generated Prolog into predicates and query and therefore keeps the final result set very relevant. Intermediate results are not part of the final output.
+
+Both models produce compilable / correct Prolog 99% of the time. This was not the case about a year when I first started testing it in late 2024. But now (late 2025) the models have advanced enough for this approach to be viable for real applications. As consumers, we should celebrate this advancement.
 
 
 
