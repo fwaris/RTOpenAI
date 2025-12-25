@@ -1,6 +1,9 @@
 # RT.Assistant - a realtime, multi-agent voice bot
 
-This sample is a voice-enabled assistant that allows one to determine the best phone plan for ones needs from a set of available plans. The assistant can be conversed with via voice to discover the types of plans & features available and their prices, to make a selection.
+This sample is a voice-enabled assistant that allows one to determine the best phone plan for ones needs from a set of available plans. The assistant can be conversed with via voice to discover the types of plans & features available and their prices, to make a selection. 
+
+Videos: [Overview](https://youtu.be/bSMByJvYLoY); [Code Walkthrough](https://youtu.be/0ghPhQyzyaI).
+
 
 ### Plan Offerings
 
@@ -321,11 +324,12 @@ Title = Core, Lines = ...
 ### Prolog Code Generation and Results
 For code generation, the application allows for a choice between Claud Sonnet 4.5 and GPT 5.1 (via the app Settings). The GPT Codex model was also tested but there the latency is too high for realtime needs.
 
-First-off, both - Sonnet and GPT - work well but GPT has the edge here. For some reason Sonnet does not produce Prolog 'predicate' code which GPT does. Sonnet only produces 'query' code. If the query is complex Sonnet's approach can bring back unnecessary results, bloating the context. 
+For this particular task, GPT-5.1 has the clear edge, generating code that produces concise and relevant output. See [this analysis](/src/Samples/PlanSelection/RT.Assistant/docs/prologgen.md) for more details.
 
-GPT divides the generated Prolog into predicates and query and therefore keeps the final result set very relevant. Intermediate results are not part of the final output.
+FTW, both models generate syntactically correct Prolog 99% of the time. (A retry loop corrects generated errors, if any.)
 
-Both models produce compilable / correct Prolog 99% of the time. This was not the case about a year when I first started testing it in late 2024. But now (late 2025) the models have advanced enough for this approach to be viable for real applications. As consumers, we should celebrate this advancement.
+For question-answering, the OpenAI realtime model generates satisfactory answers to user queries from the generated Prolog output. Note that for any real production system there should be a well-crafted 'eval' suite to truly gauge the performance.
+
 
 
 
