@@ -42,7 +42,7 @@ plan(
             ),
             applies_to_lines(all)
          ),
-         feature(scam_shield_premium(
+         feature(scam_proof_premium(
                desc("<summary of property values>"),
             ),
             applies_to_lines(all)

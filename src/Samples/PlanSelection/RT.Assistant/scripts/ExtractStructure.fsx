@@ -136,7 +136,7 @@ no_annual_service_contract
 phone_upgrades
 wi_fi_calling
 voicemail_to_text
-scam_shield_premium
+scam_proof_premium
 high_speed_data
 access_5g_at_no_extra_cost
 canada_and_mexico_included

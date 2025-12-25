@@ -18,7 +18,7 @@ Phone plans (like many other offerings these days) are bundled product and servi
 - *In-flight* data rates & limits
 - Then there may be seasonal or campaign *promotions*
 
-Additionally, the available features may be dependent on the number of lines (distinct phone numbers). For example, NetFlix may be *excluded* for a single line but *included* for two or more lines. 
+Additionally, the available features may be dependent on the number of lines (distinct phone numbers). For example, Netflix may be *excluded* for a single line but *included* for two or more lines. 
 
 ### Technologies Showcased
 The system internally maintains a mocked—but representative—set of phone plans, modeled as Prolog facts, simulating offerings from a typical major telecom provider. From (a) capturing the voice input, to (b) querying the Prolog knowledge base, and finally (c) generating the results, multiple components work together seamlessly.
