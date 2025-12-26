@@ -2,7 +2,9 @@
 
 This sample is a voice-enabled assistant that allows one to determine the best phone plan for ones needs from a set of available plans. The assistant can be conversed with via voice to discover the types of plans & features available and their prices, to make a selection. 
 
-Videos: [Overview](https://youtu.be/bSMByJvYLoY); [Code Walkthrough](https://youtu.be/0ghPhQyzyaI).
+---
+> [YouTube: Overview](https://youtu.be/bSMByJvYLoY) | [YouTube: Code Walkthrough](https://youtu.be/0ghPhQyzyaI) | [root readme.md](/readme.md) | [LinkedIn](https://www.linkedin.com/posts/activity-7410082754836725761-lquf?utm_source=share&utm_medium=member_desktop&rcm=ACoAAAAbaagBCG-0LlGBjghxmo7KKzbEXRHmiZ0)
+---
 
 
 ### Plan Offerings
