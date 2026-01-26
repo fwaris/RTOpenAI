@@ -1,10 +1,10 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 	<PropertyGroup>
 		<!-- Note: RTOpenAI.Api project should have same TargetFrameworks as here -->
-		<TargetFrameworks>net9.0-ios;net9.0-maccatalyst;net9.0-android</TargetFrameworks>
+		<TargetFrameworks>net10.0-ios;net10.0-maccatalyst;net10.0-android</TargetFrameworks>
 		<!-- 
-		<TargetFrameworks>net9.0-ios;net9.0-maccatalyst;net9.0-android</TargetFrameworks>
-		<TargetFrameworks>net9.0-windows10.0.19041.0;net9.0-android</TargetFrameworks>
+		<TargetFrameworks>net10.0-ios;net10.0-maccatalyst;net10.0-android</TargetFrameworks>
+		<TargetFrameworks>net10.0-windows10.0.19041.0;net10.0-android</TargetFrameworks>
 		-->
 		<OutputType>Exe</OutputType>
 		<RootNamespace>RTOpenAI</RootNamespace>		
@@ -97,14 +97,13 @@
 	</ItemGroup>
 	
 	<ItemGroup>
-		<!-- <PackageReference Include="Fabulous.MauiControls" Version="9.0.0-pre9" /> -->
-		<PackageReference Include="FSharp.Control.AsyncSeq" Version="3.2.1" />
-		<PackageReference Update="FSharp.Core" Version="9.0.100" />
-		<PackageReference Include="FSharp.SystemTextJson" Version="1.4.36" />
-		<PackageReference Include="Microsoft.Extensions.Logging.Console" Version="9.0.11" />
-		<PackageReference Include="System.Net.Security" Version="4.3.2" />
-		<PackageReference Include="System.Private.Uri" Version="4.3.2" />
-		<PackageReference Include="System.Text.RegularExpressions" Version="4.3.1" />
+		<!-- <PackageReference Include="Fabulous.MauiControls" /> -->
+		<PackageReference Include="FSharp.Control.AsyncSeq" />
+		<PackageReference Include="FSharp.SystemTextJson" />
+		<PackageReference Include="Microsoft.Extensions.Logging.Console" />
+		<PackageReference Include="System.Net.Security" />
+		<PackageReference Include="System.Private.Uri" />
+		<PackageReference Include="System.Text.RegularExpressions" />
 	</ItemGroup>
 
 	<ItemGroup>

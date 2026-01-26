@@ -1,14 +1,14 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
 	<PropertyGroup>
-		<TargetFramework>net9.0</TargetFramework>
+		<TargetFramework>net10.0</TargetFramework>
 		<!--<ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>-->
 		<DefineConstants>_PL_X64</DefineConstants>
 	</PropertyGroup>
 
 	<ItemGroup>
-	  <PackageReference Include="FSharp.SystemTextJson" Version="1.4.36" />
+	  <PackageReference Include="FSharp.SystemTextJson" />
 	</ItemGroup>
 
 

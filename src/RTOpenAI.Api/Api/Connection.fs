@@ -4,9 +4,7 @@ open FSharp.Control
 open System
 open RTOpenAI
 open RTOpenAI.Api
-open RTOpenAI.Events
         
-
 type Connection = {
         WebRtcClient : WebRTC.IWebRtcClient
         Disposables: IDisposable list
@@ -32,7 +30,7 @@ module Connection =
        
     let sendClientEvent connection ev =
         ev
-        |> SerDe.toJson
+        |> RTOpenAI.Events.SerDe.toJson
         |> fun j -> Log.info $">>> {j.ToString()}"; j
         |> connection.WebRtcClient.Send
         |> ignore

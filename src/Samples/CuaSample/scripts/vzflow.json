@@ -1,0 +1,239 @@
+{
+  "FlowId": "vz",
+  "Path": [
+    {
+      "type": "Page",
+      "Item": "https://www.verizon.com"
+    },
+    {
+      "type": "Clicks",
+      "Item": [
+        {
+          "elementId": "gnav20-sign-id-mobile",
+          "aria_label": null,
+          "inner_text": null,
+          "css_classes": [],
+          "tag": null,
+          "path": null,
+          "xpath": null
+        }
+      ]
+    },
+    {
+      "type": "Clicks",
+      "Item": [
+        {
+          "elementId": "gnav20-sign-id-list-item-1-mobile",
+          "aria_label": null,
+          "inner_text": null,
+          "css_classes": [],
+          "tag": null,
+          "path": null,
+          "xpath": null
+        }
+      ]
+    },
+    {
+      "type": "Pause",
+      "Item": "Login"
+    },
+    {
+      "type": "Clicks",
+      "Item": [
+        {
+          "elementId": null,
+          "aria_label": "Account menu list",
+          "inner_text": null,
+          "css_classes": [],
+          "tag": null,
+          "path": null,
+          "xpath": null
+        }
+      ]
+    },
+    {
+      "type": "Clicks",
+      "Item": [
+        {
+          "elementId": "gnav20-Account-L2-2-mobile",
+          "aria_label": null,
+          "inner_text": null,
+          "css_classes": [],
+          "tag": null,
+          "path": null,
+          "xpath": null
+        }
+      ]
+    },
+    {
+      "type": "Clicks",
+      "Item": [
+        {
+          "elementId": "gnav20-Account-L3-29-mobile",
+          "aria_label": null,
+          "inner_text": null,
+          "css_classes": [],
+          "tag": null,
+          "path": null,
+          "xpath": null
+        }
+      ]
+    },
+    {
+      "type": "Clicks",
+      "Item": [
+        {
+          "elementId": null,
+          "aria_label": "Contact and Billing",
+          "inner_text": null,
+          "css_classes": [],
+          "tag": null,
+          "path": null,
+          "xpath": null
+        }
+      ]
+    },
+    {
+      "type": "Clicks",
+      "Item": [
+        {
+          "elementId": null,
+          "aria_label": null,
+          "inner_text": null,
+          "css_classes": [],
+          "tag": null,
+          "path": "ion-item[data-track*=\\\u0022manage_addresses\\\u0022]",
+          "xpath": null
+        }
+      ]
+    },
+    {
+      "type": "Clicks",
+      "Item": [
+        {
+          "elementId": null,
+          "aria_label": null,
+          "inner_text": null,
+          "css_classes": [],
+          "tag": null,
+          "path": "ion-item[data-track*=\\\u0022billing_address\\\u0022]",
+          "xpath": null
+        }
+      ]
+    },
+    {
+      "type": "Clicks",
+      "Item": [
+        {
+          "elementId": null,
+          "aria_label": null,
+          "inner_text": null,
+          "css_classes": [],
+          "tag": null,
+          "path": "button[data-testid=\\\u0022Cancel\\\u0022]",
+          "xpath": null
+        }
+      ]
+    },
+    {
+      "type": "Clicks",
+      "Item": [
+        {
+          "elementId": null,
+          "aria_label": "Security",
+          "inner_text": null,
+          "css_classes": [],
+          "tag": null,
+          "path": null,
+          "xpath": null
+        }
+      ]
+    },
+    {
+      "type": "Clicks",
+      "Item": [
+        {
+          "elementId": null,
+          "aria_label": null,
+          "inner_text": null,
+          "css_classes": [],
+          "tag": null,
+          "path": "ion-item[data-track*=\\\u0022transfer_pin\\\u0022]",
+          "xpath": null
+        }
+      ]
+    },
+    {
+      "type": "Clicks",
+      "Item": [
+        {
+          "elementId": null,
+          "aria_label": "Generate PIN",
+          "inner_text": null,
+          "css_classes": [],
+          "tag": null,
+          "path": null,
+          "xpath": null
+        }
+      ]
+    },
+    {
+      "type": "Pause",
+      "Item": "Auth for pin"
+    },
+    {
+      "type": "Pause",
+      "Item": "done"
+    }
+  ],
+  "Extractions": [
+    {
+      "Name": "account number",
+      "ElemRef": {
+        "elementId": null,
+        "aria_label": null,
+        "inner_text": null,
+        "css_classes": [],
+        "tag": null,
+        "path": "#app \u003E ion-app \u003E div \u003E ion-content \u003E div:nth-child(3) \u003E p.sc-bypJrT.sc-ddjGPC.dJheAU.hhUETt \u003E span:nth-child(2)",
+        "xpath": null
+      }
+    },
+    {
+      "Name": "zip",
+      "ElemRef": {
+        "elementId": null,
+        "aria_label": null,
+        "inner_text": null,
+        "css_classes": [],
+        "tag": null,
+        "path": "input[data-testid=\\\u0022zipCode\\\u0022]",
+        "xpath": null
+      }
+    },
+    {
+      "Name": "pin",
+      "ElemRef": {
+        "elementId": null,
+        "aria_label": null,
+        "inner_text": null,
+        "css_classes": [],
+        "tag": null,
+        "path": null,
+        "xpath": "//h2[contains(., \\\u0022Here\\\u0027s your Number Transfer PIN.\\\u0022)]/following::h2[1]"
+      }
+    },
+    {
+      "Name": "pin page account",
+      "ElemRef": {
+        "elementId": null,
+        "aria_label": null,
+        "inner_text": null,
+        "css_classes": [],
+        "tag": null,
+        "path": null,
+        "xpath": "//h6[contains(.,\\\u0022For Account Number\\\u0022)]/following::p[1]"
+      }
+    }
+  ]
+}

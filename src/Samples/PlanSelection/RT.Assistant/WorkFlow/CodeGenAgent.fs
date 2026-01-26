@@ -4,6 +4,7 @@ open System.Text.Json
 open Fabulous
 open RTFlow
 open RTFlow.Functions
+open FsAICore
 
 exception FlowException of exn * Microsoft.Extensions.AI.ChatMessage list
 
@@ -49,9 +50,9 @@ module CodeGenAgent =
         let total =  usage.TotalTokenCount.GetValueOrDefault() |> int
         let total = if total < input + output then input + output else total
         {
-          RTFlow.Usage.input_tokens = input
-          RTFlow.Usage.output_tokens = output
-          RTFlow.Usage.total_tokens = total
+          FsAICore.Usage.input_tokens = input
+          FsAICore.Usage.output_tokens = output
+          FsAICore.Usage.total_tokens = total
         }
 
     let internal sendRequest state (history : ChatMessage list)= async {

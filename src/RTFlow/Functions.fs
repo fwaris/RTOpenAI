@@ -1,4 +1,5 @@
 ﻿namespace RTFlow.Functions
+open FsAICore
 open RTFlow
 open Microsoft.SemanticKernel
 open System.ComponentModel

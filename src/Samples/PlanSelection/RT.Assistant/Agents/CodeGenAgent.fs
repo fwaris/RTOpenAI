@@ -5,6 +5,8 @@ open Fabulous
 open RT.Assistant
 open RTFlow
 open RTFlow.Functions
+open RTOpenAI.Events
+open FsAICore
 
 exception FlowException of exn * Microsoft.Extensions.AI.ChatMessage list
 
@@ -53,9 +55,9 @@ module CodeGenAgent =
         let total =  usage.TotalTokenCount.GetValueOrDefault() |> int
         let total = if total < input + output then input + output else total
         {
-          RTFlow.Usage.input_tokens = input
-          RTFlow.Usage.output_tokens = output
-          RTFlow.Usage.total_tokens = total
+          FsAICore.Usage.input_tokens = input
+          FsAICore.Usage.output_tokens = output
+          FsAICore.Usage.total_tokens = total
         }
     let MAX_RETRY = 2
     
@@ -68,9 +70,9 @@ module CodeGenAgent =
             let client =
                 if useSonnet45 then 
                     opts.ModelId <- Anthropic.SDK.Constants.AnthropicModels.Claude45Sonnet
-                    AnthropicClient.createClient()           
+                    RT.Assistant.AnthropicClient.createClient()           
                 else 
-                    OpenAIClient.createClient()
+                    RT.Assistant.OpenAIClient.createClient()
             let! resp = client.GetResponseAsync<CodeGenResp>(history,opts,useJsonSchemaResponseFormat=true) |> Async.AwaitTask
             let prolog =
                 if useSonnet45 then
@@ -135,7 +137,7 @@ module CodeGenAgent =
        ///not currently used
     let rec internal summarizeResults count codeGenReq codeGenResp prologAns = async {
         try
-            let client = AnthropicClient.createClient()
+            let client = RT.Assistant.AnthropicClient.createClient()
             let opts = ChatOptions()
             opts.ModelId <- Anthropic.SDK.Constants.AnthropicModels.Claude45Sonnet
             let history = createSummarizeRequest codeGenReq codeGenResp prologAns

@@ -1,10 +1,6 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
-    <TargetFrameworks>net9.0-ios;net9.0-maccatalyst;net9.0-android</TargetFrameworks>
-    <!-- 
-    <TargetFrameworks>net9.0-ios;net9.0-maccatalyst;net9.0-android</TargetFrameworks>
-    <TargetFrameworks>net9.0-windows10.0.19041.0;net9.0-android</TargetFrameworks>
-    -->
+    <TargetFrameworks>net10.0-ios;net10.0-maccatalyst;net10.0-android</TargetFrameworks>
     <OutputType>Library</OutputType>
     <TargetPlatformIdentifier Condition=" $(TargetPlatformIdentifier) == '' ">$([MSBuild]::GetTargetPlatformIdentifier('$(TargetFramework)'))</TargetPlatformIdentifier>
     <SupportedOSPlatformVersion Condition="$(TargetPlatformIdentifier) == 'ios'">15.0</SupportedOSPlatformVersion>
@@ -33,11 +29,11 @@
   </ItemGroup>
     
   <ItemGroup Condition="$(TargetPlatformIdentifier) == 'android'">
-    <ProjectReference Include="..\Bindings\WebRTCme.Bindings.Maui.Android\WebRTCme.Bindings.Maui.Android.csproj" />
+    <ProjectReference Include="..\Bindings\FsWebRTC.Bindings.Maui.Android\FsWebRTC.Bindings.Maui.Android.csproj" />
   </ItemGroup>
     
   <ItemGroup Condition="$(TargetPlatformIdentifier) == 'ios' OR $(TargetPlatformIdentifier) == 'maccatalyst'">
-    <ProjectReference Include="..\Bindings\WebRTCme.Bindings.Maui.iOS\WebRTCme.Bindings.Maui.iOS.csproj" />
+    <ProjectReference Include="..\Bindings\FsWebRTC.Bindings.Maui.iOS\FsWebRTC.Bindings.Maui.iOS.csproj" />
   </ItemGroup>
     
    <ItemGroup Condition="$(TargetPlatformIdentifier) == 'windows'">
@@ -46,22 +42,14 @@
    </ItemGroup>
     
     <ItemGroup>
-        <PackageReference Include="Fabulous.MauiControls" Version="9.0.0-pre9" />
-        <PackageReference Include="FSharp.SystemTextJson" Version="1.4.36" />
-        <PackageReference Include="System.Text.Json" Version="9.0.2" />
-        <PackageReference Include="Microsoft.Extensions.Logging.Console" Version="9.0.11" />
-        <PackageReference Update="FSharp.Core" Version="9.0.303" />
+        <ProjectReference Include="..\RTOpenAI.Events\RTOpenAI.Events.fsproj" />
+        <PackageReference Include="Fabulous.MauiControls" />
+        <PackageReference Include="FSharp.SystemTextJson" />
+        <PackageReference Include="System.Text.Json" />
+        <PackageReference Include="Microsoft.Extensions.Logging.Console" />
     </ItemGroup>
-    
     <ItemGroup>
-		<PackageReference Update="Microsoft.Maui" Version="9.0.120" />
-		<PackageReference Update="Microsoft.Maui.Core" Version="9.0.120" />
-		<PackageReference Update="Microsoft.Maui.Controls" Version="9.0.120" />
-		<PackageReference Update="Microsoft.Maui.Controls.Compatibility" Version="9.0.120" />
-	</ItemGroup>
 
-  <ItemGroup>
-    <ProjectReference Include="..\RTOpenAI.Events\RTOpenAI.Events.fsproj" />
   </ItemGroup>
 
 	<PropertyGroup Condition="$(TargetPlatformIdentifier) == 'windows'">

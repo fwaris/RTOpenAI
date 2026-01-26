@@ -1,5 +1,7 @@
 namespace RT.Assistant.WorkFlow
 open RTFlow
+open RTOpenAI.Events
+open FsAICore
 type CallId = CallId of string with member this.id with get() = match this with  CallId s -> s
 
 type CodeGenReq = {query:string; callId:CallId}
@@ -19,7 +21,7 @@ type FlowMsg =
     //app msgs into flow
     | Fl_Start
     | Fl_Terminate of {|abnormal:bool|}
-    | Fl_Usage of Map<string,RTFlow.Usage> 
+    | Fl_Usage of FsAICore.UsageMap 
 
  ///Agent broadcast messages
 type AgentMsg =

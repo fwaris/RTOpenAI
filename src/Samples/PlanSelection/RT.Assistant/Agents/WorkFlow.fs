@@ -4,13 +4,15 @@ open System.Threading
 open Fabulous
 open RT.Assistant
 open RTFlow
+open RTOpenAI.Events
+open FsAICore
 
 module StateMachine =
     type SubState = {
         mailbox : System.Threading.Channels.Channel<Msg> //background messages        
         viewRef:ViewRef<Microsoft.Maui.Controls.HybridWebView>
         bus : WBus<FlowMsg,AgentMsg>
-        usage : Map<string,Usage>
+        usage : FsAICore.UsageMap
         conn : RTOpenAI.Api.Connection
     }
     
@@ -39,7 +41,7 @@ module StateMachine =
     and (|Txn|M|)  (s_ret,ss:SubState,msg) = //common message processing for each state
         match msg with
         | W_Err e                       -> Txn(terminate true ss)          //error: switch to s_terminate; send error to app
-        | W_Msg (Fl_Usage usg)          -> let ss = {ss with usage = Usage.combineUsage ss.usage usg}  //accumulate token usage
+        | W_Msg (Fl_Usage usg)          -> let ss = {ss with usage = FsAICore.Usage.combineUsage ss.usage usg}  //accumulate token usage
                                            Txn(F(s_ret ss, []))                  
         | W_Msg (Fl_Terminate x)        -> Txn(terminate x.abnormal ss)    //done: switch to s_terminate; send results to app
         | W_Msg msg                     -> M msg                           //to be handled by the current state 

@@ -1,0 +1,8 @@
+#r "nuget: FSharp.Data.Html.Core"
+#r "nuget: FSharp.SystemTextJson"
+#r "nuget: Microsoft.Maui.Controls"
+#load "../Utils.fs"
+#load "../Model/Scripts.fs"
+#load "../Model/FlowTypes.fs"
+#load "../Model/FlowsJs.fs"
+#load "../Model/FlowDefs.fs"

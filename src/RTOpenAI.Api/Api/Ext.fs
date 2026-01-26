@@ -5,7 +5,6 @@ open System.Net.Http.Json
 open System.Net.Http.Headers
 open System.Text.Json
 open System.Text.Json.Serialization
-open RTOpenAI.Events
 
 [<JsonFSharpConverter>]
 type ExpiresAfter = {anchor: string option; seconds: Skippable<int option>}
@@ -13,11 +12,11 @@ type ExpiresAfter = {anchor: string option; seconds: Skippable<int option>}
 [<JsonFSharpConverter>]
 type KeyReq = {
     expires_at : Skippable<ExpiresAfter> 
-    session : Session
+    session : RTOpenAI.Events.Session
 }
 with static member Default = {
         expires_at = Skip
-        session = { Session.Default with
+        session = { RTOpenAI.Events.Session.Default with
                      model = Some C.OPENAI_RT_MODEL_GPT_REALTIME
                      instructions = Some "You are a helpful AI assistant"
                     }
@@ -26,7 +25,7 @@ with static member Default = {
 type KeyResp = {
    value : string
    expires_at : int64
-   session : Session
+   session : RTOpenAI.Events.Session
 }
 ///RTOpenAI.Api helpers
 module Exts =
@@ -35,21 +34,21 @@ module Exts =
         task {
             use wc = new HttpClient()
             wc.DefaultRequestHeaders.Authorization <- AuthenticationHeaderValue("Bearer", key)
-            let! resp = wc.PostAsJsonAsync<'input>(Uri url, input, options=SerDe.serOpts)
-            return! resp.Content.ReadFromJsonAsync<'output>(options=SerDe.serOpts)
+            let! resp = wc.PostAsJsonAsync<'input>(Uri url, input, options=RTOpenAI.Events.SerDe.serOpts)
+            return! resp.Content.ReadFromJsonAsync<'output>(options=RTOpenAI.Events.SerDe.serOpts)
         }
         
     let callApi<'input,'output>(key:string,url:string,input:'input) =
         task {
             use wc = new HttpClient()
             wc.DefaultRequestHeaders.Authorization <- AuthenticationHeaderValue("Bearer", key)
-            let reqstr = JsonSerializer.Serialize(input,SerDe.serOpts)
+            let reqstr = JsonSerializer.Serialize(input,RTOpenAI.Events.SerDe.serOpts)
             use strContent = new StringContent(reqstr,MediaTypeHeaderValue("application/json"))
             use! resp = wc.PostAsync(Uri url,strContent)
             if resp.StatusCode = Net.HttpStatusCode.OK || resp.StatusCode = Net.HttpStatusCode.Accepted then
                 let! str = resp.Content.ReadAsStringAsync()
                 if Log.debug_logging then Log.info $"Response: {str} "
-                return JsonSerializer.Deserialize<'output>(str,SerDe.serOpts)
+                return JsonSerializer.Deserialize<'output>(str,RTOpenAI.Events.SerDe.serOpts)
             else
                 let! err = resp.Content.ReadAsStringAsync()
                 Log.error err

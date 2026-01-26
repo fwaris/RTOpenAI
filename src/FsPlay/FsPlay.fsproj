@@ -1,0 +1,53 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+	<PropertyGroup>
+		<TargetFrameworks>net10.0-android;net10.0-ios;net10.0-maccatalyst</TargetFrameworks>
+		<TargetFrameworks Condition="$([MSBuild]::IsOSPlatform('windows'))">$(TargetFrameworks);net10.0-windows10.0.19041.0</TargetFrameworks>
+		<!-- Uncomment to also build the tizen app. You will need to install tizen by following this: https://github.com/Samsung/Tizen.NET -->
+		<!-- <TargetFrameworks>$(TargetFrameworks);net8.0-tizen</TargetFrameworks> -->
+		<RootNamespace>FsPlay</RootNamespace>
+		<AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+		<UseMaui>true</UseMaui>
+		<SingleProject>true</SingleProject>
+		<EnableDefaultItems>false</EnableDefaultItems>
+		<DisableImplicitFSharpCoreReference>true</DisableImplicitFSharpCoreReference>
+		<TargetPlatformIdentifier Condition=" $(TargetPlatformIdentifier) == '' ">$([MSBuild]::GetTargetPlatformIdentifier('$(TargetFramework)'))</TargetPlatformIdentifier>
+		<SupportedOSPlatformVersion Condition="$(TargetPlatformIdentifier) == 'ios'">15.0</SupportedOSPlatformVersion>
+		<SupportedOSPlatformVersion Condition="$(TargetPlatformIdentifier) == 'maccatalyst'">15.0</SupportedOSPlatformVersion>
+		<SupportedOSPlatformVersion Condition="$(TargetPlatformIdentifier) == 'android'">21.0</SupportedOSPlatformVersion>
+		<SupportedOSPlatformVersion Condition="$(TargetPlatformIdentifier) == 'windows'">10.0.17763.0</SupportedOSPlatformVersion>
+		<TargetPlatformMinVersion Condition="$(TargetPlatformIdentifier) == 'windows'">10.0.17763.0</TargetPlatformMinVersion>
+		<SupportedOSPlatformVersion Condition="$(TargetPlatformIdentifier) == 'tizen'">6.5</SupportedOSPlatformVersion>
+	</PropertyGroup>
+	
+	<PropertyGroup>
+		<PackageId>FsPlay</PackageId>
+		<Description>Maui library for programmatically controlling mobile embedded browsers, e.g. via a computer-use-agent</Description>
+		<Authors>Faisal Waris</Authors>
+		<PackageLicenseExpression>MIT</PackageLicenseExpression>
+		<PackageTags>AI</PackageTags>
+		<RepositoryUrl>https://github.com/fwaris/RTOpenAI</RepositoryUrl>
+	</PropertyGroup>
+	
+	<ItemGroup>
+		<Compile Include="ServiceEvents.fs" />
+		<Compile Include="Bootstrap.fs" />
+		<Compile Include="MauiWebViewDriver.fs" />
+		<Compile Include="Service.ios.fs" />
+		<Compile Include="Service.droid.fs" />
+		<Compile Include="Service.fs" />
+		<Compile Include="Actions.fs" />
+	</ItemGroup>
+	
+	<ItemGroup>
+		<PackageReference Include="Microsoft.Maui.Controls" />
+		<PackageReference Include="Microsoft.Maui.Controls.Compatibility" />
+		<PackageReference Include="FSharp.Core" />
+	</ItemGroup>
+	
+	<ItemGroup>
+	  <ProjectReference Include="..\FsAICore\FsAICore.fsproj" />
+	  <ProjectReference Include="..\FsPlay.Abstractions\FsPlay.Abstractions.fsproj" />
+	</ItemGroup>
+
+</Project>
