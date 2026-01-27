@@ -6,6 +6,7 @@
 <!--    <TargetPlatformVersion>21.0</TargetPlatformVersion>-->
     <Nullable>enable</Nullable>
     <ImplicitUsings>disable</ImplicitUsings>
+    <IsBindingProject>true</IsBindingProject>
     <GeneratePackageOnBuild>False</GeneratePackageOnBuild>
     <RootNamespace>Fs.Bindings.Maui.Android</RootNamespace>
   </PropertyGroup>
@@ -18,5 +19,26 @@
     <PackageTags>webrtc;maui</PackageTags>
     <RepositoryUrl>https://github.com/fwaris/RTOpenAI</RepositoryUrl>
   </PropertyGroup>
+
+  <ItemGroup>
+    <AndroidLibrary Include="Jars\libwebrtc.aar" />
+    <TransformFile Include="Transforms\Metadata.xml" />
+    <TransformFile Include="Transforms\EnumFields.xml" />
+    <TransformFile Include="Transforms\EnumMethods.xml" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <AndroidLibrary Remove="**\obj\**" />
+    <AndroidLibrary Remove="**\bin\**" />
+    <AndroidJavaLibrary Remove="**\obj\**" />
+    <AndroidJavaLibrary Remove="**\bin\**" />
+    <JavaSourceJar Remove="**\obj\**" />
+    <JavaSourceJar Remove="**\bin\**" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Compile Remove="obj/Debug/**" />
+    <Compile Remove="obj\\Debug\\**" />
+  </ItemGroup>
   
 </Project>

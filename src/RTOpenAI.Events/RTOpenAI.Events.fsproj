@@ -5,6 +5,15 @@
     <GenerateDocumentationFile>true</GenerateDocumentationFile>
   </PropertyGroup>
 
+  <PropertyGroup>
+    <PackageId>RTOpenAI.Events</PackageId>
+    <Description>Strongly type wrappers for OpenAI realtime API messages</Description>
+    <Authors>Faisal Waris</Authors>
+    <PackageLicenseExpression>MIT</PackageLicenseExpression>
+    <PackageTags>AI</PackageTags>
+    <RepositoryUrl>https://github.com/fwaris/RTOpenAI</RepositoryUrl>
+  </PropertyGroup>
+  
   <ItemGroup>
     <Compile Include="Events.fs" />
     <Compile Include="SerDe.fs" />

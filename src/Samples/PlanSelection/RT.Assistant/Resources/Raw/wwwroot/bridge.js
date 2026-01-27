@@ -1,3 +1,9 @@
+function toBase64(str) {
+  const bytes = new TextEncoder().encode(str);
+  const binString = Array.from(bytes, byte => String.fromCodePoint(byte)).join('');
+  return btoa(binString);
+}
+
 
 //async input request
 window.addEventListener(
@@ -8,26 +14,17 @@ window.addEventListener(
         let cCode = v.predicates;
         let qCode = v.query;
         let ans = await evaluateQuery(cCode, qCode);
-        window.HybridWebView.InvokeDotNet('GotMessage', ans);
+        let ansstr = JSON.stringify(ans);
+        let ansstrBase64 = toBase64(ansstr);
+        await window.HybridWebView.InvokeDotNet('GotMessage', [ansstrBase64]);
     });
 
-async function readFileCached(url) {
-    const cacheStorage = await caches.open('file-cache');
-    const cachedResponse = await cacheStorage.match(url);
-
-    if (cachedResponse) {
-        console.log('Serving from cache');
-        return cachedResponse.text();
-    }
-
-    console.log('Fetching from network');
-    const response = await fetch(url);
-    cacheStorage.put(url, response.clone()); // Store response in cache
-    return response.text();
-}
-
 async function getClauses() {
-    globalThis.clauses = await readFileCached('plan_clauses.pl')
+    if (globalThis.clauses) {
+        return globalThis.clauses;
+    }
+    const response = await fetch('/plan_clauses.pl');
+    globalThis.clauses = await response.text();
     return globalThis.clauses;
 }
 

@@ -15,6 +15,15 @@
     <EnableWindowsTargeting>true</EnableWindowsTargeting>
   </PropertyGroup>
     
+    <PropertyGroup>
+        <PackageId>RTOpenAI.Api</PackageId>
+        <Description>F# library wrapping the OpenAI realtime (voice)  API</Description>
+        <Authors>Faisal Waris</Authors>
+        <PackageLicenseExpression>MIT</PackageLicenseExpression>
+        <PackageTags>AI</PackageTags>
+        <RepositoryUrl>https://github.com/fwaris/RTOpenAI</RepositoryUrl>
+    </PropertyGroup>
+    
   <ItemGroup>
     <Compile Include="Constants.fs" />
     <Compile Include="RTOpenAI.Log.fs" />
@@ -45,7 +54,6 @@
         <ProjectReference Include="..\RTOpenAI.Events\RTOpenAI.Events.fsproj" />
         <PackageReference Include="Fabulous.MauiControls" />
         <PackageReference Include="FSharp.SystemTextJson" />
-        <PackageReference Include="System.Text.Json" />
         <PackageReference Include="Microsoft.Extensions.Logging.Console" />
     </ItemGroup>
     <ItemGroup>

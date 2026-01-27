@@ -20,7 +20,7 @@
 		<EnableDefaultItems>false</EnableDefaultItems>
 		<DisableImplicitFSharpCoreReference>true</DisableImplicitFSharpCoreReference>
 		<!-- Display name -->
-		<ApplicationTitle>Plan Selection Assistant</ApplicationTitle>
+		<ApplicationTitle>RT.Assistant</ApplicationTitle>
 		<!-- App Identifier -->
 		<ApplicationId>com.companyname.PlanSelectionAssistant</ApplicationId>
 		<ApplicationIdGuid>5D26BACE-A3ED-4E42-ABDA-1B0C073F7764</ApplicationIdGuid>
@@ -134,11 +134,6 @@
 		<PackageReference Include="Microsoft.Extensions.AI.OpenAI" />
 		<PackageReference Include="Microsoft.Extensions.Logging.Console" />
 		<PackageReference Include="Microsoft.SemanticKernel" />
-		<PackageReference Include="System.Net.Http" />
-		<PackageReference Include="System.Net.Primitives" />
-		<PackageReference Include="System.Net.Security" />
-		<PackageReference Include="System.Private.Uri" />
-		<PackageReference Include="System.Text.RegularExpressions" />
 	</ItemGroup>
 
 	<ItemGroup>

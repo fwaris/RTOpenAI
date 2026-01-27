@@ -8,6 +8,7 @@ exception PrologError of string
 module PlanQuery =
     open System.Threading
     open Fabulous
+    open System.Text.Json
     
     type JSResp =
         {
@@ -18,11 +19,15 @@ module PlanQuery =
 
     type JSResponseHandler(w:ManualResetEvent) =
       member val Resp : JSResp = JSResp.Default with get, set
-      member x.GotMessage(resp:JSResp) =
+      member x.GotMessage(respstr:string) =
+        let decoded = System.Convert.FromBase64String(respstr)
+        let str = System.Text.UTF8Encoding.Default.GetString(decoded)
+        let resp = JsonSerializer.Deserialize<JSResp>(str)
         x.Resp <- resp
         Utils.debug resp.result
         w.Set()
-                    
+
+                            
     let fixCode (s:string) =
         s
             .Replace('\u2019','\'') //change 'smart' single quotes to regular ones

@@ -4,10 +4,9 @@
     {
       "label": "Mac: RT.Assistant",
       "type": "shell",
-      //"command": "dotnet",
       "command": "dotnet",
       "args": [
-        "build",       
+        "build",
         "${workspaceFolder}/src/Samples/PlanSelection/RT.Assistant",
         "-t:Run",
         "-f",
