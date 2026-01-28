@@ -8,8 +8,8 @@ This repo the following reusable library projects.
     - [Bindings/FsWebRTC.Bindings.Maui.iOS](/src/Bindings/FsWebRTC.Bindings.Maui.iOS/) - Maui WebRTC bindings for iOS
 - [RTFlow](/src/RTFlow/) - A framework for building realtime multi-agents systems.
 - [FsPlan](/src/FsPlan/) - A library for organizing a collection of tasks into a plan with either linear or graphical flow
-- [FsPlay](/src/FsPlay/) - A Maui library for programmatically driving embedded mobile browsers, e.g. using computer-use-agents
-    - [FsPlay.Abstractions](/src/FsPlay.Abstractions/) - Abstracts for browser automation
+- [FsPlay](/src/FsPlay/) - A Maui library for programmatically driving embedded mobile browsers, e.g. using computer-use-agents or CUA
+    - [FsPlay.Abstractions](/src/FsPlay.Abstractions/) - Abstractions for browser automation
 - [FsAICore](/src/FsAICore/) - Common AI utilities used by the other libraries here.
 
 ## Samples Included
