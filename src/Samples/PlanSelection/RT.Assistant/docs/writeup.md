@@ -97,7 +97,7 @@ This design allows system-level determinism and control to be introduced increme
 
 ### Topology
 
-From a multi-agent systems perspective, RTFlow employs a hybrid **bus–star** [topology]((https://vuir.vu.edu.au/652/1/Zhang_H-TopologicalClassfication.pdf)):
+From a multi-agent systems perspective, RTFlow employs a hybrid **bus–star** [topology](https://vuir.vu.edu.au/652/1/Zhang_H-TopologicalClassfication.pdf):
 
 - The **Bus** enables broadcast-based, peer-style agent communication.
 - The **Flow** acts as a central coordinating node when orchestration is required.
@@ -211,7 +211,7 @@ The RT.Assistant is a *Maui* application and so the project structure is defined
 
 The platform specific folders contain the native-app required components (plists, app manifests, etc.). For example, here is the IOS [plist](/src/Samples/PlanSelection/RT.Assistant/Platforms/iOS/Info.plist).
 
-RT.Assistant application code is 90% shared across platforms. However platform-specific libraries are required when interfacing with hardware that Maui does not cover. For WebRTC, RTOpenAI uses platform-native libraries with [Native Library Interop](https://devblogs.microsoft.com/dotnet/native-library-interop-dotnet-maui/). The [IOS WebRtc binding library](/src/Bindings/WebRTCme.Bindings.Maui.iOS/WebRTCme.Bindings.Maui.iOS.csproj) wraps the `WebRTC.xcframework` written in C++. And [for Android](/src/Bindings/WebRTCme.Bindings.Maui.Android/WebRTCme.Bindings.Maui.Android.csproj) the native `libwebrtc.arr` Android Archive is wrapped.
+RT.Assistant application code is 90% shared across platforms. However platform-specific libraries are required when interfacing with hardware that Maui does not cover. For WebRTC, RTOpenAI uses platform-native libraries with [Native Library Interop](https://devblogs.microsoft.com/dotnet/native-library-interop-dotnet-maui/). The [IOS WebRtc binding library](/src/Bindings/FsWebRTC.Bindings.Maui.iOS/FsWebRTC.Bindings.Maui.iOS.csproj) wraps the `WebRTC.xcframework` written in C++. And [for Android](/src/Bindings/FsWebRTC.Bindings.Maui.Android/FsWebRTC.Bindings.Maui.Android.csproj) the native `libwebrtc.arr` Android Archive is wrapped.
 
 Since most mobile apps have both IOS and Android versions, as such, Maui makes a lot of sense. Instead of maintaining multiple code bases and dev teams, with Maui one can maintain a single code base with 90% shared code across platforms. And unlike other mobile platforms (e.g. React Native), Maui apps are proper native apps. For example, it would be problematic to host a realtime multi-agent systems like RTFlow in a JavaScript-based system like React Native.
 
