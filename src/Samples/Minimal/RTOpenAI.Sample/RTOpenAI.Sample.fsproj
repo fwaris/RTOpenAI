@@ -101,9 +101,6 @@
 		<PackageReference Include="FSharp.Control.AsyncSeq" />
 		<PackageReference Include="FSharp.SystemTextJson" />
 		<PackageReference Include="Microsoft.Extensions.Logging.Console" />
-		<PackageReference Include="System.Net.Security" />
-		<PackageReference Include="System.Private.Uri" />
-		<PackageReference Include="System.Text.RegularExpressions" />
 	</ItemGroup>
 
 	<ItemGroup>

@@ -13,17 +13,18 @@ module ConfigKeys =
     let OPENAI_API_KEY = "OPENAI_API_KEY"
     let CHAT_MODEL_ID = "CHAT_MODEL_ID"
     
-///Need this distinction until MxExtAI abstracts more backends
+///Need this distinction until MxExtAI abstracts more of the backend functionality
 type AIBackend = OpenAILike | AnthropicLike 
+
 type AIContext = {
     backend:AIBackend
     
-    ///Required services: IChatClient, IConfiguration (see ConfigKeys for expected key names, depending on backends used).   
+    ///Required services: IConfiguration (see ConfigKeys for expected key names, depending on backends used).   
     kernel:IServiceProvider
     
     jsonSerializationOptions : JsonSerializerOptions option
         
-    ///Tool implementations mapped to their names. Should have at least the tools for the list in 'tools'.
+    ///Tool implementations mapped to their names.
     toolsCache:ToolCache
     
     ///Configure any non-tool option settings.
@@ -132,41 +133,17 @@ module AIUtils =
         response.Messages
         |> Seq.rev
         |> Seq.tryFind (fun m -> m.Role = ChatRole.Assistant)
-        |> Option.defaultWith (fun _ -> failwith "Assistant response missing after tool invocation")
-
-    /// Sends a request to backend LLM with retry but without automated tool calling.
-    /// Returns the raw LLM response (which may be tool call).
-    let rec sendRequestBase (retries:int) (context:AIContext) (tools:ToolName list)  (history : ChatMessage seq)= async {
-        try
-            let cfg = context.kernel.GetRequiredService<IConfiguration>()
-            let opts = ChatOptions()           
-            opts.Temperature <- 0.2f
-            context.optionsConfigurator |> Option.iter(fun f -> f opts)            
-            opts.Tools <- context.toolsCache |> Toolbox.filter (Some tools)|> Map.toSeq |> Seq.map snd |> ResizeArray
-            let client =
-                if context.backend.IsAnthropicLike then 
-                    opts.ModelId <- cfg.[ConfigKeys.CHAT_MODEL_ID]
-                    AnthropicClient.createClient(cfg)           
-                else
-                    failwith "only anthropic supported"
-                    //OpenAIClient.createClient(cfg)
-            let! resp = client.GetResponseAsync<'ResponseFormat>(history,opts,useJsonSchemaResponseFormat=true) |> Async.AwaitTask
-            return resp
-        with ex ->
-            if retries <= 0 then
-                do! Async.Sleep 1000
-                return! sendRequestBase (retries-1) context tools history
-            else
-                Log.exn(ex,"sendRequest")
-                return raise ex
-    }    
-    
-    ///Sends a request to backend LLM with - automated tool calling and retries - to obtain a structured response.   
+        |> Option.defaultWith (fun _ -> failwith "Assistant role message not found in ChatResponse")
+         
+    /// <summary>
+    ///Sends a request to backend LLM with - automated tool calling and retries - to obtain a structured response.<br />
+    /// Note: Anthropic.SDK support for structured response handling is currently partial so using alternative approach for now.
+    /// <summary />
     let rec sendRequest<'ResponseFormat> (retries:int) (context:AIContext) (tools:ToolName list)  (history : ChatMessage seq)= async {
         try
             let cfg = context.kernel.GetRequiredService<IConfiguration>()
             let opts = ChatOptions()
-            opts.Temperature <- 0.2f
+            opts.Temperature <- 0.2f //default temperature
             context.optionsConfigurator |> Option.iter(fun f -> f opts)            
             opts.ToolMode <- ChatToolMode.Auto
             opts.Tools <- context.toolsCache |> Toolbox.filter (Some tools) |> Map.toSeq |> Seq.map snd |> ResizeArray
@@ -176,10 +153,9 @@ module AIUtils =
                     opts.ModelId <- cfg.[ConfigKeys.CHAT_MODEL_ID]
                     AnthropicClient.createClient(cfg)           
                 else
-                    failwith "only anthropic supported"
-                    //OpenAIClient.createClient(cfg)
+                    OpenAIClient.createClient(cfg)
             let! resp = client.GetResponseAsync<'ResponseFormat>(history,opts,useJsonSchemaResponseFormat=true) |> Async.AwaitTask
-            let structuredResp = //need this until structured output support is added to anthropic lib
+            let structuredResp = //need this until full structured output support is added to anthropic.sdk lib
                 if context.backend.IsAnthropicLike then
                     let asstMsg = asstMsg resp
                     let text = textContent (Some asstMsg) |> Option.defaultWith (fun _ -> failwith "code not found")
