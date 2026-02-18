@@ -27,6 +27,7 @@
         <Compile Include="AnthropicTools.fs" />
         <Compile Include="CuaLoop.fs" />
         <Compile Include="JsonUtils.fs" />
+        <None Include="scripts\test_schema.fsx" />
     </ItemGroup>
 
     <ItemGroup>
