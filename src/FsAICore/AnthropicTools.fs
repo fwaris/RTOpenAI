@@ -93,7 +93,7 @@ module Parser =
             let str = System.Text.Json.JsonSerializer.Deserialize<CuaAction>(j)
             let coordinate = coordinate2 js
             match str with 
-            | CuaAction.key -> Key [(js.GetProperty("text").GetString())]                
+            | CuaAction.key -> Key [(js.GetProperty("text").GetString())]
             | CuaAction.``type`` -> Type (js.GetProperty("text").GetString())
             | CuaAction.mouse_move -> MouseMove coordinate
             | CuaAction.left_click -> Left_Click coordinate
@@ -116,7 +116,7 @@ module Parser =
     
     let parseActions js = 
         match parseActionBase js with 
-        | Some (Key xs) -> [KeyUtils.canonicalize xs |> Key]
+        | Some (Key xs) ->  KeyUtils.canonicalize xs |> List.map Key
         | Some x         -> [x]
         | None           -> []
 

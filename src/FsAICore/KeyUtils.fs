@@ -28,7 +28,7 @@ module KeyUtils =
     
     let private (=*=) (a:string) (b:string) = a.Equals(b, StringComparison.OrdinalIgnoreCase)
     
-    let canonicalize (keys:string list) =
+    let baseCanonicalize (keys:string list) =
         keys
         |> List.collect split
         |> List.map (fun k ->
@@ -60,3 +60,16 @@ module KeyUtils =
             elif k =*= "INSERT" then K.Insert
             elif k =*= "DELETE" then K.Delete
             else k)
+
+    let modifiers = set [K.Alt; K.Control; K.Shift;]
+
+    let hasModifiers (keys:string list) =
+        let ks = set keys
+        (Set.union modifiers ks).Count > 0
+
+    let canonicalize (keys:string list) : string list list =
+        let keys = baseCanonicalize keys
+        if hasModifiers keys then
+            [keys]
+        else 
+            keys |> List.map (fun x -> [x])
