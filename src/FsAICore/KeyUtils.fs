@@ -24,7 +24,7 @@ module K =
 module KeyUtils = 
     open System
     
-    let split (x:string) = x.Split("+") |> Array.toList
+    let split (x:string) = x.Split([|'+'; ' '|], StringSplitOptions.RemoveEmptyEntries) |> Array.toList
     
     let private (=*=) (a:string) (b:string) = a.Equals(b, StringComparison.OrdinalIgnoreCase)
     
@@ -61,7 +61,7 @@ module KeyUtils =
             elif k =*= "DELETE" then K.Delete
             else k)
 
-    let modifiers = set [K.Alt; K.Control; K.Shift;]
+    let modifiers = set [K.Alt; K.Control; K.Shift; K.Meta]
 
     let hasModifiers (keys:string list) =
         let ks = set keys

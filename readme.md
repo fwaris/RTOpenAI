@@ -51,10 +51,10 @@ In addition to the three projects mentioned above, the following projects are al
 > - [`FSPlay`](/src/FsPlay/FsPlay.fsproj)
 >
 > For example, if you are on MacOs then set `<TargetPlatforms>` to:
-> -  `net9.0-ios;net9.0-maccatalyst`
-> - On Windows use `net9.0-windows10.0.19041.0`
-> - Add `net9.0-android` to the list if you have Android Studio or Rider with the Android plugin installed.
-> - The default is `net9.0-ios;net9.0-maccatalyst;net9.0-android`.
+> -  `net10.0-ios;net10.0-maccatalyst`
+> - On Windows use `net10.0-windows10.0.19041.0`
+> - Add `net10.0-android` to the list if you have Android Studio or Rider with the Android plugin installed.
+> - The default is `net10.0-ios;net10.0-maccatalyst;net10.0-android`.
 > - For convenience, commented-out versions of the `<TargetFrameworks>` are included in the `.fsproj` files.
 - Build twice if necessary. Sometimes Maui projects have to be built twice for build errors to go away
 - Note that `dotnet build` at the solution root level is not likely to succeed as there are too many variations possible. Instead set the `<TargetFrameworks>` and use targeted builds in Rider or Visual Studio.
