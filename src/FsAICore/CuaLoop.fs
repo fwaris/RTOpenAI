@@ -61,7 +61,7 @@ module CuaLoop =
     
     let chatOptions tools = 
         let opts = ChatOptions()
-        opts.ModelId <- Anthropic.SDK.Constants.AnthropicModels.Claude45Sonnet
+        opts.ModelId <- "claude-sonnet-4-6"
         opts.Tools <-
             tools
             |> Map.toSeq

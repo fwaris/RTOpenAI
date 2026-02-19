@@ -158,17 +158,7 @@ module Parser =
 module ToolUtils = 
     open System.Collections.Generic
     open Anthropic.SDK.Common
-    
-    let cuaTool width height : Tool = 
-        let toolPrams = 
-            [
-                "display_width_px", width :> obj
-                "display_height_px", height
-                "display_number", 1 
-            ]
-            |> dict
-            |> Dictionary
-        Function("computer", "computer_20250124",toolPrams)      
+  
 
     let toJsonElement (args:IDictionary<string,obj>) = 
         match args with 
@@ -191,7 +181,7 @@ module ToolUtils =
         metadata["display_height_px"] <- box height
         metadata["display_number"] <- box 1
 
-        let computerFunction = Function("computer", "computer_20250124", metadata)
+        let computerFunction = Function("computer", AnthropicClient.COMPUTER_TOOL_VERSION, metadata)
         let computerTool = Anthropic.SDK.Common.Tool(computerFunction)
 
         let parameters = MessageParameters()

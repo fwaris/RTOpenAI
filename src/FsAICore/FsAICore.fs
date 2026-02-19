@@ -41,11 +41,13 @@ type AIContext = {
 module AnthropicClient = 
     open Anthropic.SDK
     open Anthropic.SDK.Messaging
+    
+    let mutable COMPUTER_USE_BETA_HEADER = "computer-use-2025-11-24"  // these are likely to change so making mutable for now
+    let mutable COMPUTER_TOOL_VERSION = "computer_20251124"
 
     let createAnthropicClient(key:string) =
         let httpClient = new System.Net.Http.HttpClient()
-        httpClient.DefaultRequestHeaders.Add("anthropic-beta","computer-use-2025-01-24")
-        httpClient.DefaultRequestHeaders.Add("anthropic-beta","structured-outputs-2025-11-13") //supposedly not needed with new api
+        httpClient.DefaultRequestHeaders.Add("anthropic-beta",COMPUTER_USE_BETA_HEADER)
         new AnthropicClient(key,httpClient)
         
     let createClientWithKey(key) : IChatClient =  
