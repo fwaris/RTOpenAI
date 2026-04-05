@@ -129,7 +129,7 @@ let ``SessionUpdate serialization includes truncation`` () =
 
     let sessionWithTruncation =
         { Session.Default with
-            model = Some "gpt-realtime"
+            model = Some "gpt-realtime-2025-08-28"
             truncation = Skippable.Include (Some truncationSettings) }
 
     let sessionUpdateEvent =

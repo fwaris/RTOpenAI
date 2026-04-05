@@ -25,7 +25,7 @@ module Connect =
     let createDataChannel (pc:PeerConnection) =
         let config = new DataChannel.Init()
         try
-            pc.CreateDataChannel(C.OPENAI_RT_DATA_CHANNEL, config) |> Some
+            pc.CreateDataChannel(Env.OPENAI_RT_DATA_CHANNEL.Value, config) |> Some
         with ex -> 
             Log.exn (ex,"createDataChannel")
             None

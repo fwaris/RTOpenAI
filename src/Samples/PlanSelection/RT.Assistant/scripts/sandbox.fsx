@@ -35,7 +35,7 @@ let sess_orig = """
     "type": "realtime",
     "object": "realtime.session",
     "id": "sess_Ckbg6ZXqxqfvhD3OV2Ykb",
-    "model": "gpt-realtime",
+    "model": "gpt-realtime-2025-08-28",
     "output_modalities": [
       "audio"
     ],
@@ -87,7 +87,7 @@ let sess = """
     "type": "realtime",
     "object": "realtime.session",
     "id": "sess_Ckbg6ZXqxqfvhD3OV2Ykb",
-    "model": "gpt-realtime",
+    "model": "gpt-realtime-2025-08-28",
     "output_modalities": [
       "audio"
     ],
@@ -190,4 +190,3 @@ let supdev =
                     }
 let supdevstr = JsonSerializer.Serialize(Audio.Default,serOpts)
 supdevstr |> printfn "%s"
-

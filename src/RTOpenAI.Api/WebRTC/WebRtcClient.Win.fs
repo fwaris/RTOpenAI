@@ -3,6 +3,7 @@
 open RTOpenAI.WebRTC
 open System
 open System.Threading
+open System.Threading.Tasks
 open SIPSorcery.Net
 open System.Text.Json
 open RTOpenAI.Api
@@ -20,10 +21,50 @@ type WebRtcClientWin() =
     let mutable disposables : IDisposable list  = []
     let mutable state = Disconnected
     let stateEvent = Event<State>()
+    let mutable iceGatheringCompleted = TaskCompletionSource<unit>(TaskCreationOptions.RunContinuationsAsynchronously)
+    let stunServerUrl = "stun:stun.l.google.com:19302"
 
     let addDisposables xs = disposables <- disposables @ xs
     
     let setState s = state <- s; stateEvent.Trigger(s)
+    let resetIceGathering() =
+        iceGatheringCompleted <- TaskCompletionSource<unit>(TaskCreationOptions.RunContinuationsAsynchronously)
+
+    let tryGetLocalOfferSdp() =
+        match peerConnection with
+        | null -> None
+        | pc when isNull pc.localDescription -> None
+        | pc ->
+            let sdp = pc.localDescription.sdp.ToString()
+
+            if String.IsNullOrWhiteSpace sdp then
+                None
+            else
+                Some sdp
+
+    let hasLocalCandidates() =
+        tryGetLocalOfferSdp()
+        |> Option.exists (fun sdp ->
+            sdp.Contains("a=candidate:")
+            || sdp.Contains("a=end-of-candidates"))
+
+    let waitForLocalCandidatesAsync timeoutMs =
+        task {
+            if hasLocalCandidates() then
+                ()
+            else
+                use timeout = new CancellationTokenSource(millisecondsDelay = timeoutMs)
+
+                try
+                    do! iceGatheringCompleted.Task.WaitAsync(timeout.Token)
+                with
+                | :? OperationCanceledException -> ()
+
+            if hasLocalCandidates() then
+                Log.info "pc: local ICE candidates gathered for offer"
+            else
+                Log.warn $"pc: continuing without local ICE candidates after waiting {timeoutMs}ms"
+        }
 
     let onMessage dataChannel payload (bytes:byte[]) = 
         let msg = JsonSerializer.Deserialize(bytes)
@@ -67,11 +108,23 @@ type WebRtcClientWin() =
 
     let createPcConnection() = 
         task {
-            let pcConfig = RTCConfiguration(X_UseRtpFeedbackProfile = true)
+            let iceServer = RTCIceServer()
+            iceServer.urls <- stunServerUrl
+            let pcConfig =
+                RTCConfiguration(
+                    X_UseRtpFeedbackProfile = true,
+                    X_ICEIncludeAllInterfaceAddresses = true
+                )
+            pcConfig.iceServers <- System.Collections.Generic.List<RTCIceServer>([ iceServer ])
             let pc = new RTCPeerConnection(pcConfig)
-            let! dataChannel = pc.createDataChannel(C.OPENAI_RT_DATA_CHANNEL)
+            let! dataChannel = pc.createDataChannel(Env.OPENAI_RT_DATA_CHANNEL.Value)
             let winAudioEP = addAudio pc
             pc.add_OnTimeout(fun mediaType -> Log.info $"Timeout on media {mediaType}")
+            pc.add_onicegatheringstatechange(fun state ->
+                Log.info $"ICE gathering state changed to {state}"
+
+                if state = RTCIceGatheringState.complete then
+                    iceGatheringCompleted.TrySetResult() |> ignore)
             hookConnectionHandling winAudioEP pc
             hookAudioStream winAudioEP pc
             return pc,dataChannel,winAudioEP
@@ -80,6 +133,7 @@ type WebRtcClientWin() =
 
     member this.Init () =               
         task {
+            resetIceGathering()
             let! pc,dc,winAudioEP = createPcConnection()
             peerConnection <- pc
             dataChannel <- dc
@@ -89,17 +143,25 @@ type WebRtcClientWin() =
     member this.SendOffer(ephemeralKey:string,url:string) =
         task {
             let offer = peerConnection.createOffer()
-            //Log.info $"Offer SDP:\r\n{offer.sdp}"
             do! peerConnection.setLocalDescription(offer)
-            let! answer = Utils.getAnswerSdp ephemeralKey url offer.sdp
-            //Log.info $"Answer SDP:\r\n{answer}"
-            let r = peerConnection.setRemoteDescription(RTCSessionDescriptionInit(
-                                                        sdp=answer, ``type`` = RTCSdpType.answer))
-            if r = SetDescriptionResultEnum.OK then 
-                task {setState Connected} |> ignore
-            else
+            do! waitForLocalCandidatesAsync 4_000
+
+            match tryGetLocalOfferSdp() with
+            | Some offerSdp ->
+                let! answer = Utils.getAnswerSdp ephemeralKey url offerSdp
+                let r =
+                    peerConnection.setRemoteDescription(
+                        RTCSessionDescriptionInit(sdp = answer, ``type`` = RTCSdpType.answer)
+                    )
+
+                if r = SetDescriptionResultEnum.OK then 
+                    task {setState Connected} |> ignore
+                else
+                    task {setState Disconnected} |> ignore
+                    Utils.logAndFail "timeout on setting remote sdp as answer"
+            | None ->
                 task {setState Disconnected} |> ignore
-                Utils.logAndFail "timeout on setting remote sdp as answer"
+                Utils.logAndFail "local offer SDP was empty after ICE gathering"
         }   
 
     interface System.IDisposable with 

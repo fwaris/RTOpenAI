@@ -13,7 +13,7 @@ module Update =
             log = []
             isActive = false
             conversation = []
-            modelId = RTOpenAI.Api.C.OPENAI_RT_MODEL_GPT4O_MINI
+            modelId = RTOpenAI.Api.Env.OPENAI_RT_MODEL_GPT_REALTIME.Value
         }, Cmd.none
         
     let update nav msg model =

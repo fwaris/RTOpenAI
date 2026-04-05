@@ -17,7 +17,7 @@ type KeyReq = {
 with static member Default = {
         expires_at = Skip
         session = { RTOpenAI.Events.Session.Default with
-                     model = Some C.OPENAI_RT_MODEL_GPT_REALTIME
+                     model = Some Env.OPENAI_RT_MODEL_GPT_REALTIME.Value
                      instructions = Some "You are a helpful AI assistant"
                     }
     }
@@ -55,8 +55,3 @@ module Exts =
                 return failwith err
         }
   
-    let getOpenAIEphemKey apiKey (keyRequest:KeyReq) =
-        task {
-            let! resp = callApi<_,KeyResp>(apiKey,RTOpenAI.Api.C.OPENAI_SESSION_API,keyRequest) |> Async.AwaitTask
-            return resp.value
-        }        

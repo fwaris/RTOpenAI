@@ -17,7 +17,7 @@ module Connection =
     let getEphemeralKey apiKey (keyReq:KeyReq) =
         task {
             //use helper function in Api project to exchange 'real' OpenAI key for an ephemeral key for the RT api
-            let! resp = Exts.callApi<_,KeyResp>(apiKey,C.OPENAI_SESSION_API,keyReq)
+            let! resp = Exts.callApi<_,KeyResp>(apiKey,Env.OPENAI_SESSION_API.Value,keyReq)
             return resp.value
         }       
     
@@ -37,7 +37,7 @@ module Connection =
         
         
     let connect ephemeralKey (connection:Connection) =
-        connection.WebRtcClient.Connect(ephemeralKey,C.OPENAI_RT_API_CALLS)
+        connection.WebRtcClient.Connect(ephemeralKey,Env.OPENAI_RT_API_CALLS.Value)
 
     let close (sess:Connection) = 
         sess.WebRtcClient.Dispose()     
