@@ -1,11 +1,11 @@
 #load "packages.fsx"
 #load "../../../../RTOpenAI.Api/Constants.fs"
-#load "../../../../RTOpenAI.Api/Api/Events.fs"
+#load "../../../../RTOpenAI.Events/Events.fs"
 
 
 open System.Text.Json
 open System.Text.Json.Serialization
-open RTOpenAI.Api.Events
+open RTOpenAI.Events
 
 let serOptionsFSharp = 
     let o = JsonSerializerOptions(JsonSerializerDefaults.General)
@@ -181,7 +181,7 @@ let serOpts =
     opts
 
 let supdev = 
-         {SessionUpdateEvent.Default with
+         {SessionUpdate.Default with
                         event_id = "xy"
                         session =
                             {Session.Default with 
