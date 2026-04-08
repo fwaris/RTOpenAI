@@ -11,12 +11,15 @@ open AVFoundation
 open System.Text.Json
 
 module Connect =
-    let private stunServerUrl = "stun:stun.l.google.com:19302"
+    let private createIceServers (clientConfig: WebRtcClientConfig) =
+        clientConfig.IceServerUrls
+        |> List.map (fun url -> new RTCIceServer([| url |]))
+        |> List.toArray
 
-    let rtcConfiguration() =
+    let rtcConfiguration (clientConfig: WebRtcClientConfig) =
         let config = new RTCConfiguration()
         config.SdpSemantics <- RTCSdpSemantics.UnifiedPlan
-        config.IceServers <- [| new RTCIceServer([| stunServerUrl |]) |]
+        config.IceServers <- createIceServers clientConfig
         config
 
     let createPeerConnection (fac:RTCPeerConnectionFactory) config constraints dlg =
@@ -166,9 +169,9 @@ type WebRtcClientIOS() =
             base.Dispose()            
 
     //initialize WebRTCClient
-    member this.Init() =
+    member this.Init(clientConfig: WebRtcClientConfig) =
         resetIceGathering()
-        let config = Connect.rtcConfiguration()
+        let config = Connect.rtcConfiguration clientConfig
         let fac = new RTCPeerConnectionFactory(null,null)
         peerConnection <- Connect.createPeerConnection fac config mediaConstraints this    
         let _audioTrack, _dataChannel = Connect.createMediaSenders fac peerConnection 
@@ -176,9 +179,15 @@ type WebRtcClientIOS() =
         match _dataChannel with 
         | Some d -> dataChannel <- d; dataChannel.Delegate <- this
         | None   -> failwith "unable to create data channel"
+
+        match clientConfig.BindAddress with
+        | Some address ->
+            Log.warn $"pc: bind address {address} was requested but is not supported on iOS/MacCatalyst; ignoring"
+        | None -> ()
+
         AudioUtils.configureAudioSession()
 
-    member this.SendOffer(ephemeralKey:string,url:string) =
+    member this.SendOffer(ephemeralKey:string,url:string,clientConfig: WebRtcClientConfig) =
         task {
             use sem = new ManualResetEvent(false)
             let completionHandler = RTCCreateSessionDescriptionCompletionHandler(fun sdp err  ->
@@ -189,7 +198,7 @@ type WebRtcClientIOS() =
                         else
                             task {
                                 try
-                                    do! waitForLocalCandidatesAsync 4_000
+                                    do! waitForLocalCandidatesAsync clientConfig.IceGatherTimeoutMs
 
                                     match tryGetLocalOfferSdp() with
                                     | Some offerSdp ->
@@ -236,10 +245,11 @@ type WebRtcClientIOS() =
         member _.State with get() = state
         member _.StateChanged = stateEvent.Publish
                     
-        member this.Connect (key,url) = 
-            this.Init()
+        member this.Connect (key,url,config) = 
+            let config = WebRtcClientConfigHelpers.normalize config
+            this.Init(config)
             setState Connecting
-            this.SendOffer(key,url)
+            this.SendOffer(key,url,config)
 
         member this.Send (data:string) =
             if dataChannel <> null then 

@@ -164,6 +164,44 @@ let ``SessionUpdate serialization includes truncation`` () =
         | None -> Assert.Fail("Expected token_limits to deserialize")
     | other -> Assert.Fail(sprintf "Unexpected truncation payload: %A" other)
 
+[<Test>]
+let ``ResponseCancel serialization can target a specific response`` () =
+    let responseCancelEvent =
+        { ResponseCancel.Default with
+            event_id = "event_cancel"
+            response_id = Skippable.Include "resp_123" }
+
+    let json = JsonSerializer.Serialize(responseCancelEvent, SerDe.serOpts)
+
+    Assert.That(json, Does.Contain("\"type\": \"response.cancel\""))
+    Assert.That(json, Does.Contain("\"response_id\": \"resp_123\""))
+
+    let deserialized = JsonSerializer.Deserialize<ResponseCancel>(json, SerDe.serOpts)
+    if obj.ReferenceEquals(deserialized, null) then
+        Assert.Fail("Expected round-trip ResponseCancel")
+
+    match deserialized.response_id with
+    | Skippable.Include responseId -> Assert.That(responseId, Is.EqualTo("resp_123"))
+    | Skip -> Assert.Fail("Expected response_id to deserialize")
+
+[<Test>]
+let ``OutputAudioBufferClear serialization matches current realtime schema`` () =
+    let clearEvent =
+        { OutputAudioBufferClear.Default with
+            event_id = "event_audio_clear" }
+
+    let json = JsonSerializer.Serialize(clearEvent, SerDe.serOpts)
+
+    Assert.That(json, Does.Contain("\"type\": \"output_audio_buffer.clear\""))
+    Assert.That(json, Does.Not.Contain("\"response_id\""))
+
+    let deserialized = JsonSerializer.Deserialize<OutputAudioBufferClear>(json, SerDe.serOpts)
+    if obj.ReferenceEquals(deserialized, null) then
+        Assert.Fail("Expected round-trip OutputAudioBufferClear")
+
+    Assert.That(deserialized.event_id, Is.EqualTo("event_audio_clear"))
+    Assert.That(deserialized.``type``, Is.EqualTo("output_audio_buffer.clear"))
+
 // Conversation Item Added Event Tests
 [<Test>]
 let ``ConversationItemAdded event deserialization`` () =

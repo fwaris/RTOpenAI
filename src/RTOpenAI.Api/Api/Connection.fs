@@ -4,9 +4,11 @@ open FSharp.Control
 open System
 open RTOpenAI
 open RTOpenAI.Api
+open RTOpenAI.WebRTC
         
 type Connection = {
         WebRtcClient : WebRTC.IWebRtcClient
+        Config : WebRtcClientConfig
         Disposables: IDisposable list
     }
 
@@ -21,12 +23,16 @@ module Connection =
             return resp.value
         }       
     
-    let create() = 
+    let createWithConfig config =
         let pc = RTOpenAI.WebRTC.WebRtc.create()
         {
             WebRtcClient = pc
+            Config = WebRtcClientConfigHelpers.normalize config
             Disposables = []
         }
+
+    let create() = 
+        createWithConfig WebRtcClientConfig.Default
        
     let sendClientEvent connection ev =
         ev
@@ -37,7 +43,10 @@ module Connection =
         
         
     let connect ephemeralKey (connection:Connection) =
-        connection.WebRtcClient.Connect(ephemeralKey,Env.OPENAI_RT_API_CALLS.Value)
+        connection.WebRtcClient.Connect(ephemeralKey,Env.OPENAI_RT_API_CALLS.Value,connection.Config)
+
+    let connectTo url key (connection: Connection) =
+        connection.WebRtcClient.Connect(key,url,connection.Config)
 
     let close (sess:Connection) = 
         sess.WebRtcClient.Dispose()     

@@ -22,7 +22,6 @@ type WebRtcClientWin() =
     let mutable state = Disconnected
     let stateEvent = Event<State>()
     let mutable iceGatheringCompleted = TaskCompletionSource<unit>(TaskCreationOptions.RunContinuationsAsynchronously)
-    let stunServerUrl = "stun:stun.l.google.com:19302"
 
     let addDisposables xs = disposables <- disposables @ xs
     
@@ -70,6 +69,13 @@ type WebRtcClientWin() =
         let msg = JsonSerializer.Deserialize(bytes)
         outputChannel.Writer.TryWrite(msg) |> ignore
 
+    let createIceServers (clientConfig: WebRtcClientConfig) =
+        clientConfig.IceServerUrls
+        |> List.map (fun url ->
+            let iceServer = RTCIceServer()
+            iceServer.urls <- url
+            iceServer)
+
     let audioDelegate (pc:RTCPeerConnection) = EncodedSampleDelegate(fun duration bytes -> pc.SendAudio(duration,bytes))
 
     let addAudio(pc:RTCPeerConnection) =
@@ -106,16 +112,22 @@ type WebRtcClientWin() =
         //pc.add_OnAudioFrameReceived(fun audioFrame -> winAudioEP.GotEncodedMediaFrame(audioFrame))
         pc.add_OnAudioFrameReceived(Action<EncodedAudioFrame>(winAudioEP.GotEncodedMediaFrame))
 
-    let createPcConnection() = 
+    let createPcConnection (clientConfig: WebRtcClientConfig) = 
         task {
-            let iceServer = RTCIceServer()
-            iceServer.urls <- stunServerUrl
             let pcConfig =
                 RTCConfiguration(
                     X_UseRtpFeedbackProfile = true,
-                    X_ICEIncludeAllInterfaceAddresses = true
+                    X_ICEIncludeAllInterfaceAddresses = clientConfig.BindAddress.IsNone
                 )
-            pcConfig.iceServers <- System.Collections.Generic.List<RTCIceServer>([ iceServer ])
+
+            pcConfig.iceServers <- System.Collections.Generic.List<RTCIceServer>(createIceServers clientConfig)
+
+            match clientConfig.BindAddress with
+            | Some address ->
+                pcConfig.X_BindAddress <- address
+                Log.info $"pc: using bind address {address}"
+            | None -> ()
+
             let pc = new RTCPeerConnection(pcConfig)
             let! dataChannel = pc.createDataChannel(Env.OPENAI_RT_DATA_CHANNEL.Value)
             let winAudioEP = addAudio pc
@@ -131,20 +143,20 @@ type WebRtcClientWin() =
         }
 
 
-    member this.Init () =               
+    member this.Init (clientConfig: WebRtcClientConfig) =               
         task {
             resetIceGathering()
-            let! pc,dc,winAudioEP = createPcConnection()
+            let! pc,dc,winAudioEP = createPcConnection clientConfig
             peerConnection <- pc
             dataChannel <- dc
             dataChannel.add_onmessage(OnDataChannelMessageDelegate(onMessage))
         }
 
-    member this.SendOffer(ephemeralKey:string,url:string) =
+    member this.SendOffer(ephemeralKey:string,url:string,clientConfig: WebRtcClientConfig) =
         task {
             let offer = peerConnection.createOffer()
             do! peerConnection.setLocalDescription(offer)
-            do! waitForLocalCandidatesAsync 4_000
+            do! waitForLocalCandidatesAsync clientConfig.IceGatherTimeoutMs
 
             match tryGetLocalOfferSdp() with
             | Some offerSdp ->
@@ -187,12 +199,13 @@ type WebRtcClientWin() =
         member _.State with get() = state
         member _.StateChanged = stateEvent.Publish
                     
-        member this.Connect (key,url) = 
+        member this.Connect (key,url,config) = 
             task {
                 try
-                    do! this.Init()
+                    let config = WebRtcClientConfigHelpers.normalize config
+                    do! this.Init(config)
                     setState Connecting
-                    do!this.SendOffer(key,url)
+                    do!this.SendOffer(key,url,config)
                 with ex ->
                     Log.exn (ex,"IWebRtcClient.Connect")
             }

@@ -329,7 +329,12 @@ type Usage = {
 }
     with static member Default = { total_tokens = 0; input_tokens = 0; output_tokens = 0; input_token_details ={|text_tokens=0; audio_tokens=0|}; ``type`` = Include "tokens"}
 
-/// Send this event to update the session’s default configuration.
+/// Patch the session's default configuration for future turns.
+///
+/// Send this whenever the client needs to change defaults such as instructions, tools,
+/// audio settings, truncation, or turn detection. Only fields present in `session` are
+/// updated; empty strings, empty arrays, and `null` clear existing values. These session
+/// defaults are used unless a later `response.create` overrides them for one response.
 [<JsonFSharpConverter>]
 type SessionUpdate =
     {
@@ -339,7 +344,11 @@ type SessionUpdate =
     }
     static member Default = { event_id = ""; ``type`` = "session.update"; session = Session.Default }
 
-///Send this event to append audio bytes to the input audio buffer.
+/// Append audio bytes to the temporary input audio buffer.
+///
+/// Send this while streaming microphone audio. The buffer is later turned into a user
+/// message by `input_audio_buffer.commit`, or committed automatically when server-side
+/// turn detection is enabled. The server does not send an acknowledgement for each append.
 type InputAudioBufferAppend =
     {
         event_id: string
@@ -348,7 +357,11 @@ type InputAudioBufferAppend =
     }
     static member Default = { event_id = ""; ``type`` = "input_audio_buffer.append"; audio = "" }
 
-///Send this event to commit audio bytes to a user message.
+/// Commit buffered audio into a new user message item.
+///
+/// Send this after the user finishes speaking when server-side VAD is off, or when the
+/// client wants to force an early commit. This creates the user message and can trigger
+/// input transcription, but it does not itself ask the model to respond.
 type InputAudioBufferCommit =
     {
         event_id: string
@@ -356,7 +369,10 @@ type InputAudioBufferCommit =
     }
     static member Default = { event_id = ""; ``type`` = "input_audio_buffer.commit" }
 
-///Send this event to clear the audio bytes in the buffer.
+/// Discard any uncommitted audio bytes in the input buffer.
+///
+/// Send this when buffered microphone audio should be dropped instead of committed into
+/// conversation history. The server replies with `input_audio_buffer.cleared`.
 type InputAudioBufferClear =
     {
         event_id: string
@@ -364,7 +380,12 @@ type InputAudioBufferClear =
     }
     static member Default = { event_id = ""; ``type`` = "input_audio_buffer.clear" }
 
-///Send this event when adding an item to the conversation.
+/// Add a new item to the conversation context.
+///
+/// Send this to seed prior history, insert a message/function item mid-conversation, or
+/// otherwise add context before requesting inference. If `previous_item_id` is omitted the
+/// item is appended; `root` inserts at the start. Current OpenAI limitation: this cannot
+/// populate assistant audio messages.
 type ConversationItemCreate =
     {
         event_id: string
@@ -378,17 +399,25 @@ type ConversationItemCreate =
                               item = ConversationItem.Message ContentMessage.Default
                               }
 
-///Send this event when adding an item to the conversation.
+/// Retrieve the server's stored representation of a conversation item.
+///
+/// Send this when the client needs the canonical item as stored by OpenAI, for example to
+/// inspect user audio after server-side noise reduction and VAD have been applied.
 type ConversationItemRetrieve =
     {
         event_id: string
         item_id : string
-        ``type``: string  // "conversation.item.create"
+        ``type``: string  // "conversation.item.retrieve"
     }
     static member Default = { event_id = ""; ``type`` = "conversation.item.retrieve"; item_id = ""}
 
 
-///Send this event when you want to truncate a previous assistant message’s audio.
+/// Truncate audio that was already generated for an assistant message.
+///
+/// Send this when the user interrupts playback and the server has produced audio that the
+/// client has not finished playing yet. This keeps server context aligned with playback and
+/// removes the corresponding server-side transcript so unheard text does not remain in context.
+/// Only assistant message items can be truncated, and OpenAI expects `content_index = 0`.
 type ConversationItemTruncate =
     {
         event_id: string
@@ -399,14 +428,21 @@ type ConversationItemTruncate =
     }
     static member Default = { event_id = ""; ``type`` = "conversation.item.truncate"; item_id = ""; content_index = 0; audio_end_ms = 0 }
 
+/// WebRTC/SIP only: cut off output audio that is already buffered for playback.
+///
+/// Send this immediately after `response.cancel` when cancelling generation is not enough and
+/// the client also needs already-buffered output audio to stop. The server replies with
+/// `output_audio_buffer.cleared`.
 type OutputAudioBufferClear = {
     event_id : string
-    response_id : string
     ``type`` : string
 }
-with static member Default = {event_id=""; ``type``="response.cancel"; response_id=""}
+with static member Default = {event_id=""; ``type``="output_audio_buffer.clear"}
 
-///Send this event when you want to remove any item from the conversation history.
+/// Remove an item from the conversation history.
+///
+/// Send this to retract a previously stored item from model context. The server replies with
+/// `conversation.item.deleted` if the item exists.
 type ConversationItemDelete =
     {
         event_id: string
@@ -415,7 +451,12 @@ type ConversationItemDelete =
     }
     static member Default = { event_id = ""; ``type`` = "conversation.item.delete"; item_id = "" }
 
-///Send this event to trigger a response generation.
+/// Trigger model inference to create a response.
+///
+/// Send this when the model should answer now, especially if turn detection is disabled or
+/// automatic response creation is turned off. Values inside `response` override the session
+/// defaults for this response only, and the request can also run out-of-band from the default
+/// conversation.
 type ResponseCreate =
     {
         event_id: string
@@ -424,13 +465,18 @@ type ResponseCreate =
     }
     static member Default = { event_id = ""; ``type`` = "response.create"; response = Skip }
 
-///Send this event to cancel an in-progress response.
+/// Cancel an in-progress response.
+///
+/// Send this when the user interrupts, navigates away, or the pending answer is no longer
+/// wanted. If `response_id` is omitted, OpenAI cancels the active response in the default
+/// conversation; otherwise the targeted response is cancelled.
 type ResponseCancel =
     {
         event_id: string
         ``type``: string  // "response.cancel"
+        response_id: Skippable<string>
     }
-    static member Default = { event_id = ""; ``type`` = "response.cancel" }
+    static member Default = { event_id = ""; ``type`` = "response.cancel"; response_id = Skip }
 
 [<JsonFSharpConverter>]
 type MessageAudioContent =
@@ -993,4 +1039,3 @@ type ClientEvent =
     | ResponseCreate of ResponseCreate
     | ResponseCancel of ResponseCancel
     | OutputAudioBufferClear of OutputAudioBufferClear
-
