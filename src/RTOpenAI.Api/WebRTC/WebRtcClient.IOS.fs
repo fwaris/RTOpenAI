@@ -33,7 +33,7 @@ module Connect =
         let audioConstraints = new RTCMediaConstraints(null,null)        
         let audioSource = fac.AudioSourceWithConstraints(audioConstraints)        
         let audioTrack = fac.AudioTrackWithSource(audioSource,trackId = "audio0")
-        audioTrack
+        audioSource, audioTrack
 
     let createDataChannel (pc:RTCPeerConnection) =
         let config = new RTCDataChannelConfiguration()
@@ -44,9 +44,9 @@ module Connect =
             None
 
     let createMediaSenders fac (pc:RTCPeerConnection)   = 
-        let audioTrack = createAudioTrack fac
+        let audioSource, audioTrack = createAudioTrack fac
         let dataChannel = createDataChannel pc
-        audioTrack,dataChannel
+        audioSource, audioTrack, dataChannel
 
     let mediaConstraints() = 
         let mandatory = 
@@ -105,10 +105,12 @@ type WebRtcClientIOS() =
     let mutable mediaConstraints = Connect.mediaConstraints()
     let mutable dataChannel: RTCDataChannel = Unchecked.defaultof<_>
     let mutable outputChannel = Channels.Channel.CreateBounded<JsonDocument>(30)
+    let mutable disposables : IDisposable list = []
     let mutable state = Disconnected
     let stateEvent = Event<State>()
     let mutable iceGatheringCompleted = TaskCompletionSource<unit>(TaskCreationOptions.RunContinuationsAsynchronously)
 
+    let addDisposables xs = disposables <- disposables @ xs
     let setState s = state <- s; stateEvent.Trigger(s)
     let resetIceGathering() =
         iceGatheringCompleted <- TaskCompletionSource<unit>(TaskCreationOptions.RunContinuationsAsynchronously)
@@ -159,12 +161,15 @@ type WebRtcClientIOS() =
             match peerConnection with null -> () | x -> x.Close(); x.Dispose(); peerConnection <- null
             mediaConstraints.Dispose()
             if dataChannel <> Unchecked.defaultof<_> then 
+                dataChannel.Delegate <- null
                 dataChannel.Close()
                 dataChannel.Dispose()
                 dataChannel <- Unchecked.defaultof<_>
             if outputChannel <>  Unchecked.defaultof<_> then
                 outputChannel.Writer.Complete()
                 outputChannel <- Unchecked.defaultof<_>
+            disposables |> List.iter _.Dispose()
+            disposables <- []
             setState Disconnected            
             base.Dispose()            
 
@@ -173,9 +178,13 @@ type WebRtcClientIOS() =
         resetIceGathering()
         let config = Connect.rtcConfiguration clientConfig
         let fac = new RTCPeerConnectionFactory(null,null)
+        addDisposables [ fac ]
         peerConnection <- Connect.createPeerConnection fac config mediaConstraints this    
-        let _audioTrack, _dataChannel = Connect.createMediaSenders fac peerConnection 
-        let audioSender = peerConnection.AddTrack(_audioTrack, streamIds = [|"stream0"|])        
+        let audioSource, audioTrack, _dataChannel = Connect.createMediaSenders fac peerConnection
+        addDisposables [ audioSource; audioTrack ]
+        let audioSender = peerConnection.AddTrack(audioTrack, streamIds = [|"stream0"|])
+        if audioSender <> null then
+            addDisposables [ audioSender ]
         match _dataChannel with 
         | Some d -> dataChannel <- d; dataChannel.Delegate <- this
         | None   -> failwith "unable to create data channel"
