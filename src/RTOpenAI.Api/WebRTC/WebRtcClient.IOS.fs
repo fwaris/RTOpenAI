@@ -158,19 +158,41 @@ type WebRtcClientIOS() =
 
     interface System.IDisposable with 
         member this.Dispose (): unit = 
-            match peerConnection with null -> () | x -> x.Close(); x.Dispose(); peerConnection <- null
-            mediaConstraints.Dispose()
+            match peerConnection with
+            | null -> ()
+            | x ->
+                x.Delegate <- null
+                x.Close()
+                x.Dispose()
+                peerConnection <- null
+
+            if mediaConstraints <> null then
+                mediaConstraints.Dispose()
+                mediaConstraints <- null
+
             if dataChannel <> Unchecked.defaultof<_> then 
                 dataChannel.Delegate <- null
                 dataChannel.Close()
                 dataChannel.Dispose()
                 dataChannel <- Unchecked.defaultof<_>
+
             if outputChannel <>  Unchecked.defaultof<_> then
                 outputChannel.Writer.Complete()
                 outputChannel <- Unchecked.defaultof<_>
-            disposables |> List.iter _.Dispose()
+
+            try
+                AudioUtils.release()
+            with ex ->
+                Log.exn(ex, "pc: audio session release failed")
+
+            disposables |> List.iter (fun disposable ->
+                try
+                    disposable.Dispose()
+                with ex ->
+                    Log.exn(ex, "pc: disposable cleanup failed"))
             disposables <- []
             setState Disconnected            
+            GC.SuppressFinalize(this)
             base.Dispose()            
 
     //initialize WebRTCClient
