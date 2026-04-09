@@ -1024,6 +1024,39 @@ let ``ResponseFunctionCallArgumentsDone event deserialization`` () =
         Assert.That(e.arguments, Is.EqualTo("{\"location\": \"San Francisco\"}"))
     | _ -> Assert.Fail("Expected ResponseFunctionCallArgumentsDone event")
 
+[<Test>]
+let ``ConversationItemAdded function call output tolerates missing status`` () =
+    let conversationItemAddedJson = """
+    {
+        "type": "conversation.item.added",
+        "event_id": "event_fn_output_001",
+        "previous_item_id": "item_prev_001",
+        "item": {
+            "id": "item_fn_output_001",
+            "type": "function_call_output",
+            "call_id": "call_fn_output_001",
+            "output": "Function call timed out."
+        }
+    }"""
+
+    let doc = JsonDocument.Parse(conversationItemAddedJson)
+    let serverEvent = SerDe.toEvent doc
+
+    match serverEvent with
+    | ServerEvent.ConversationItemAdded e ->
+        match e.item with
+        | ConversationItem.Function_call_output output ->
+            Assert.That(output.call_id, Is.EqualTo("call_fn_output_001"))
+            Assert.That(output.output, Is.EqualTo("Function call timed out."))
+
+            match output.status with
+            | Skip -> Assert.Pass()
+            | other -> Assert.Fail($"Expected missing status to deserialize as Skip, got {other}")
+        | _ ->
+            Assert.Fail("Expected function_call_output conversation item")
+    | _ ->
+        Assert.Fail("Expected ConversationItemAdded event")
+
 // Response MCP Call Arguments Delta Event Tests
 [<Test>]
 let ``ResponseMcpCallArgumentsDelta event deserialization`` () =

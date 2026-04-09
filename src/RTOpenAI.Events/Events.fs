@@ -523,7 +523,7 @@ type ContentFunctionCall = {
     call_id : string
     id : string
     object : Skippable<string>
-    status : string
+    status : Skippable<string>
 }
 
 type ContentFunctionCallOutput = {
@@ -531,13 +531,13 @@ type ContentFunctionCallOutput = {
     output : string
     id : string
     object : Skippable<string>
-    status : string
+    status : Skippable<string>
 } with static member Create callId output = {
         call_id = callId
         output = output
         id = Utils.newId()
         object = Skip
-        status = "completed"
+        status = Include "completed"
 }
 
 type ContentMcpApprovalResponse = {
