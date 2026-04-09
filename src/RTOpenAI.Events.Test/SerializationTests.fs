@@ -62,17 +62,43 @@ let ``SessionCreated event deserialization`` () =
             "id": "sess_001",
             "object": "realtime.session",
             "model": "gpt-realtime-2025-08-28",
-            "modalities": ["audio", "text"],
+            "output_modalities": ["audio"],
             "instructions": "You are a helpful assistant",
-            "voice": "alloy",
-            "input_audio_format": "pcm16",
-            "output_audio_format": "pcm16",
-            "input_audio_transcription": null,
-            "turn_detection": null,
             "tools": [],
             "tool_choice": "auto",
-            "temperature": 0.8,
-            "max_output_tokens": null
+            "max_output_tokens": "inf",
+            "tracing": null,
+            "truncation": "auto",
+            "prompt": null,
+            "expires_at": 1775708058,
+            "audio": {
+                "input": {
+                    "format": {
+                        "type": "audio/pcm",
+                        "rate": 24000
+                    },
+                    "transcription": null,
+                    "noise_reduction": null,
+                    "turn_detection": {
+                        "type": "server_vad",
+                        "threshold": 0.5,
+                        "prefix_padding_ms": 300,
+                        "silence_duration_ms": 200,
+                        "idle_timeout_ms": null,
+                        "create_response": true,
+                        "interrupt_response": true
+                    }
+                },
+                "output": {
+                    "format": {
+                        "type": "audio/pcm",
+                        "rate": 24000
+                    },
+                    "voice": "alloy",
+                    "speed": 1.0
+                }
+            },
+            "include": null
         }
     }"""
     
@@ -83,6 +109,9 @@ let ``SessionCreated event deserialization`` () =
     | ServerEvent.SessionCreated e ->
         Assert.That(e.event_id, Is.EqualTo("event_123"))
         Assert.That(e.``type``, Is.EqualTo("session.created"))
+        match e.session.``include`` with
+        | Skippable.Include None -> ()
+        | other -> Assert.Fail(sprintf "Expected include = null to deserialize as Include None, got %A" other)
     | _ -> Assert.Fail("Expected SessionCreated event")
 
 // Session Updated Event Tests  

@@ -230,7 +230,7 @@ type Session =
         ``object`` : Skippable<string>        
         model: string option
         audio : Skippable<Audio>
-        ``include`` : Skippable<string list>
+        ``include`` : Skippable<string list option>
         output_modalities: Skippable<string list>
         instructions: string option
         prompt : Skippable<Prompt option>
@@ -250,7 +250,7 @@ type Session =
             ``object`` = Skip
             model = None
             audio = Skip
-            ``include`` = Include []
+            ``include`` = Include (Some [])
             output_modalities = Skip
             instructions = None
             prompt = Skip
