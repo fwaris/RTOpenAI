@@ -49,6 +49,19 @@ module Connection =
         connection.WebRtcClient.Connect(key,url,connection.Config)
 
     let close (sess:Connection) = 
-        sess.WebRtcClient.Dispose()     
-        sess.Disposables |> List.iter _.Dispose()
+        Log.info "conn: closing realtime connection"
+
+        try
+            sess.WebRtcClient.Dispose()
+            Log.info "conn: WebRTC client disposed"
+        with ex ->
+            Log.exn(ex, "conn: WebRTC client dispose failed")
+
+        sess.Disposables
+        |> List.iteri (fun index disposable ->
+            try
+                disposable.Dispose()
+                Log.info $"conn: disposed dependent resource #{index + 1} ({disposable.GetType().FullName})"
+            with ex ->
+                Log.exn(ex, $"conn: dependent resource #{index + 1} dispose failed ({disposable.GetType().FullName})"))
      

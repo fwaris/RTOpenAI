@@ -8,6 +8,7 @@ open RTOpenAI.WebRTC
 open IOS.WebRTC
 open Foundation
 open AVFoundation
+open ObjCRuntime
 open System.Text.Json
 
 module Connect =
@@ -100,23 +101,52 @@ module AudioUtils =
 type WebRtcClientIOS() =    
     inherit NSObject() 
     //weak var delegate: WebRTCClientDelegate?
+    let instanceId = Guid.NewGuid().ToString("N").Substring(0, 8)
     let mutable peerConnection: RTCPeerConnection = null   
+    let mutable peerConnectionFactory: RTCPeerConnectionFactory = null
     let mutable audioQueue = MailboxProcessor.Start(ignore>>async.Return)
     let mutable mediaConstraints = Connect.mediaConstraints()
+    let mutable audioSource: RTCAudioSource = null
+    let mutable audioTrack: RTCAudioTrack = null
+    let mutable audioSender: RTCRtpSender = null
     let mutable dataChannel: RTCDataChannel = Unchecked.defaultof<_>
     let mutable outputChannel = Channels.Channel.CreateBounded<JsonDocument>(30)
-    let mutable disposables : IDisposable list = []
     let mutable state = Disconnected
+    let mutable disposeStarted = 0
     let stateEvent = Event<State>()
     let mutable iceGatheringCompleted = TaskCompletionSource<unit>(TaskCreationOptions.RunContinuationsAsynchronously)
 
-    let addDisposables xs = disposables <- disposables @ xs
     let setState s = state <- s; stateEvent.Trigger(s)
     let resetIceGathering() =
         iceGatheringCompleted <- TaskCompletionSource<unit>(TaskCreationOptions.RunContinuationsAsynchronously)
 
     let tryCompleteIceGathering() =
         iceGatheringCompleted.TrySetResult() |> ignore
+
+    let describeNative name (value: obj) =
+        match value with
+        | null -> $"{name}=null"
+        | :? INativeObject as native -> $"{name}={value.GetType().Name}(handle={native.Handle})"
+        | _ -> $"{name}={value.GetType().Name}"
+
+    let logCleanupStart disposing pc dc sender track source factory constraints =
+        Log.info
+            ($"pc[{instanceId}]: dispose start disposing={disposing}; "
+             + String.concat
+                 "; "
+                 [ describeNative "peerConnection" pc
+                   describeNative "dataChannel" dc
+                   describeNative "audioSender" sender
+                   describeNative "audioTrack" track
+                   describeNative "audioSource" source
+                   describeNative "peerConnectionFactory" factory
+                   describeNative "mediaConstraints" constraints ])
+
+    let safeCleanup step action =
+        try
+            action()
+        with ex ->
+            Log.exn(ex, $"pc[{instanceId}]: cleanup step '{step}' failed")
 
     let tryGetLocalOfferSdp() =
         match peerConnection with
@@ -153,60 +183,90 @@ type WebRtcClientIOS() =
                 Log.warn $"pc: continuing without local ICE candidates after waiting {timeoutMs}ms"
         }
 
-    interface ObjCRuntime.INativeObject with
-        member this.Handle = base.Handle        
+    override this.Dispose(disposing: bool) =
+        let alreadyDisposing = Interlocked.Exchange(&disposeStarted, 1) <> 0
 
-    interface System.IDisposable with 
-        member this.Dispose (): unit = 
-            match peerConnection with
-            | null -> ()
-            | x ->
-                x.Delegate <- null
-                x.Close()
-                x.Dispose()
-                peerConnection <- null
+        if alreadyDisposing then
+            Log.warn $"pc[{instanceId}]: duplicate dispose ignored; disposing={disposing}"
+        else
+            let pc = peerConnection
+            let dc = dataChannel
+            let sender = audioSender
+            let track = audioTrack
+            let source = audioSource
+            let factory = peerConnectionFactory
+            let constraints = mediaConstraints
+            let channel = outputChannel
 
-            if mediaConstraints <> null then
-                mediaConstraints.Dispose()
-                mediaConstraints <- null
+            peerConnection <- null
+            dataChannel <- Unchecked.defaultof<_>
+            audioSender <- null
+            audioTrack <- null
+            audioSource <- null
+            peerConnectionFactory <- null
+            mediaConstraints <- null
+            outputChannel <- Unchecked.defaultof<_>
 
-            if dataChannel <> Unchecked.defaultof<_> then 
-                dataChannel.Delegate <- null
-                dataChannel.Close()
-                dataChannel.Dispose()
-                dataChannel <- Unchecked.defaultof<_>
+            logCleanupStart disposing pc dc sender track source factory constraints
+            tryCompleteIceGathering()
 
-            if outputChannel <>  Unchecked.defaultof<_> then
-                outputChannel.Writer.Complete()
-                outputChannel <- Unchecked.defaultof<_>
+            if channel <> Unchecked.defaultof<_> then
+                channel.Writer.TryComplete() |> ignore
 
-            try
-                AudioUtils.release()
-            with ex ->
-                Log.exn(ex, "pc: audio session release failed")
+            if disposing then
+                if dc <> Unchecked.defaultof<_> then
+                    safeCleanup "detach data channel delegate" (fun () -> dc.Delegate <- null)
+                    safeCleanup "close data channel" (fun () -> dc.Close())
+                    safeCleanup "dispose data channel" (fun () -> dc.Dispose())
 
-            disposables |> List.iter (fun disposable ->
-                try
-                    disposable.Dispose()
-                with ex ->
-                    Log.exn(ex, "pc: disposable cleanup failed"))
-            disposables <- []
-            setState Disconnected            
-            GC.SuppressFinalize(this)
-            base.Dispose()            
+                if sender <> null then
+                    safeCleanup "dispose audio sender" (fun () -> sender.Dispose())
+
+                if track <> null then
+                    safeCleanup "dispose audio track" (fun () -> track.Dispose())
+
+                if source <> null then
+                    safeCleanup "dispose audio source" (fun () -> source.Dispose())
+
+                if pc <> null then
+                    safeCleanup "detach peer connection delegate" (fun () -> pc.Delegate <- null)
+                    safeCleanup "close peer connection" (fun () -> pc.Close())
+                    safeCleanup "dispose peer connection" (fun () -> pc.Dispose())
+
+                if constraints <> null then
+                    safeCleanup "dispose media constraints" (fun () -> constraints.Dispose())
+
+                if factory <> null then
+                    safeCleanup "dispose peer connection factory" (fun () -> factory.Dispose())
+
+                safeCleanup "release audio session" AudioUtils.release
+                setState Disconnected
+                Log.info $"pc[{instanceId}]: dispose completed"
+            else
+                state <- Disconnected
+                Log.warn
+                    ($"pc[{instanceId}]: finalizer-driven Dispose(false) reached; "
+                     + "native WebRTC teardown was skipped to avoid Objective-C cleanup on the finalizer thread.")
+
+        base.Dispose(disposing)
+
+    interface INativeObject with
+        member this.Handle = base.Handle
+
+    interface IDisposable with
+        member this.Dispose() =
+            base.Dispose()
 
     //initialize WebRTCClient
     member this.Init(clientConfig: WebRtcClientConfig) =
         resetIceGathering()
         let config = Connect.rtcConfiguration clientConfig
-        let fac = new RTCPeerConnectionFactory(null,null)
-        addDisposables [ fac ]
-        peerConnection <- Connect.createPeerConnection fac config mediaConstraints this    
-        let audioSource, audioTrack, _dataChannel = Connect.createMediaSenders fac peerConnection
-        addDisposables [ audioSource; audioTrack ]
-        let audioSender = peerConnection.AddTrack(audioTrack, streamIds = [|"stream0"|])
-        if audioSender <> null then
-            addDisposables [ audioSender ]
+        peerConnectionFactory <- new RTCPeerConnectionFactory(null,null)
+        peerConnection <- Connect.createPeerConnection peerConnectionFactory config mediaConstraints this    
+        let createdAudioSource, createdAudioTrack, _dataChannel = Connect.createMediaSenders peerConnectionFactory peerConnection
+        audioSource <- createdAudioSource
+        audioTrack <- createdAudioTrack
+        audioSender <- peerConnection.AddTrack(audioTrack, streamIds = [|"stream0"|])
         match _dataChannel with 
         | Some d -> dataChannel <- d; dataChannel.Delegate <- this
         | None   -> failwith "unable to create data channel"
@@ -217,6 +277,14 @@ type WebRtcClientIOS() =
         | None -> ()
 
         AudioUtils.configureAudioSession()
+        let initDetails =
+            [ describeNative "peerConnection" peerConnection
+              describeNative "dataChannel" dataChannel
+              describeNative "audioSender" audioSender
+              describeNative "audioTrack" audioTrack
+              describeNative "audioSource" audioSource ]
+            |> String.concat "; "
+        Log.info $"pc[{instanceId}]: initialized {initDetails}"
 
     member this.SendOffer(ephemeralKey:string,url:string,clientConfig: WebRtcClientConfig) =
         task {
