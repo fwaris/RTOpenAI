@@ -15,7 +15,7 @@ The following are **ServerEvents** union cases related to error handling:
 
 - **Error** - is an error message sent by the server in relation to *some* error. It could be related to a past message sent from the client. Pay particular attention to this message as it will likely affect how the server responds from this point forward.
 - **UnknownEvent (msgType,JsonDocument)** - is generated on the client side when the JSON message sent by the server cannot be mapped to a known type. The raw JSON and its 'type' string (if any) are included in this message 
-- **EventHandlingError (err,msgType,JsonDocument)** - is generated on the client side when the JSON message sent by server cannot be parsed/deserialized. The message includes the error message as well as the msgType and raw JSON.
+- **EventHandlingError (msgType, err, JsonDocument)** - is generated on the client side when the JSON message sent by server cannot be parsed/deserialized, or when the top-level `type` field is missing / not a string. The tuple carries the event type (may be empty), the error message, and the raw JSON.
 
 ### Possible Serialization Issues
 OpenAI realtime API protocol messages are described in detail but there is an ambiguity related to optional fields. Assume `data` is an optional field then there are three distinct possibilities:

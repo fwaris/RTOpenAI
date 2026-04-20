@@ -7,21 +7,23 @@
 
   <PropertyGroup>
     <PackageId>RTOpenAI.Events</PackageId>
-    <Description>Strongly type wrappers for OpenAI realtime API messages</Description>
+    <Description>Strongly-typed F# wrappers and (de)serialization for OpenAI Realtime API protocol messages.</Description>
     <Authors>Faisal Waris</Authors>
     <PackageLicenseExpression>MIT</PackageLicenseExpression>
-    <PackageTags>AI</PackageTags>
+    <PackageTags>OpenAI;Realtime;WebRTC;FSharp;AI;Voice</PackageTags>
+    <PackageProjectUrl>https://github.com/fwaris/RTOpenAI</PackageProjectUrl>
     <RepositoryUrl>https://github.com/fwaris/RTOpenAI</RepositoryUrl>
+    <RepositoryType>git</RepositoryType>
+    <PackageReadmeFile>readme.md</PackageReadmeFile>
   </PropertyGroup>
-  
+
   <ItemGroup>
     <Compile Include="Events.fs" />
     <Compile Include="SerDe.fs" />
-    <None Include="readme.md" />
+    <None Include="readme.md" Pack="true" PackagePath="\" />
   </ItemGroup>
 
   <ItemGroup>
-    <PackageReference Include="Microsoft.Extensions.Logging.Console" />    
     <PackageReference Include="FSharp.SystemTextJson" />
   </ItemGroup>
 

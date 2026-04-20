@@ -4,6 +4,23 @@ open System
 open FsAICore
 open System.Text.Json
 open Microsoft.Extensions.AI
+open FSharp.DI
+
+type LogCategory = class end
+
+module Log =
+    ///allow for turning message loggin on/off at runtime
+    let mutable debug_logging = false
+    let private log = DI.loggerLazy<LogCategory>()
+    let info (msg:string) = log.Value.info msg
+    let warn (msg:string) = log.Value.warn msg
+    let error (msg:string) = log.Value.error msg
+    let exn (exn:exn,msg) = log.Value.exn (exn,msg)
+    let trace (msg:string) = log.Value.trace msg
+
+    let init (sp:IServiceProvider) =
+        DI.init sp
+        info "Initialized"
 
 type Tid = Tid of string with member this.id with get() = match this with Tid i -> i
 

@@ -3,6 +3,7 @@ open Microsoft.Extensions.Configuration
 open Microsoft.Maui.Hosting
 open Microsoft.Extensions.DependencyInjection
 open Fabulous.Maui
+open FSharp.DI
 open Microsoft.Extensions.Logging
 open  FsPlaySamples.Cua.Navigation
 open Syncfusion.Maui.Toolkit.Hosting
@@ -48,5 +49,7 @@ type MauiProgram =
 //#if DEBUG        
         builder.Logging.AddConsole() |> ignore
 //#endif
-       
-        builder.Build()
+
+        let app = builder.Build()
+        DI.init app.Services
+        app

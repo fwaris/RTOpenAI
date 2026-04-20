@@ -6,8 +6,9 @@
   <ItemGroup>
     <PackageVersion Include="Anthropic.SDK" Version="[5.8,)" />
     <PackageVersion Include="coverlet.collector" Version="6.0.4" />
+    <PackageVersion Include="FSharp.DI" Version="1.0.0" />
     <PackageVersion Include="FSharp.Control.AsyncSeq" Version="3.2.1" />
-    <PackageVersion Include="FSharp.Core" Version="[10,)" />
+    <PackageVersion Include="FSharp.Core" Version="10.1.201" />
     <PackageVersion Include="FSharp.Data.JsonSchema" Version="2.1.0" />
     <PackageVersion Include="FSharp.Maui.WinUICompat" Version="[1.1,)" />
     <PackageVersion Include="FSharp.SystemTextJson" Version="1.4.36" />

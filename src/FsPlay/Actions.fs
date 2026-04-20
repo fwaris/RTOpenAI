@@ -30,7 +30,9 @@ module Actions =
                 do! driver.scroll (p.x,p.y) (p.scroll_x,p.scroll_y)
             | Action.Keypress p -> do! driver.pressKeys p.keys
             | Action.Type p -> do! driver.typeText p.text
-            | Action.Wait  ->  do! Async.Sleep(2000)
+            | Action.Wait secs ->
+                let ms = if secs = 0u then 2000 else int secs * 1000
+                do! Async.Sleep ms
             | Action.Screenshot -> () //these are handled separately
             | Action.Move p -> do! driver.move(p.x,p.y)
             | Action.Double_click p -> do! driver.doubleClick(p.x,p.y)

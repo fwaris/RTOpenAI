@@ -198,7 +198,7 @@ let ``ResponseCancel serialization can target a specific response`` () =
     let responseCancelEvent =
         { ResponseCancel.Default with
             event_id = "event_cancel"
-            response_id = Skippable.Include "resp_123" }
+            response_id = Skippable.Include (Some "resp_123") }
 
     let json = JsonSerializer.Serialize(responseCancelEvent, SerDe.serOpts)
 
@@ -210,7 +210,8 @@ let ``ResponseCancel serialization can target a specific response`` () =
         Assert.Fail("Expected round-trip ResponseCancel")
 
     match deserialized.response_id with
-    | Skippable.Include responseId -> Assert.That(responseId, Is.EqualTo("resp_123"))
+    | Skippable.Include (Some responseId) -> Assert.That(responseId, Is.EqualTo("resp_123"))
+    | Skippable.Include None -> Assert.Fail("Expected response_id value, got null")
     | Skip -> Assert.Fail("Expected response_id to deserialize")
 
 [<Test>]

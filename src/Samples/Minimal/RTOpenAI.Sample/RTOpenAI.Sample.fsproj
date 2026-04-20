@@ -98,9 +98,9 @@
 	
 	<ItemGroup>
 		<!-- <PackageReference Include="Fabulous.MauiControls" /> -->
+		<PackageReference Include="FSharp.DI" />
 		<PackageReference Include="FSharp.Control.AsyncSeq" />
 		<PackageReference Include="FSharp.SystemTextJson" />
-		<PackageReference Include="Microsoft.Extensions.Logging.Console" />
 	</ItemGroup>
 
 	<ItemGroup>

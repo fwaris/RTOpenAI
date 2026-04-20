@@ -1,6 +1,21 @@
 namespace RTOpenAI.Api
 
 open System
+open FSharp.DI
+
+type RTOpenAILog() = class end
+
+module Log =
+    let mutable debug_logging = false
+    let private log = DI.loggerLazy<RTOpenAILog>()
+    let info (msg:string) = log.Value.info msg
+    let warn (msg:string) = log.Value.warn msg
+    let error (msg:string) = log.Value.error msg
+    let exn (exn:exn,msg) = log.Value.exn (exn,msg)
+
+    let init (sp:IServiceProvider) =
+        DI.init sp
+        info "Initialized"
 
 module rec Env =
     let private fromEnvironmentOrDefault name fallback =

@@ -26,7 +26,6 @@
     
   <ItemGroup>
     <Compile Include="Constants.fs" />
-    <Compile Include="RTOpenAI.Log.fs" />
     <Compile Include="Utils.fs" />
     <Compile Include="WebRTC/IWebRtcClient.fs" />
     <Compile Include="WebRTC/WebRtcClient.IOS.fs" />
@@ -53,8 +52,8 @@
     <ItemGroup>
         <ProjectReference Include="..\RTOpenAI.Events\RTOpenAI.Events.fsproj" />
         <PackageReference Include="Fabulous.MauiControls" />
+        <PackageReference Include="FSharp.DI" />
         <PackageReference Include="FSharp.SystemTextJson" />
-        <PackageReference Include="Microsoft.Extensions.Logging.Console" />
     </ItemGroup>
     <ItemGroup>
 

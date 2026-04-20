@@ -2,6 +2,7 @@
 open Microsoft.Maui.Hosting
 open Microsoft.Extensions.DependencyInjection
 open Fabulous.Maui
+open FSharp.DI
 open Microsoft.Extensions.Logging
 open RTOpenAI.Sample.Navigation
 
@@ -24,4 +25,6 @@ type MauiProgram =
             x.AddConsole() |> ignore
             x.AddFilter("RTOpenAILog", LogLevel.Information) |> ignore
             ) |> ignore
-        builder.Build()
+        let app = builder.Build()
+        DI.init app.Services
+        app

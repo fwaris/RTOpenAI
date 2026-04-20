@@ -12,6 +12,9 @@ module ConfigKeys =
     let ANTHROPIC_API_KEY = "ANTHROPIC_API_KEY"
     let OPENAI_API_KEY = "OPENAI_API_KEY"
     let CHAT_MODEL_ID = "CHAT_MODEL_ID"
+    /// Optional. Model used for CUA completion-check (`CuaLoop.isTaskEnded`).
+    /// Falls back to CHAT_MODEL_ID when unset.
+    let COMPLETION_MODEL_ID = "COMPLETION_MODEL_ID"
     
 ///Need this distinction until MxExtAI abstracts more of the backend functionality
 type AIBackend = OpenAILike | AnthropicLike 
@@ -45,10 +48,15 @@ module AnthropicClient =
     let mutable COMPUTER_USE_BETA_HEADER = "computer-use-2025-11-24"  // these are likely to change so making mutable for now
     let mutable COMPUTER_TOOL_VERSION = "computer_20251124"
 
-    let createAnthropicClient(key:string) =
+    // Shared HttpClient to avoid socket exhaustion. The anthropic-beta header value is
+    // captured on first use; changing COMPUTER_USE_BETA_HEADER after that has no effect.
+    let private sharedHttpClient = lazy(
         let httpClient = new System.Net.Http.HttpClient()
-        httpClient.DefaultRequestHeaders.Add("anthropic-beta",COMPUTER_USE_BETA_HEADER)
-        new AnthropicClient(key,httpClient)
+        httpClient.DefaultRequestHeaders.Add("anthropic-beta", COMPUTER_USE_BETA_HEADER)
+        httpClient)
+
+    let createAnthropicClient(key:string) =
+        new AnthropicClient(key, sharedHttpClient.Value)
         
     let createClientWithKey(key) : IChatClient =  
         (createAnthropicClient(key))
@@ -168,11 +176,12 @@ module AIUtils =
             let usage = [resp.ModelId,resp.Usage] |> Map.ofList           
             return structuredResp,usage
         with ex ->
-            if retries <= 0 then
+            if retries > 0 then
+                Log.exn(ex, $"sendRequest (retrying, {retries} attempt(s) left)")
                 do! Async.Sleep 1000
                 return! sendRequest (retries-1) context tools history
             else
                 Log.exn(ex,"sendRequest")
                 return raise ex
-    }    
+    }
  

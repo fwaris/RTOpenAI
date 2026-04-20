@@ -64,8 +64,7 @@ module KeyUtils =
     let modifiers = set [K.Alt; K.Control; K.Shift; K.Meta]
 
     let hasModifiers (keys:string list) =
-        let ks = set keys
-        (Set.union modifiers ks).Count > 0
+        keys |> List.exists modifiers.Contains
 
     let canonicalize (keys:string list) : string list list =
         let keys = baseCanonicalize keys
