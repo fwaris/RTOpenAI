@@ -23,15 +23,15 @@ module VoiceAgent =
     
     let sessionAudio =
         {Audio.Default with
-            input = Include {AudioInput.Default with
-                               transcription = {
-                                  language = "en"
-                                  model = "gpt-4o-mini-transcribe"
-                                  prompt = Some "Expect words related to phone plans"
-                               }
-                               |> Some
-                               |> Include
-                             }                                
+            input = Include (Some {AudioInput.Default with
+                                     transcription = {
+                                        language = "en"
+                                        model = "gpt-4o-mini-transcribe"
+                                        prompt = Some "Expect words related to phone plans"
+                                     }
+                                     |> Some
+                                     |> Include
+                                  })
             }
     
     //sends 'response.create' to prompt the LLM to generate audio (otherwise it seems to wait).
@@ -39,7 +39,7 @@ module VoiceAgent =
         let rc = { ResponseCreate.Default with event_id = Utils.newId()}
         let rc =            
             instructions
-            |> Option.map (fun i ->  {rc with response = Include {Response.Default with instructions = Include i }})
+            |> Option.map (fun i ->  {rc with response = Include (Some {Response.Default with instructions = Include (Some i) }) })
             |> Option.defaultValue rc
         rc |> ClientEvent.ResponseCreate |> Api.Connection.sendClientEvent conn
                 
@@ -107,10 +107,10 @@ module VoiceAgent =
         { s with
             id = Skip
             object = Skip
-            audio = Include sessionAudio
-            instructions = Some PlanPrompts.voiceInstructions.Value 
-            tool_choice = Include "auto"            
-            tools = Include voiceFunctions
+            audio = Include (Some sessionAudio)
+            instructions = Some PlanPrompts.voiceInstructions.Value
+            tool_choice = Include (Some "auto")
+            tools = Include (Some voiceFunctions)
             expires_at = Skip
         }
         
@@ -169,7 +169,7 @@ module VoiceAgent =
     let startVoice (conn:RTOpenAI.Api.Connection) (bus:WBus<FlowMsg, AgentMsg>) = async {
         let initState = VoState.Create bus
         if conn.WebRtcClient.State.IsDisconnected then
-            let keyReq = {KeyReq.Default with session.audio = Include sessionAudio}
+            let keyReq = {KeyReq.Default with session.audio = Include (Some sessionAudio)}
             let! ephemKey = Connection.getEphemeralKey (Settings.Values.openaiKey()) keyReq |> Async.AwaitTask
             do! Connection.connect ephemKey conn |> Async.AwaitTask
         let comp = 

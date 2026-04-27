@@ -5,6 +5,21 @@ open System.Text.Json
 open System.Runtime.InteropServices
 open System.Text.Encodings.Web
 open System.Text.Json.Serialization
+open FSharp.DI
+
+type LogCategory = class end
+
+module Log =
+    let private log = DI.loggerLazy<LogCategory>()
+    let info (msg:string) = log.Value.info msg
+    let warn (msg:string) = log.Value.warn msg
+    let error (msg:string) = log.Value.error msg
+    let exn (exn:exn,msg) = log.Value.exn (exn,msg)
+    let trace (msg:string) = log.Value.trace msg
+
+    let init (sp:IServiceProvider) =
+        DI.init sp
+        info "Initialized"
 
 [<AutoOpen>]
 module Utility =
@@ -67,4 +82,6 @@ module Utility =
 
     let prependToFile (t:string) (f:string) =
         let pText = if File.Exists f then File.ReadAllText f else ""
-        File.WriteAllText(f,t + pText)
+        let tmp = f + ".tmp"
+        File.WriteAllText(tmp, t + pText)
+        File.Move(tmp, f, true)

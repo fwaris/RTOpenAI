@@ -17,14 +17,20 @@ open System.Text.Json.Serialization
 - Update: Manually updated to match OpenAI realtime API version change
 *)
 
+/// Small helpers used across event types. Primarily exposes <see cref="M:RTOpenAI.Events.Utils.newId"/>
+/// for generating URL-safe event IDs that round-trip cleanly through the OpenAI Realtime API.
 module Utils =
-    
-    let newId() = 
-        Guid.NewGuid().ToByteArray() 
-        |> Convert.ToBase64String 
-        |> Seq.takeWhile (fun c -> c <> '=') 
+
+    /// Generate a short, URL-safe identifier suitable for the <c>event_id</c> field
+    /// on outgoing client events. Derived from a random GUID, then base64 encoded
+    /// with characters that have meaning in JSON or URLs (<c>/</c>, <c>\</c>, <c>+</c>)
+    /// remapped so the string is safe to embed without escaping.
+    let newId() =
+        Guid.NewGuid().ToByteArray()
+        |> Convert.ToBase64String
+        |> Seq.takeWhile (fun c -> c <> '=')
         |> Seq.collect (function '/' -> ['_';'_'] | '\\' -> ['-';'-'] | '+' -> ['_';'-'] | c -> [c])
-        |> Seq.toArray 
+        |> Seq.toArray
         |> String
 
 // Shared Types
@@ -174,8 +180,8 @@ type AudioOutput = {
         
 [<JsonFSharpConverter>]
 type Audio = {
-    input: Skippable<AudioInput>
-    output : Skippable<AudioOutput> //don't need output for 'transcription' sessions
+    input: Skippable<AudioInput option>
+    output : Skippable<AudioOutput option> //don't need output for 'transcription' sessions
 }
     with
     static member Default =
@@ -222,35 +228,40 @@ type Truncation =
     | [<JsonName "disabled">] Disabled
     | Truncation of {|retention_ratio:float; ``type`` : string; token_limits : TokenLimits option|}
 
+/// Realtime session configuration. Sent in <c>session.update</c> / returned in
+/// <c>session.created</c> and <c>session.updated</c>. Most fields are
+/// <see cref="T:Skippable`1"/> wrapping an <c>option</c>: use <c>Skip</c> to omit the
+/// field, <c>Include None</c> to transmit <c>null</c>, and <c>Include (Some v)</c> to
+/// set an explicit value.
 [<JsonFSharpConverter>]
 type Session =
     {
-        ``type`` : Skippable<string> 
-        id: Skippable<string>
-        ``object`` : Skippable<string>        
+        ``type`` : Skippable<string option>
+        id: Skippable<string option>
+        ``object`` : Skippable<string option>        
         model: string option
-        audio : Skippable<Audio>
-        ``include`` : Skippable<string list>
-        output_modalities: Skippable<string list>
+        audio : Skippable<Audio option>
+        ``include`` : Skippable<string list option>
+        output_modalities: Skippable<string list option>
         instructions: string option
         prompt : Skippable<Prompt option>
-        tool_choice: Skippable<string>
-        tools: Skippable<Tool list>
+        tool_choice: Skippable<string option>
+        tools: Skippable<Tool list option>
         tracing : Skippable<Tracing option>
         truncation : Skippable<Truncation option>
         max_output_tokens : Skippable<OutputTokens option> 
         client_secret : Skippable<Client_Secret option>
-        value : Skippable<string>
-        expires_at : Skippable<int>
+        value : Skippable<string option>
+        expires_at : Skippable<int option>
     }
     static member Default = 
         {
-            ``type`` = Include "realtime"
+            ``type`` = Include (Some "realtime")
             id = Skip
             ``object`` = Skip
             model = None
             audio = Skip
-            ``include`` = Include []
+            ``include`` = Include (Some [])
             output_modalities = Skip
             instructions = None
             prompt = Skip
@@ -264,26 +275,30 @@ type Session =
             expires_at = Skip
         }
 
-///Overload of client and server versions of Response
+/// Unified shape used for both the client-side <c>response.create</c> payload and the
+/// server-side <c>response</c> object returned in <c>response.created</c> /
+/// <c>response.done</c>. Fields that apply only to one side are wrapped in
+/// <see cref="T:Skippable`1"/> and default to <c>Skip</c>; populate them only where
+/// the API documents them.
 [<JsonFSharpConverter>]
 type Response =
     {
         
-        audio : Skippable<Audio>
-        conversation : Skippable<string>
-        conversation_id : Skippable<string>
-        id : Skippable<string>
-        input : Skippable<ConversationItem list>
-        output : Skippable<ConversationItem list>
-        instructions: Skippable<string>
+        audio : Skippable<Audio option>
+        conversation : Skippable<string option>
+        conversation_id : Skippable<string option>
+        id : Skippable<string option>
+        input : Skippable<ConversationItem list option>
+        output : Skippable<ConversationItem list option>
+        instructions: Skippable<string option>
         max_output_tokens : Skippable<OutputTokens option> 
         metadata : Skippable<Map<string,string> option>
-        output_modalities: Skippable<string list>
+        output_modalities: Skippable<string list option>
         prompt : Skippable<Prompt option>
-        tool_choice: Skippable<string>
-        tools: Skippable<Tool list>
-        object : Skippable<string>
-        status : Skippable<string>
+        tool_choice: Skippable<string option>
+        tools: Skippable<Tool list option>
+        object : Skippable<string option>
+        status : Skippable<string option>
         status_details : Skippable<StatusDetails option>
         usage : Skippable<Usage option>
         
@@ -321,15 +336,20 @@ type ErrorDetail =
     static member Default = { ``type`` = ""; code = ""; message = ""; param = Skip; event_id = Skip }
     
 type Usage = {
-    ``type`` : Skippable<string>
+    ``type`` : Skippable<string option>
     total_tokens : int
     input_tokens : int
     output_tokens : int
     input_token_details : {|text_tokens:int; audio_tokens:int|}
 }
-    with static member Default = { total_tokens = 0; input_tokens = 0; output_tokens = 0; input_token_details ={|text_tokens=0; audio_tokens=0|}; ``type`` = Include "tokens"}
+    with static member Default = { total_tokens = 0; input_tokens = 0; output_tokens = 0; input_token_details ={|text_tokens=0; audio_tokens=0|}; ``type`` = Include (Some "tokens")}
 
-/// Send this event to update the session’s default configuration.
+/// Patch the session's default configuration for future turns.
+///
+/// Send this whenever the client needs to change defaults such as instructions, tools,
+/// audio settings, truncation, or turn detection. Only fields present in `session` are
+/// updated; empty strings, empty arrays, and `null` clear existing values. These session
+/// defaults are used unless a later `response.create` overrides them for one response.
 [<JsonFSharpConverter>]
 type SessionUpdate =
     {
@@ -339,7 +359,11 @@ type SessionUpdate =
     }
     static member Default = { event_id = ""; ``type`` = "session.update"; session = Session.Default }
 
-///Send this event to append audio bytes to the input audio buffer.
+/// Append audio bytes to the temporary input audio buffer.
+///
+/// Send this while streaming microphone audio. The buffer is later turned into a user
+/// message by `input_audio_buffer.commit`, or committed automatically when server-side
+/// turn detection is enabled. The server does not send an acknowledgement for each append.
 type InputAudioBufferAppend =
     {
         event_id: string
@@ -348,7 +372,11 @@ type InputAudioBufferAppend =
     }
     static member Default = { event_id = ""; ``type`` = "input_audio_buffer.append"; audio = "" }
 
-///Send this event to commit audio bytes to a user message.
+/// Commit buffered audio into a new user message item.
+///
+/// Send this after the user finishes speaking when server-side VAD is off, or when the
+/// client wants to force an early commit. This creates the user message and can trigger
+/// input transcription, but it does not itself ask the model to respond.
 type InputAudioBufferCommit =
     {
         event_id: string
@@ -356,7 +384,10 @@ type InputAudioBufferCommit =
     }
     static member Default = { event_id = ""; ``type`` = "input_audio_buffer.commit" }
 
-///Send this event to clear the audio bytes in the buffer.
+/// Discard any uncommitted audio bytes in the input buffer.
+///
+/// Send this when buffered microphone audio should be dropped instead of committed into
+/// conversation history. The server replies with `input_audio_buffer.cleared`.
 type InputAudioBufferClear =
     {
         event_id: string
@@ -364,12 +395,17 @@ type InputAudioBufferClear =
     }
     static member Default = { event_id = ""; ``type`` = "input_audio_buffer.clear" }
 
-///Send this event when adding an item to the conversation.
+/// Add a new item to the conversation context.
+///
+/// Send this to seed prior history, insert a message/function item mid-conversation, or
+/// otherwise add context before requesting inference. If `previous_item_id` is omitted the
+/// item is appended; `root` inserts at the start. Current OpenAI limitation: this cannot
+/// populate assistant audio messages.
 type ConversationItemCreate =
     {
         event_id: string
         ``type``: string  // "conversation.item.create"
-        previous_item_id: Skippable<string>
+        previous_item_id: Skippable<string option>
         item: ConversationItem
     }
     static member Default = { event_id = ""
@@ -378,17 +414,25 @@ type ConversationItemCreate =
                               item = ConversationItem.Message ContentMessage.Default
                               }
 
-///Send this event when adding an item to the conversation.
+/// Retrieve the server's stored representation of a conversation item.
+///
+/// Send this when the client needs the canonical item as stored by OpenAI, for example to
+/// inspect user audio after server-side noise reduction and VAD have been applied.
 type ConversationItemRetrieve =
     {
         event_id: string
         item_id : string
-        ``type``: string  // "conversation.item.create"
+        ``type``: string  // "conversation.item.retrieve"
     }
     static member Default = { event_id = ""; ``type`` = "conversation.item.retrieve"; item_id = ""}
 
 
-///Send this event when you want to truncate a previous assistant message’s audio.
+/// Truncate audio that was already generated for an assistant message.
+///
+/// Send this when the user interrupts playback and the server has produced audio that the
+/// client has not finished playing yet. This keeps server context aligned with playback and
+/// removes the corresponding server-side transcript so unheard text does not remain in context.
+/// Only assistant message items can be truncated, and OpenAI expects `content_index = 0`.
 type ConversationItemTruncate =
     {
         event_id: string
@@ -399,14 +443,21 @@ type ConversationItemTruncate =
     }
     static member Default = { event_id = ""; ``type`` = "conversation.item.truncate"; item_id = ""; content_index = 0; audio_end_ms = 0 }
 
+/// WebRTC/SIP only: cut off output audio that is already buffered for playback.
+///
+/// Send this immediately after `response.cancel` when cancelling generation is not enough and
+/// the client also needs already-buffered output audio to stop. The server replies with
+/// `output_audio_buffer.cleared`.
 type OutputAudioBufferClear = {
     event_id : string
-    response_id : string
     ``type`` : string
 }
-with static member Default = {event_id=""; ``type``="response.cancel"; response_id=""}
+with static member Default = {event_id=""; ``type``="output_audio_buffer.clear"}
 
-///Send this event when you want to remove any item from the conversation history.
+/// Remove an item from the conversation history.
+///
+/// Send this to retract a previously stored item from model context. The server replies with
+/// `conversation.item.deleted` if the item exists.
 type ConversationItemDelete =
     {
         event_id: string
@@ -415,40 +466,50 @@ type ConversationItemDelete =
     }
     static member Default = { event_id = ""; ``type`` = "conversation.item.delete"; item_id = "" }
 
-///Send this event to trigger a response generation.
+/// Trigger model inference to create a response.
+///
+/// Send this when the model should answer now, especially if turn detection is disabled or
+/// automatic response creation is turned off. Values inside `response` override the session
+/// defaults for this response only, and the request can also run out-of-band from the default
+/// conversation.
 type ResponseCreate =
     {
         event_id: string
         ``type``: string  // "response.create"
-        response: Skippable<Response>
+        response: Skippable<Response option>
     }
     static member Default = { event_id = ""; ``type`` = "response.create"; response = Skip }
 
-///Send this event to cancel an in-progress response.
+/// Cancel an in-progress response.
+///
+/// Send this when the user interrupts, navigates away, or the pending answer is no longer
+/// wanted. If `response_id` is omitted, OpenAI cancels the active response in the default
+/// conversation; otherwise the targeted response is cancelled.
 type ResponseCancel =
     {
         event_id: string
         ``type``: string  // "response.cancel"
+        response_id: Skippable<string option>
     }
-    static member Default = { event_id = ""; ``type`` = "response.cancel" }
+    static member Default = { event_id = ""; ``type`` = "response.cancel"; response_id = Skip }
 
 [<JsonFSharpConverter>]
 type MessageAudioContent =
     {
-        audio: Skippable<string>
-        transcript: Skippable<string>
-        format: Skippable<JsonElement>
+        audio: Skippable<string option>
+        transcript: Skippable<string option>
+        format: Skippable<JsonElement option>
     }
 
 [<JsonFSharpConverter>]
 type MessageTextContent =
     {
-        text: Skippable<string>
-        annotations: Skippable<JsonElement>
+        text: Skippable<string option>
+        annotations: Skippable<JsonElement option>
     }
 
 type MessageContent =
-    | [<JsonName("input_audio")>] Input_audio of {|audio:Skippable<string>; transcript:string|}
+    | [<JsonName("input_audio")>] Input_audio of {|audio:Skippable<string option>; transcript:string|}
     | [<JsonName("input_text")>] Input_text of {|text:string|}
     | [<JsonName("input_image")>] Input_image of {|image_url:string; detail:string|}
     | [<JsonName("output_audio")>] Output_audio of MessageAudioContent
@@ -459,8 +520,8 @@ type MessageContent =
 type ContentMessage = {
     content : MessageContent List
     role : string
-    id : Skippable<string>
-    object : Skippable<string>
+    id : Skippable<string option>
+    object : Skippable<string option>
     status : string
 }
 with static member Default : ContentMessage = {
@@ -476,22 +537,22 @@ type ContentFunctionCall = {
     arguments : string
     call_id : string
     id : string
-    object : Skippable<string>
-    status : string
+    object : Skippable<string option>
+    status : Skippable<string option>
 }
 
 type ContentFunctionCallOutput = {
     call_id : string
     output : string
     id : string
-    object : Skippable<string>
-    status : string
+    object : Skippable<string option>
+    status : Skippable<string option>
 } with static member Create callId output = {
         call_id = callId
         output = output
         id = Utils.newId()
         object = Skip
-        status = "completed"
+        status = Include (Some "completed")
 }
 
 type ContentMcpApprovalResponse = {
@@ -531,12 +592,15 @@ type ContentMcpToolCall = {
     error : {|code:int; message:string; ``type``:string|}
 }
 
+/// An item in the Realtime conversation transcript. Covers user/assistant messages,
+/// function calls and their outputs, and MCP-related approval / tool-call items.
+/// Serialized with an internal <c>"type"</c> tag matching the OpenAI wire format.
 [<JsonFSharpConverter(
     BaseUnionEncoding = JsonUnionEncoding.InternalTag,
     UnionTagName = "type",
     UnionUnwrapRecordCases = true
 )>]
-type ConversationItem = 
+type ConversationItem =
     | [<JsonName "message">] Message of ContentMessage
     | [<JsonName "function_call">] Function_call of ContentFunctionCall
     | [<JsonName "function_call_output">] Function_call_output of ContentFunctionCallOutput
@@ -906,7 +970,7 @@ type StatusError =
 type StatusDetails =
         {
             ``type`` : string
-            error : Skippable<StatusError>
+            error : Skippable<StatusError option>
             reason : string
         }
         
@@ -921,8 +985,17 @@ type ContentPart =
     }
 
 
+/// Discriminated union of every server-to-client event produced by the OpenAI
+/// Realtime API. Deserialization is handled by
+/// <see cref="M:RTOpenAI.Events.SerDe.toEvent"/>: unrecognized or malformed
+/// messages surface as <see cref="P:UnknownEvent"/> / <see cref="P:EventHandlingError"/>
+/// rather than throwing, so callers can log-and-continue without tearing down
+/// the WebRTC connection.
 [<RequireQualifiedAccess>]
 type ServerEvent =
+    /// Server-reported error ("error" event). Inspect
+    /// <see cref="T:Error"/> — these are often caused by a prior client message
+    /// and usually change how the server behaves for the rest of the session.
     | Error of Error
     //session
     | SessionCreated of SessionCreated
@@ -975,22 +1048,40 @@ type ServerEvent =
 
     //others
     | RateLimitsUpdated of RateLimitsUpdated
-    ///No predefined type can be mapped to this event
+    /// Server emitted an event whose <c>"type"</c> string is not mapped in
+    /// <see cref="M:RTOpenAI.Events.SerDe.toEvent"/>. Carries the raw type
+    /// string and the original JSON so callers can log, inspect, or handle
+    /// newer API events that the library has not been updated for.
     | UnknownEvent of string * JsonDocument
-    ///Error occured while trying to parse the event. Usually it's a serialization error.
-    | EventHandlingError of string*string*JsonDocument
+    /// Deserialization failed for a known event. The tuple is
+    /// <c>(eventType, errorMessage, rawJson)</c>. An empty <c>eventType</c>
+    /// indicates the incoming payload had no string <c>"type"</c> field.
+    | EventHandlingError of string * string * JsonDocument
 
+/// Discriminated union of every client-to-server event supported by the OpenAI
+/// Realtime API. Serialize with <see cref="M:RTOpenAI.Events.SerDe.toJson"/>
+/// and write the resulting string to the WebRTC data channel.
 [<RequireQualifiedAccess>]
 type ClientEvent =
+    /// Update session-level configuration (instructions, tools, audio settings, etc.).
     | SessionUpdate of SessionUpdate
+    /// Append a base64-encoded PCM chunk to the temporary input audio buffer.
     | InputAudioBufferAppend of InputAudioBufferAppend
+    /// Commit the buffered input audio as a user message.
     | InputAudioBufferCommit of InputAudioBufferCommit
+    /// Discard any buffered input audio without committing.
     | InputAudioBufferClear of InputAudioBufferClear
+    /// Insert a new conversation item (e.g. user text, function_call_output).
     | ConversationItemCreate of ConversationItemCreate
+    /// Ask the server to echo back a conversation item's current state.
     | ConversationItemRetrieve of ConversationItemRetrieve
+    /// Truncate a prior assistant item's audio at a given sample offset.
     | ConversationItemTruncate of ConversationItemTruncate
+    /// Remove a conversation item from the session.
     | ConversationItemDelete of ConversationItemDelete
+    /// Prompt the model to produce the next response.
     | ResponseCreate of ResponseCreate
+    /// Cancel an in-flight response.
     | ResponseCancel of ResponseCancel
+    /// Stop and drop any output audio the server is currently streaming.
     | OutputAudioBufferClear of OutputAudioBufferClear
-

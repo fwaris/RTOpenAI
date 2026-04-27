@@ -53,14 +53,15 @@ type FsOpMemory() =
     [<Description("Save a key-value pair for later retrieval")>]
     member this.memory_save(key:string, value:string) =
         Log.info $"{nameof this.memory_save}:{key} = {value}"
-        lock bag (fun _ -> 
-            bag <-
-                bag 
-                |> Map.tryFind key 
-                |> Option.map (fun vs -> bag |> Map.add key (List.distinct (value::vs)))
-                |> Option.defaultWith (fun _ -> bag |> Map.add key [value])
-            FsOpMemory._SaveState(bag)
-        )
+        let snapshot =
+            lock bag (fun _ ->
+                bag <-
+                    bag
+                    |> Map.tryFind key
+                    |> Option.map (fun vs -> bag |> Map.add key (List.distinct (value::vs)))
+                    |> Option.defaultWith (fun _ -> bag |> Map.add key [value])
+                bag)
+        FsOpMemory._SaveState(snapshot)
         "saved"
 
     [<KernelFunction("memory_get_all")>]

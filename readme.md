@@ -23,6 +23,38 @@ Two videos are also available: [Overview](https://youtu.be/bSMByJvYLoY); [Code W
 ### [RTOpenAI.Sample](/src/Samples//Minimal/RTOpenAI.Sample/)
 A minimal sample showcasing RTOpenAI for interfacing with the OpenAI realtime voice API
 
+### `RTOpenAI.Api` Quick Usage
+
+The normal case still uses the default WebRTC settings:
+
+```fsharp
+open RTOpenAI.Api
+
+let conn = Connection.create()
+do! Connection.connect ephemeralKey conn
+```
+
+If you need a custom signaling endpoint or a small amount of WebRTC tuning, use `Connection.createWithConfig` and `Connection.connectTo`:
+
+```fsharp
+open System.Net
+open RTOpenAI.Api
+open RTOpenAI.WebRTC
+
+let conn =
+    Connection.createWithConfig
+        { WebRtcClientConfig.Default with
+            BindAddress = Some(IPAddress.Parse("127.0.0.1"))
+            IceServerUrls = []
+            IceGatherTimeoutMs = 250 }
+
+do! Connection.connectTo "http://127.0.0.1:5178/api/realtime/offer" sessionId conn
+```
+
+`BindAddress` is currently best-effort:
+- on Windows/SIPSorcery it is applied to the peer connection
+- on iOS and Android it is ignored and logged as a warning
+
 ### [CuaSample](/src/Samples/CuaSample/)
 A computer-use-agent (CUA) sample for driving mobile embedded browser based website to accomplish a goal, e.g. extract some information from the site.
 

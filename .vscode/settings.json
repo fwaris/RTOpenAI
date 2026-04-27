@@ -1,4 +1,9 @@
 {
-    "FSharp.inlayHints.enabled": false,
-    "FSharp.inlayHints.typeAnnotations": false
+
+    "editor.inlayHints.enabled": "offUnlessPressed",
+    "FSharp.dotnetRoot": "/usr/local/share/dotnet",
+    "FSharp.inlayHints.typeAnnotations": false,
+    "files.watcherExclude": {
+        "**/target": true
+    }
 }

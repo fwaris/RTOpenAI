@@ -3,12 +3,24 @@ namespace RTOpenAI.WebRTC.Android
 open RTOpenAI.Api
 open System
 open System.Threading
+open System.Threading.Tasks
 open Org.Webrtc.Audio
 open RTOpenAI.WebRTC
 open Org.Webrtc
 open System.Text.Json
 
 module Connect =
+    let createIceServers (clientConfig: WebRtcClientConfig) =
+        clientConfig.IceServerUrls
+        |> List.choose (fun url ->
+            let builder = PeerConnection.IceServer.InvokeBuilder(url)
+
+            if isNull builder then
+                None
+            else
+                builder.CreateIceServer() |> Option.ofObj)
+        |> ResizeArray
+
     let createPeerConnection (fac:PeerConnectionFactory) (config:PeerConnection.RTCConfiguration) (dlg:PeerConnection.IObserver) =
         try
             fac.CreatePeerConnection(config,dlg)
@@ -25,7 +37,7 @@ module Connect =
     let createDataChannel (pc:PeerConnection) =
         let config = new DataChannel.Init()
         try
-            pc.CreateDataChannel(C.OPENAI_RT_DATA_CHANNEL, config) |> Some
+            pc.CreateDataChannel(Env.OPENAI_RT_DATA_CHANNEL.Value, config) |> Some
         with ex -> 
             Log.exn (ex,"createDataChannel")
             None
@@ -146,10 +158,50 @@ type WebRtcClientAndroid() =
     let mutable disposables : IDisposable list  = []
     let mutable state = Disconnected
     let stateEvent = Event<State>()
+    let mutable iceGatheringCompleted = TaskCompletionSource<unit>(TaskCreationOptions.RunContinuationsAsynchronously)
 
     let addDisposables xs = disposables <- disposables @ xs
     
     let setState s = state <- s; stateEvent.Trigger(s)
+
+    let resetIceGathering() =
+        iceGatheringCompleted <- TaskCompletionSource<unit>(TaskCreationOptions.RunContinuationsAsynchronously)
+
+    let tryCompleteIceGathering() =
+        iceGatheringCompleted.TrySetResult() |> ignore
+
+    let tryGetLocalOfferSdp() =
+        match peerConnection with
+        | null -> None
+        | pc ->
+            match pc.LocalDescription with
+            | null -> None
+            | description when String.IsNullOrWhiteSpace description.Description -> None
+            | description -> Some description.Description
+
+    let hasLocalCandidates() =
+        tryGetLocalOfferSdp()
+        |> Option.exists (fun sdp ->
+            sdp.Contains("a=candidate:")
+            || sdp.Contains("a=end-of-candidates"))
+
+    let waitForLocalCandidatesAsync timeoutMs =
+        task {
+            if hasLocalCandidates() then
+                ()
+            else
+                use timeout = new CancellationTokenSource(millisecondsDelay = timeoutMs)
+
+                try
+                    do! iceGatheringCompleted.Task.WaitAsync(timeout.Token)
+                with
+                | :? OperationCanceledException -> ()
+
+            if hasLocalCandidates() then
+                Log.info "pc: local ICE candidates gathered for offer"
+            else
+                Log.warn $"pc: continuing without local ICE candidates after waiting {timeoutMs}ms"
+        }
    
     interface System.IDisposable with 
         member this.Dispose (): unit = 
@@ -177,7 +229,9 @@ type WebRtcClientAndroid() =
             Log.warn $"dropped incoming {count} bytes"
     
     //initialize WebRTCClient
-    member this.Init() =
+    member this.Init(clientConfig: WebRtcClientConfig) =
+        resetIceGathering()
+
         let context = Microsoft.Maui.ApplicationModel.Platform.AppContext
         let opts = PeerConnectionFactory.InitializationOptions.InvokeBuilder(context)
                        .CreateInitializationOptions()        
@@ -187,7 +241,8 @@ type WebRtcClientAndroid() =
         let fac = PeerConnectionFactory.InvokeBuilder()
                       .SetAudioDeviceModule(audioModule)
                       .CreatePeerConnectionFactory()
-        let config = new PeerConnection.RTCConfiguration(ResizeArray[])
+
+        let config = new PeerConnection.RTCConfiguration(Connect.createIceServers clientConfig)
         config.SdpSemantics <- PeerConnection.SdpSemantics.UnifiedPlan
         peerConnection <- Connect.createPeerConnection fac config this
         let _audioTrack, _dataChannel = Connect.createMediaSenders fac peerConnection 
@@ -198,8 +253,13 @@ type WebRtcClientAndroid() =
             addDisposables [obs]
             dataChannel <- d; dataChannel.RegisterObserver obs
         | None   -> logAndFail "unable to create data channel"
+
+        match clientConfig.BindAddress with
+        | Some address ->
+            Log.warn $"pc: bind address {address} was requested but is not supported on Android; ignoring"
+        | None -> ()
         
-    member this.SendOffer(ephemeralKey:string,url:string) =
+    member this.SendOffer(ephemeralKey:string,url:string,clientConfig: WebRtcClientConfig) =
         task {
             use sem = new ManualResetEvent(false)            
             
@@ -210,6 +270,8 @@ type WebRtcClientAndroid() =
             task{peerConnection.CreateOffer(obsOffer, mediaConstraints)} |> ignore
             let! rOffer = Async.AwaitWaitHandle(sem,1000)
             if not rOffer then return Utils.logAndFail "timeout on creating local offer"
+
+            do! waitForLocalCandidatesAsync clientConfig.IceGatherTimeoutMs
             Log.info $"pc: local sdp {peerConnection.LocalDescription.Description}"
             
             //send offer and get answer
@@ -234,10 +296,11 @@ type WebRtcClientAndroid() =
         member _.State with get() = state
         member _.StateChanged = stateEvent.Publish
                     
-        member this.Connect (key,url) = 
-            this.Init()
+        member this.Connect (key,url,config) = 
+            let config = WebRtcClientConfigHelpers.normalize config
+            this.Init(config)
             setState Connecting
-            this.SendOffer(key,url)
+            this.SendOffer(key,url,config)
 
         member this.Send (data:string) =
             if dataChannel <> null then 
@@ -278,6 +341,8 @@ type WebRtcClientAndroid() =
             Log.info $"pc: ice connection receiving changed {p0}"            
         member this.OnIceGatheringChange(p0: PeerConnection.IceGatheringState): unit = 
             Log.info $"pc: ice gathering change %A{p0}"
+            if p0 = PeerConnection.IceGatheringState.Complete then
+                tryCompleteIceGathering()
         member this.OnRemoveStream(p0: MediaStream): unit = 
             Log.info $"pc: removed stream {p0.Id}"
         member this.OnRemoveTrack(receiver: RtpReceiver): unit = 

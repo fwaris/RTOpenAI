@@ -10,6 +10,7 @@
     <Compile Include="documentation.html.fs" />
     <Compile Include="SerializationTests.fs" />
     <Compile Include="ExtraSerDeTests.fs" />
+    <Compile Include="NewTests.fs" />
     <Compile Include="Program.fs" />
   </ItemGroup>
   <ItemGroup>

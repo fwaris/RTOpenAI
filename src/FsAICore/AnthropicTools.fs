@@ -64,16 +64,16 @@ type internal CuaToolCall =
     }
 
 module Parser = 
-    let coordinate2 (js:JsonElement) = 
-        match js.TryGetProperty("coordinate") with 
-        | true, j -> 
+    let coordinate2 (js:JsonElement) =
+        match js.TryGetProperty("coordinate") with
+        | true, j ->
             let xs = j.EnumerateArray() |> Seq.toArray
-            if xs.Length <> 2 then failwith "invalidate coordinate"
+            if xs.Length <> 2 then failwith "invalid coordinate"
             let x = xs.[0].GetUInt32()
             let y = xs.[1].GetUInt32()
             {x=x; y=y}
-        | _ -> 
-            {x = 0u; y = 0u}        
+        | _ ->
+            {x = 0u; y = 0u}
 
     let direction (j:JsonElement) = 
         match j.GetString() with 
@@ -104,7 +104,12 @@ module Parser =
             | CuaAction.screenshot -> Screenshot
             | CuaAction.cursor_position -> MouseMove (coordinate2 (js.GetProperty("coordinate")))
             | CuaAction.left_mouse_down -> Left_Mouse_Down
-            | CuaAction.scroll -> Scroll {|amount=1u; direction=direction (js.GetProperty("scroll_direction")) |}
+            | CuaAction.scroll ->
+                let amount =
+                    match js.TryGetProperty("scroll_amount") with
+                    | true, j -> j.GetUInt32()
+                    | _ -> 1u
+                Scroll {|amount=amount; direction=direction (js.GetProperty("scroll_direction")) |}
             | CuaAction.hold_key -> Hold_Key {|key=j.GetProperty("key").GetString(); duration=duration (js.GetProperty("duration")) |}
             | CuaAction.wait -> Wait (duration (js.GetProperty("duration")))
             | CuaAction.triple_click -> Triple_Click coordinate
@@ -146,12 +151,14 @@ module Parser =
         | Right_Click c -> Action.Click {|button=Button.Right; x = int c.x; y = int c.y|}
         | Middle_Click c -> Action.Click {|button=Button.Middle; x = int c.x; y = int c.y|}
         | Double_Click c -> Action.Double_click {|x = int c.x; y = int c.y|} // -1 indicates use current mouse position
-        | Triple_Click c -> Action.Double_click {|x = int c.x; y = int c.y|} // -1 indicates use current mouse position
-        | Left_Mouse_Down -> Log.warn "action ignored: left_mouse_down"; Action.Wait
-        | Left_Mouse_Up -> Log.warn "action ignored: left_mouse_up"; Action.Wait
+        | Triple_Click c ->
+            Log.warn "triple_click downgraded to double_click (UI driver has no tripleClick)"
+            Action.Double_click {|x = int c.x; y = int c.y|}
+        | Left_Mouse_Down -> Log.warn "action ignored: left_mouse_down"; Action.Wait 0u
+        | Left_Mouse_Up -> Log.warn "action ignored: left_mouse_up"; Action.Wait 0u
         | Scroll scrl -> mapScroll (int scrl.amount) scrl.direction
         | Screenshot -> Action.Screenshot
-        | Wait duration -> Action.Wait
+        | Wait duration -> Action.Wait duration
         | Unknown x -> failwith $"Unable to map to playwright action '{x}'"
         
 

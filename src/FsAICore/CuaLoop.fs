@@ -59,15 +59,14 @@ module CuaLoop =
         | _                   -> return $"called {tool.Name}" :> obj
     }
     
-    let chatOptions tools = 
+    let chatOptions tools =
         let opts = ChatOptions()
-        opts.ModelId <- "claude-sonnet-4-6"
         opts.Tools <-
             tools
             |> Map.toSeq
             |> Seq.map snd
             |> ResizeArray
-    
+
         opts
 
     let invokeFunction (tools:ToolCache) (funcCall:FunctionCallContent) = async {
@@ -124,8 +123,9 @@ module CuaLoop =
        let cfg = taskContext.aiContext.kernel.GetRequiredService<IConfiguration>()
        let client = AnthropicClient.createClient(cfg)
        let opts = chatOptions taskContext.aiContext.toolsCache
+       opts.ModelId <- cfg.[ConfigKeys.CHAT_MODEL_ID]
        taskContext.aiContext.optionsConfigurator |> Option.iter (fun c-> c opts)
-       Anthropic.ToolUtils.addCuaAnthropicTool taskContext.screenDimensions opts        
+       Anthropic.ToolUtils.addCuaAnthropicTool taskContext.screenDimensions opts
        let! resp = client.GetResponseAsync(List.rev history, opts) |> Async.AwaitTask
        let usage = mapUsage resp.Usage
        postUsage (Map.ofList [resp.ModelId,usage])     
@@ -181,12 +181,17 @@ Answer in the following JSON format:
 ```
 """
     
-    ///Ask a higher model if the CUA task can be considered to be complete
+    ///Ask a higher model if the CUA task can be considered to be complete.
+    ///Uses <c>ConfigKeys.COMPLETION_MODEL_ID</c> when set, otherwise falls back to
+    ///<c>ConfigKeys.CHAT_MODEL_ID</c>.
     let isTaskEnded poster (taskContext:TaskContext) (history:ChatMessage list) (completionPrompt : string option)= async {
        let cfg = taskContext.aiContext.kernel.GetRequiredService<IConfiguration>()
        let client = AnthropicClient.createClient(cfg)
        let opts = chatOptions Map.empty
-       opts.ModelId <- "claude-opus-4-5-20251101"
+       let completionModel = cfg.[ConfigKeys.COMPLETION_MODEL_ID]
+       opts.ModelId <-
+           if String.IsNullOrWhiteSpace completionModel then cfg.[ConfigKeys.CHAT_MODEL_ID]
+           else completionModel
        opts.ResponseFormat <- ChatResponseFormat.ForJsonSchema(typeof<Completion>)
        let msg = defaultArg completionPrompt defaultCompletionTestPrompt
        let history = ChatMessage(ChatRole.User,msg)::history

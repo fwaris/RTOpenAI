@@ -1,18 +1,12 @@
 namespace RTOpenAI.Sample
 
 open Fabulous.Maui.Transform
-open Microsoft.Extensions.Logging
-open Microsoft.Maui
+open FSharp.DI
 
 type RTOpenAILog() = class end 
 module Log =     
-        let getLogger() = IPlatformApplication.Current.Services.GetService(typeof<ILogger<RTOpenAILog>>)  :?> ILogger<RTOpenAILog>      
-        let private _log= lazy(getLogger())
-        let info  (msg:string) = if _log.Value <> Unchecked.defaultof<_> then _log.Value.LogInformation(msg)
-        let warn (msg:string) = if _log.Value <> Unchecked.defaultof<_> then _log.Value.LogWarning(msg)
-        let error (msg:string) = if _log.Value <> Unchecked.defaultof<_> then _log.Value.LogError(msg)
-        let exn (exn:exn,msg) = if _log.Value <> Unchecked.defaultof<_> then _log.Value.LogError(exn,msg)
-        
-        
-        
-
+        let private log = DI.loggerLazy<RTOpenAILog>()
+        let info (msg:string) = log.Value.info msg
+        let warn (msg:string) = log.Value.warn msg
+        let error (msg:string) = log.Value.error msg
+        let exn (exn:exn,msg) = log.Value.exn (exn,msg)

@@ -16,7 +16,6 @@
     </PropertyGroup>
     
     <ItemGroup>
-        <Compile Include="FsAICore.Log.fs" />
         <Compile Include="Utils.fs" />
         <Compile Include="Usage.fs" />
         <Compile Include="Toolbox.fs" />
@@ -32,12 +31,12 @@
 
     <ItemGroup>
         <PackageReference Include="Anthropic.SDK" />
+        <PackageReference Include="FSharp.DI" />
         <PackageReference Include="FSharp.Control.AsyncSeq" />
         <PackageReference Include="FSharp.SystemTextJson" />
-        <PackageReference Include="Microsoft.Extensions.AI.Abstractions" />
         <PackageReference Include="Microsoft.Extensions.AI.OpenAI" />
-        <PackageReference Include="Microsoft.Extensions.Logging" />
         <PackageReference Include="Microsoft.SemanticKernel.Abstractions" />
         <PackageReference Include="Microsoft.Extensions.Logging.Console" />
+        <PackageReference Include="NJsonSchema" />
     </ItemGroup>
 </Project>

@@ -2,6 +2,7 @@
 open Microsoft.Maui.Hosting
 open Microsoft.Extensions.DependencyInjection
 open Fabulous.Maui
+open FSharp.DI
 open Microsoft.Extensions.Logging
 open  RT.Assistant.Navigation
 
@@ -28,5 +29,7 @@ type MauiProgram =
         builder.Services.AddHybridWebViewDeveloperTools() |> ignore
         builder.Logging.AddConsole() |> ignore
 //#endif
-       
-        builder.Build()
+
+        let app = builder.Build()
+        DI.init app.Services
+        app

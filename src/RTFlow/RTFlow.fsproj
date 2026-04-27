@@ -15,13 +15,13 @@
     </PropertyGroup>
     
     <ItemGroup>
-        <Compile Include="RTFlow.Log.fs" />
         <Compile Include="Bus.fs" />
         <Compile Include="WorkFlow.fs" />
         <Compile Include="Functions.fs" />
     </ItemGroup>
 
     <ItemGroup>
+      <PackageReference Include="FSharp.DI" />
       <PackageReference Include="FSharp.Control.AsyncSeq" />
     </ItemGroup>
 

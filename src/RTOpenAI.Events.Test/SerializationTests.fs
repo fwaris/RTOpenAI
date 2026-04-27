@@ -62,17 +62,43 @@ let ``SessionCreated event deserialization`` () =
             "id": "sess_001",
             "object": "realtime.session",
             "model": "gpt-realtime-2025-08-28",
-            "modalities": ["audio", "text"],
+            "output_modalities": ["audio"],
             "instructions": "You are a helpful assistant",
-            "voice": "alloy",
-            "input_audio_format": "pcm16",
-            "output_audio_format": "pcm16",
-            "input_audio_transcription": null,
-            "turn_detection": null,
             "tools": [],
             "tool_choice": "auto",
-            "temperature": 0.8,
-            "max_output_tokens": null
+            "max_output_tokens": "inf",
+            "tracing": null,
+            "truncation": "auto",
+            "prompt": null,
+            "expires_at": 1775708058,
+            "audio": {
+                "input": {
+                    "format": {
+                        "type": "audio/pcm",
+                        "rate": 24000
+                    },
+                    "transcription": null,
+                    "noise_reduction": null,
+                    "turn_detection": {
+                        "type": "server_vad",
+                        "threshold": 0.5,
+                        "prefix_padding_ms": 300,
+                        "silence_duration_ms": 200,
+                        "idle_timeout_ms": null,
+                        "create_response": true,
+                        "interrupt_response": true
+                    }
+                },
+                "output": {
+                    "format": {
+                        "type": "audio/pcm",
+                        "rate": 24000
+                    },
+                    "voice": "alloy",
+                    "speed": 1.0
+                }
+            },
+            "include": null
         }
     }"""
     
@@ -83,6 +109,9 @@ let ``SessionCreated event deserialization`` () =
     | ServerEvent.SessionCreated e ->
         Assert.That(e.event_id, Is.EqualTo("event_123"))
         Assert.That(e.``type``, Is.EqualTo("session.created"))
+        match e.session.``include`` with
+        | Skippable.Include None -> ()
+        | other -> Assert.Fail(sprintf "Expected include = null to deserialize as Include None, got %A" other)
     | _ -> Assert.Fail("Expected SessionCreated event")
 
 // Session Updated Event Tests  
@@ -129,7 +158,7 @@ let ``SessionUpdate serialization includes truncation`` () =
 
     let sessionWithTruncation =
         { Session.Default with
-            model = Some "gpt-realtime"
+            model = Some "gpt-realtime-2025-08-28"
             truncation = Skippable.Include (Some truncationSettings) }
 
     let sessionUpdateEvent =
@@ -163,6 +192,45 @@ let ``SessionUpdate serialization includes truncation`` () =
         | Some limits -> Assert.That(limits.post_instructions, Is.EqualTo(5000))
         | None -> Assert.Fail("Expected token_limits to deserialize")
     | other -> Assert.Fail(sprintf "Unexpected truncation payload: %A" other)
+
+[<Test>]
+let ``ResponseCancel serialization can target a specific response`` () =
+    let responseCancelEvent =
+        { ResponseCancel.Default with
+            event_id = "event_cancel"
+            response_id = Skippable.Include (Some "resp_123") }
+
+    let json = JsonSerializer.Serialize(responseCancelEvent, SerDe.serOpts)
+
+    Assert.That(json, Does.Contain("\"type\": \"response.cancel\""))
+    Assert.That(json, Does.Contain("\"response_id\": \"resp_123\""))
+
+    let deserialized = JsonSerializer.Deserialize<ResponseCancel>(json, SerDe.serOpts)
+    if obj.ReferenceEquals(deserialized, null) then
+        Assert.Fail("Expected round-trip ResponseCancel")
+
+    match deserialized.response_id with
+    | Skippable.Include (Some responseId) -> Assert.That(responseId, Is.EqualTo("resp_123"))
+    | Skippable.Include None -> Assert.Fail("Expected response_id value, got null")
+    | Skip -> Assert.Fail("Expected response_id to deserialize")
+
+[<Test>]
+let ``OutputAudioBufferClear serialization matches current realtime schema`` () =
+    let clearEvent =
+        { OutputAudioBufferClear.Default with
+            event_id = "event_audio_clear" }
+
+    let json = JsonSerializer.Serialize(clearEvent, SerDe.serOpts)
+
+    Assert.That(json, Does.Contain("\"type\": \"output_audio_buffer.clear\""))
+    Assert.That(json, Does.Not.Contain("\"response_id\""))
+
+    let deserialized = JsonSerializer.Deserialize<OutputAudioBufferClear>(json, SerDe.serOpts)
+    if obj.ReferenceEquals(deserialized, null) then
+        Assert.Fail("Expected round-trip OutputAudioBufferClear")
+
+    Assert.That(deserialized.event_id, Is.EqualTo("event_audio_clear"))
+    Assert.That(deserialized.``type``, Is.EqualTo("output_audio_buffer.clear"))
 
 // Conversation Item Added Event Tests
 [<Test>]
@@ -956,6 +1024,39 @@ let ``ResponseFunctionCallArgumentsDone event deserialization`` () =
         Assert.That(e.event_id, Is.EqualTo("event_5556"))
         Assert.That(e.arguments, Is.EqualTo("{\"location\": \"San Francisco\"}"))
     | _ -> Assert.Fail("Expected ResponseFunctionCallArgumentsDone event")
+
+[<Test>]
+let ``ConversationItemAdded function call output tolerates missing status`` () =
+    let conversationItemAddedJson = """
+    {
+        "type": "conversation.item.added",
+        "event_id": "event_fn_output_001",
+        "previous_item_id": "item_prev_001",
+        "item": {
+            "id": "item_fn_output_001",
+            "type": "function_call_output",
+            "call_id": "call_fn_output_001",
+            "output": "Function call timed out."
+        }
+    }"""
+
+    let doc = JsonDocument.Parse(conversationItemAddedJson)
+    let serverEvent = SerDe.toEvent doc
+
+    match serverEvent with
+    | ServerEvent.ConversationItemAdded e ->
+        match e.item with
+        | ConversationItem.Function_call_output output ->
+            Assert.That(output.call_id, Is.EqualTo("call_fn_output_001"))
+            Assert.That(output.output, Is.EqualTo("Function call timed out."))
+
+            match output.status with
+            | Skip -> Assert.Pass()
+            | other -> Assert.Fail($"Expected missing status to deserialize as Skip, got {other}")
+        | _ ->
+            Assert.Fail("Expected function_call_output conversation item")
+    | _ ->
+        Assert.Fail("Expected ConversationItemAdded event")
 
 // Response MCP Call Arguments Delta Event Tests
 [<Test>]

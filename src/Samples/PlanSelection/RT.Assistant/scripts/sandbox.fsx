@@ -1,11 +1,11 @@
 #load "packages.fsx"
 #load "../../../../RTOpenAI.Api/Constants.fs"
-#load "../../../../RTOpenAI.Api/Api/Events.fs"
+#load "../../../../RTOpenAI.Events/Events.fs"
 
 
 open System.Text.Json
 open System.Text.Json.Serialization
-open RTOpenAI.Api.Events
+open RTOpenAI.Events
 
 let serOptionsFSharp = 
     let o = JsonSerializerOptions(JsonSerializerDefaults.General)
@@ -35,7 +35,7 @@ let sess_orig = """
     "type": "realtime",
     "object": "realtime.session",
     "id": "sess_Ckbg6ZXqxqfvhD3OV2Ykb",
-    "model": "gpt-realtime",
+    "model": "gpt-realtime-2025-08-28",
     "output_modalities": [
       "audio"
     ],
@@ -87,7 +87,7 @@ let sess = """
     "type": "realtime",
     "object": "realtime.session",
     "id": "sess_Ckbg6ZXqxqfvhD3OV2Ykb",
-    "model": "gpt-realtime",
+    "model": "gpt-realtime-2025-08-28",
     "output_modalities": [
       "audio"
     ],
@@ -181,7 +181,7 @@ let serOpts =
     opts
 
 let supdev = 
-         {SessionUpdateEvent.Default with
+         {SessionUpdate.Default with
                         event_id = "xy"
                         session =
                             {Session.Default with 
@@ -190,4 +190,3 @@ let supdev =
                     }
 let supdevstr = JsonSerializer.Serialize(Audio.Default,serOpts)
 supdevstr |> printfn "%s"
-

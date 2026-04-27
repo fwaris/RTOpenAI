@@ -129,10 +129,10 @@
 	<ItemGroup>
 		<PackageReference Include="Anthropic.SDK" />
 		<PackageReference Include="Fabulous.MauiControls" />
+		<PackageReference Include="FSharp.DI" />
 		<PackageReference Include="FSharp.Control.AsyncSeq" />
 		<PackageReference Include="FSharp.SystemTextJson" />
 		<PackageReference Include="Microsoft.Extensions.AI.OpenAI" />
-		<PackageReference Include="Microsoft.Extensions.Logging.Console" />
 		<PackageReference Include="Microsoft.SemanticKernel" />
 	</ItemGroup>
 
