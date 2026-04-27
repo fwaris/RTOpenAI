@@ -88,14 +88,13 @@ In addition to the three projects mentioned above, the following projects are al
 > - Add `net10.0-android` to the list if you have Android Studio or Rider with the Android plugin installed.
 > - The default is `net10.0-ios;net10.0-maccatalyst;net10.0-android`.
 > - For convenience, commented-out versions of the `<TargetFrameworks>` are included in the `.fsproj` files.
-- Build twice if necessary. Sometimes Maui projects have to be built twice for build errors to go away
-- Note that `dotnet build` at the solution root level is not likely to succeed as there are too many variations possible. Instead set the `<TargetFrameworks>` and use targeted builds in Rider or Visual Studio.
+- `dotnet build` at the repository root builds the main `RTOpenAI.slnx`. For targeted IDE builds, set the `<TargetFrameworks>` first.
 
 ## Package Build
-The release builds of Maui *apps* (not libraries) can take a while so a separate solution is provided [RT_FS_NugetPackages.sln](/RT_FS_NugetPackages.sln) to build nuget packages.
+The release builds of Maui *apps* (not libraries) can take a while so a separate solution is provided [RT_FS_NugetPackages.slnx](/build/RT_FS_NugetPackages.slnx) to build nuget packages.
 Use the following command to build packages:
 
- `dotnet pack -c Release RT_FS_NugetPackages.sln` 
+ `dotnet pack -c Release build/RT_FS_NugetPackages.slnx`
  
 # Acknowledgements
 

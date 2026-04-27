@@ -12,7 +12,7 @@
     <PackageVersion Include="FSharp.Data.JsonSchema" Version="3.0.1" />
     <PackageVersion Include="FSharp.Maui.WinUICompat" Version="1.1.0" />
     <PackageVersion Include="FSharp.SystemTextJson" Version="1.4.36" />
-    <PackageVersion Include="Fabulous.MauiControls" Version="8.0.5" />
+    <PackageVersion Include="Fabulous.MauiControls" Version="9.0.0-pre9" />
     <PackageVersion Include="Microsoft.Extensions.AI.OpenAI" Version="10.5.0" />
     <PackageVersion Include="Microsoft.Extensions.Configuration" Version="10.0.7" />
     <PackageVersion Include="Microsoft.Extensions.Configuration.EnvironmentVariables" Version="10.0.7" />

@@ -28,7 +28,6 @@ module PageView =
                 async{
                     let comp =
                          model.mailbox.Reader.ReadAllAsync(ctx.Token)
-                         |> AsyncSeq.ofAsyncEnum
                          |> AsyncSeq.iter dispatch            
                     match! Async.Catch(comp) with
                     | Choice1Of2 _ -> () //debug "dispose subscribeBackground"
@@ -45,7 +44,6 @@ module PageView =
                 async{
                     let comp =
                          FsPlay.ServiceEvents.mailbox.Value.Reader.ReadAllAsync(ctx.Token)
-                         |> AsyncSeq.ofAsyncEnum
                          |> AsyncSeq.bufferByTime 1000
                          |> AsyncSeq.choose Array.tryLast
                          |> AsyncSeq.map WebviewInteraction                         

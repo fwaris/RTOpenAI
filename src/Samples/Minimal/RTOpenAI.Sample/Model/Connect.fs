@@ -16,7 +16,7 @@ module Connect =
                          
     let promptForKey() =
         Application.Current.Windows.[0].Page
-            .DisplayAlert("Key","Input OpenAI real-time API key and connect again","Ok")
+            .DisplayAlertAsync("Key","Input OpenAI real-time API key and connect again","Ok")
             
     let lookForKey() =
         task {
@@ -45,7 +45,6 @@ module Connect =
     let logServerEvents (model:Model) (channel:Channels.Channel<JsonDocument>) =
         let comp = 
             channel.Reader.ReadAllAsync()
-            |> AsyncSeq.ofAsyncEnum// listen to RT OpenAI server events coming over the WebRTC data channel
             |> AsyncSeq.map SerDe.toEvent//covert JSON to strongly typed event
             |> AsyncSeq.iter (fun msg -> model.mailbox.Writer.TryWrite(Log_Append $"{DateTime.Now}: {msg}") |> ignore) // send events to UI to show in Log view
         async {

@@ -27,7 +27,6 @@ module Chat =
                 async{
                     let comp =
                          model.mailbox.Reader.ReadAllAsync()
-                         |> AsyncSeq.ofAsyncEnum
                          |> AsyncSeq.iter dispatch            
                     match! Async.Catch(comp) with
                     | Choice1Of2 _ -> ()

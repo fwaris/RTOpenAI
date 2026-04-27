@@ -47,7 +47,6 @@ module Workflow =
     let run (token:CancellationToken) bus initState =
         let runner =  
             bus._flowChannel.Reader.ReadAllAsync(token)
-            |> AsyncSeq.ofAsyncEnum
             //|> AsyncSeq.map(fun m -> Log.info $"Workflow message: {m.msgType}"; m)
             |> AsyncSeq.scanAsync (transition bus) initState
             |> AsyncSeq.iter (fun x -> ())
@@ -65,7 +64,6 @@ module Workflow =
     let runStepped (stepper:StepperHolder) printer (token:CancellationToken) bus initState =
         let runner =  
             bus._flowChannel.Reader.ReadAllAsync(token)
-            |> AsyncSeq.ofAsyncEnum
             |> AsyncSeq.mapAsync(fun x -> async{
                 let printed : string = printer x
                 Log.info $"Queued: {printed}"

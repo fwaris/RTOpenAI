@@ -29,7 +29,6 @@ module AppAgent =
         let st0 = {mailbox = mailbox; bus=bus}
         let channel = bus.agentChannel.Subscribe("app")
         channel.Reader.ReadAllAsync()
-        |> AsyncSeq.ofAsyncEnum
         |> AsyncSeq.scanAsync update st0
         |> AsyncSeq.iter(fun _ -> ())
         |> FlowUtils.catch bus.PostToFlow

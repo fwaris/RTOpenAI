@@ -32,7 +32,6 @@ type PubSub<'T>(cancellationToken:CancellationToken) =
     do
         let comp = 
             central.Reader.ReadAllAsync(cancellationToken)
-            |> AsyncSeq.ofAsyncEnum
             |> AsyncSeq.iterAsync(fun m -> async {
                 for kvp in subscribers do
                     let r = kvp.Value.Writer.TryWrite(m)
@@ -124,7 +123,6 @@ type WBus<'flowMsg,'agentMsg> =
             let msgComp = async {
                 let! msg = 
                     ch.Reader.ReadAllAsync()
-                    |> AsyncSeq.ofAsyncEnum
                     |> AsyncSeq.skipWhile (filter>>not)
                     |> AsyncSeq.tryFirst
                 return msg                                                    

@@ -69,7 +69,7 @@ module StateMachine =
     }
 
     let create mailbox viewRef conn =
-        let bus = WBus.Create()
+        let bus = WBus<_,_>.Create()
         let ss = {mailbox=mailbox; viewRef=viewRef; conn=conn; usage=Map.empty; bus=bus}
         let s0 = s_start ss
         RTFlow.Workflow.run CancellationToken.None bus s0 //start the state machine with initial state

@@ -174,7 +174,6 @@ module VoiceAgent =
             do! Connection.connect ephemKey conn |> Async.AwaitTask
         let comp = 
             conn.WebRtcClient.OutputChannel.Reader.ReadAllAsync()
-            |> AsyncSeq.ofAsyncEnum
             |> AsyncSeq.map SerDe.toEvent
             |> AsyncSeq.scanAsync (updateVoice conn) initState   //handle actual event
             |> AsyncSeq.iter (fun s -> ())            
@@ -195,7 +194,6 @@ module VoiceAgent =
         let channel = bus.agentChannel.Subscribe("voice")
         let st = {conn = conn; bus = bus}
         channel.Reader.ReadAllAsync()
-        |> AsyncSeq.ofAsyncEnum
         |> AsyncSeq.scanAsync handleFlow st
         |> AsyncSeq.iter(fun _ -> ())
         

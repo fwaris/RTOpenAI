@@ -1,0 +1,35 @@
+<Solution>
+  <Configurations>
+    <Platform Name="Any CPU" />
+    <Platform Name="x64" />
+    <Platform Name="x86" />
+  </Configurations>
+  <Folder Name="/Bindings/">
+    <Project Path="src/Bindings/FsWebRTC.Bindings.Maui.Android/FsWebRTC.Bindings.Maui.Android.csproj" />
+    <Project Path="src/Bindings/FsWebRTC.Bindings.Maui.iOS/FsWebRTC.Bindings.Maui.iOS.csproj" />
+  </Folder>
+  <Folder Name="/Samples/">
+    <Project Path="src/Samples/CuaSample/CuaSample.fsproj" />
+  </Folder>
+  <Folder Name="/Samples/Minimal/">
+    <Project Path="src/Samples/Minimal/RTOpenAI.Sample/RTOpenAI.Sample.fsproj">
+      <Deploy Solution="Debug|Any CPU" />
+    </Project>
+  </Folder>
+  <Folder Name="/Samples/PlanSelection/">
+    <Project Path="src/Samples/PlanSelection/EvalProlog/EvalProlog.fsproj" />
+    <Project Path="src/Samples/PlanSelection/RT.Assistant/RT.Assistant.fsproj">
+      <Deploy Solution="Debug|Any CPU" />
+    </Project>
+    <Project Path="src/Samples/PlanSelection/SwiPlcsCore/SwiPlcsCore.csproj" />
+  </Folder>
+  <Project Path="src/FsAICore/FsAICore.fsproj" />
+  <Project Path="src/FsPlan/FsPlan.fsproj" />
+  <Project Path="src/FsPlay.Abstractions/FsPlay.Abstractions.fsproj" />
+  <Project Path="src/FsPlay/FsPlay.fsproj" />
+  <Project Path="src/RTFlow/RTFlow.fsproj" />
+  <Project Path="src/RTOpenAI.Api/RTOpenAI.Api.fsproj" />
+  <Project Path="src/RTOpenAI.Events.Test/RTOpenAI.Events.Test.fsproj" />
+  <Project Path="src/RTOpenAI.Events/RTOpenAI.Events.fsproj" />
+  <Project Path="src/WebFlows/WebFlows.fsproj" />
+</Solution>
