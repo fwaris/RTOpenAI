@@ -38,9 +38,9 @@ module OpenAIClient =
                 
     let createClientWithKey(key:string) : IChatClient =
         let oaiClient = OpenAI.OpenAIClient(key)
-        //let respClient = oaiClient.GetResponsesClient("gpt-5.1-codex")
-        let respClient = oaiClient.GetResponsesClient("gpt-5.1")
-        respClient.AsIChatClient() 
+        //let modelId = "gpt-5.1-codex"
+        let modelId = "gpt-5.1"
+        let respClient = oaiClient.GetResponsesClient()
+        respClient.AsIChatClient(modelId) 
  
     let createClient() = createClientWithKey(Settings.Values.openaiKey())
-

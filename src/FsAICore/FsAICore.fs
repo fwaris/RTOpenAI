@@ -72,8 +72,8 @@ module OpenAIClient =
                 
     let createClientWithKey(key:string,modelId:string) : IChatClient =
         let oaiClient = OpenAI.OpenAIClient(key)
-        let respClient = oaiClient.GetResponsesClient(modelId)
-        respClient.AsIChatClient() 
+        let respClient = oaiClient.GetResponsesClient()
+        respClient.AsIChatClient(modelId) 
  
     let createClient(cfg:IConfiguration) =
         createClientWithKey(cfg.[ConfigKeys.OPENAI_API_KEY], cfg.[ConfigKeys.CHAT_MODEL_ID])

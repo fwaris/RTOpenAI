@@ -1,22 +1,18 @@
 namespace FsAICore
 open System
+open System.Text.Json
 open System.Text.Json.Nodes
 open System.Reflection
 open System.ComponentModel
 open System.Collections.Generic
+open Microsoft.Extensions.AI
 open Microsoft.FSharp.Reflection
-open FSharp.Data.JsonSchema
-open NJsonSchema
 
 ///<summary>
 /// F# DU friendly JSON Schema Generation.<br />
-/// Extends FSharp.Data.JsonSchema for schema generation.<br />
-/// Use FSharp.Data.Json members for serialization and deserialization.<br />
-/// For compatible serialization options, use FSharp.Data.Json.DefaultOptions
+/// Uses Microsoft.Extensions.AI for schema generation.
 /// </summary>
 module JsonUtils =
-    let private casePropertyName = "type"
-    let private schemaGenerator = lazy (Generator.CreateMemoized(?casePropertyName = Some casePropertyName))
     let private bindingFlags = BindingFlags.Public ||| BindingFlags.Instance
 
     let private tryGetEnumDescriptions (enumType:Type) =
@@ -82,47 +78,70 @@ module JsonUtils =
             |> Option.map (fun descriptions -> enumType.Name, descriptions))
         |> Map.ofSeq
 
-    let private ensureExtensionData (schema:JsonSchema) =
-        if isNull schema.ExtensionData then
-            schema.ExtensionData <- Dictionary<string, obj>()
-        schema.ExtensionData
+    let private tryGetStringProperty (propertyName:string) (obj:JsonObject) =
+        let mutable node: JsonNode = null
+        if obj.TryGetPropertyValue(propertyName, &node) then
+            match node with
+            | :? JsonValue as value ->
+                match value.GetValueKind() with
+                | JsonValueKind.String -> value.GetValue<string>() |> Some
+                | _ -> None
+            | _ -> None
+        else
+            None
 
-    let private applyEnumDescriptions (schema:JsonSchema) (enumDescriptions:Map<string, string array>) (rootType:Type) =
-        let tryAttach key target =
-            match Map.tryFind key enumDescriptions with
-            | Some descriptions ->
-                ensureExtensionData target
-                |> fun extensions -> extensions["enumDescriptions"] <- descriptions
-            | None -> ()
+    let private addEnumDescriptions (obj:JsonObject) (descriptions:string array) =
+        let values = JsonArray()
+        descriptions
+        |> Array.iter (fun description -> values.Add(JsonValue.Create description))
+        obj["enumDescriptions"] <- values
 
-        if schema.IsEnumeration then
-            let name = if String.IsNullOrWhiteSpace schema.Title then rootType.Name else schema.Title
-            tryAttach name schema
+    let private applyEnumDescriptions (rootType:Type) (enumDescriptions:Map<string, string array>) (node:JsonNode) =
+        let rec visit currentName (node:JsonNode) =
+            match node with
+            | :? JsonObject as obj ->
+                let schemaName =
+                    tryGetStringProperty "title" obj
+                    |> Option.orElse currentName
 
-        if not (isNull schema.Definitions) then
-            for KeyValue(name, defSchema) in schema.Definitions do
-                if defSchema.IsEnumeration then
-                    tryAttach name defSchema
-        schema
+                if obj.ContainsKey "enum" then
+                    [ schemaName; currentName; Some rootType.Name ]
+                    |> List.choose id
+                    |> List.tryPick (fun name -> Map.tryFind name enumDescriptions)
+                    |> Option.iter (addEnumDescriptions obj)
+
+                obj
+                |> Seq.toArray
+                |> Array.iter (fun (KeyValue(name, value)) -> visit (Some name) value)
+            | :? JsonArray as arr ->
+                arr
+                |> Seq.toArray
+                |> Array.iter (visit currentName)
+            | _ -> ()
+        visit None node
 
     let rec private stripEnumNameExtensions (node:JsonNode) =
-        match node with
-        | :? JsonObject as obj ->
-            obj.Remove("x-enumNames") |> ignore
-            for KeyValue(_, value) in obj do
-                stripEnumNameExtensions value
-        | :? JsonArray as arr ->
-            for item in arr do
-                stripEnumNameExtensions item
-        | _ -> ()
+        if isNull node then ()
+        else
+            match node with
+            | :? JsonObject as obj ->
+                obj.Remove("x-enumNames") |> ignore
+                for KeyValue(_, value) in obj do
+                    stripEnumNameExtensions value
+            | :? JsonArray as arr ->
+                for item in arr do
+                    stripEnumNameExtensions item
+            | _ -> ()
 
     let toSchema (t:Type) : JsonNode =
-        let jsonSchema = schemaGenerator.Value t
-        let enrichedSchema =
-            let enumDescriptions = buildEnumDescriptionMap t
-            if Map.isEmpty enumDescriptions then jsonSchema
-            else applyEnumDescriptions jsonSchema enumDescriptions t
-        let jsonNode = enrichedSchema.ToJson() |> JsonNode.Parse
+        let jsonNode =
+            AIJsonUtilities.CreateJsonSchema(t).GetRawText()
+            |> JsonNode.Parse
+
+        let enumDescriptions = buildEnumDescriptionMap t
+        if not (Map.isEmpty enumDescriptions) then
+            applyEnumDescriptions t enumDescriptions jsonNode
+
         stripEnumNameExtensions jsonNode
         jsonNode
 
