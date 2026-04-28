@@ -91,10 +91,10 @@ In addition to the three projects mentioned above, the following projects are al
 - `dotnet build` at the repository root builds the main `RTOpenAI.slnx`. For targeted IDE builds, set the `<TargetFrameworks>` first.
 
 ## Package Build
-The release builds of Maui *apps* (not libraries) can take a while so a separate solution is provided [RT_FS_NugetPackages.slnx](/build/RT_FS_NugetPackages.slnx) to build nuget packages.
+The release builds of Maui *apps* (not libraries) can take a while so a separate solution is provided [RT_NugetPack.slnx](/build/RT_NugetPack.slnx) to build nuget packages.
 Use the following command to build packages:
 
- `dotnet pack -c Release build/RT_FS_NugetPackages.slnx`
+ `dotnet pack -c Release build/RT_NugetPack.slnx`
  
 # Acknowledgements
 
