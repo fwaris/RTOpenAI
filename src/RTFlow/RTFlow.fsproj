@@ -15,6 +15,7 @@
     </PropertyGroup>
     
     <ItemGroup>
+        <Compile Include="AgentBus.fs" />
         <Compile Include="Bus.fs" />
         <Compile Include="WorkFlow.fs" />
         <Compile Include="Functions.fs" />

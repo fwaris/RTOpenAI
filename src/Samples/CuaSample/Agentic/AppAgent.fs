@@ -96,8 +96,8 @@ module AppAgent =
             previewActions = previewActions
             aiContext = aiContext
         }
-        let channel = bus.agentChannel.Subscribe("app")
-        channel.Reader.ReadAllAsync()
+        let reader = bus.agentChannel.Subscribe("app")
+        reader.ReadAllAsync()
         |> AsyncSeq.scanAsync update st0
         |> AsyncSeq.iter(fun _ -> ())
         |> FlowUtils.catch bus.PostToFlow

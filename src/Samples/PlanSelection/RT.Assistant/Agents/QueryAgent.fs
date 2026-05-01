@@ -34,10 +34,9 @@ module QueryAgent =
 
     let start viewRef (bus:WBus<FlowMsg, AgentMsg>) =
         let st0 = {viewRef = viewRef; bus=bus}
-        let channel = bus.agentChannel.Subscribe("query")
-        channel.Reader.ReadAllAsync()
+        let reader = bus.agentChannel.Subscribe("query")
+        reader.ReadAllAsync()
         |> AsyncSeq.scanAsync update st0
         |> AsyncSeq.iter(fun _ -> ())
         |> FlowUtils.catch bus.PostToFlow
    
-

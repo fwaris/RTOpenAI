@@ -1,9 +1,7 @@
 namespace RTFlow
 open System
-open System.Collections.Generic
 open System.Threading.Channels
 open System.Threading
-open FSharp.Control
 open FSharp.DI
 
 type LogCategory = class end
@@ -26,50 +24,26 @@ module C =
     let MAX_BUS_QUEUE_DEPTH = 10
 
 type PubSub<'T>(cancellationToken:CancellationToken) =
-    let central = Channel.CreateBounded<'T>(C.MAX_BUS_QUEUE_DEPTH)
-    let subscribers = System.Collections.Concurrent.ConcurrentDictionary<string, Channel<'T>>()
-    
-    do
-        let comp = 
-            central.Reader.ReadAllAsync(cancellationToken)
-            |> AsyncSeq.iterAsync(fun m -> async {
-                for kvp in subscribers do
-                    let r = kvp.Value.Writer.TryWrite(m)
-                    if not r then
-                        Log.info $"Dropped msg {m} to {kvp.Key}"
-            })
-        async {
-            match! Async.Catch(comp) with
-            | Choice1Of2 _ -> Log.info "Bus stopped"
-            | Choice2Of2 ex -> Log.exn(ex,"Error message dispatch for bus")
-            for kvp in subscribers.Values do
-                kvp.Writer.Complete()
-            central.Writer.Complete()
-        }
-        |> Async.Start
+    let bus = AgentBus<'T>(cancellationToken)
     
     /// Publishes a message to all subscribers
     member _.Publish(msg: 'T) =
-        central.Writer.TryWrite(msg) |> ignore
+        bus.Publish msg
 
-    /// Subscribe and receive messages; returns a Subscription
-    member _.Subscribe(name:string) =
-        if subscribers.ContainsKey name then
-            failwith $"{name} is already registered in bus"
-        let channel = Channel.CreateBounded<'T>(C.MAX_BUS_QUEUE_DEPTH)
-        subscribers[name] <- channel
-        channel
+    /// Subscribe and receive messages.
+    member _.Subscribe(name:string) : ChannelReader<'T> =
+        bus.Subscribe name
         
     member _.UnSubscribe(name:string) =
-        match subscribers.TryGetValue name with
-        | true,ch -> ch.Writer.TryComplete() |> ignore
-                     subscribers.Remove(name) |> ignore
-        | _ -> ()
+        bus.Unsubscribe name
+
+    member _.Unsubscribe(name:string) =
+        bus.Unsubscribe name
         
     member _.Close() =
-        for kv in subscribers do
-            kv.Value.Writer.TryComplete() |> ignore
-        subscribers.Clear()
+        bus.Close()
+
+    member _.AgentBus = bus
             
 
 
@@ -114,24 +88,9 @@ type WBus<'flowMsg,'agentMsg> =
             match this._flowChannel.Writer.TryWrite msg with 
             | false -> Log.warn $"Bus dropped message {msg}"
             | true  -> ()
+        member this.AgentBus = this.agentChannel.AgentBus
         member this.PostToAgent msg =
-            this.agentChannel.Publish msg
-        member this.AwaitAgentMsg(filter:('agentMsg->bool),?timeoutMs:int) : Async<'agentMsg option>  = async {
-            let guid = "temp_" + Guid.NewGuid().ToString()
-            let mutable msg : 'agentMsg option = None
-            let ch = this.agentChannel.Subscribe(guid) //open a temporary subscription to listen to agent messages
-            let msgComp = async {
-                let! msg = 
-                    ch.Reader.ReadAllAsync()
-                    |> AsyncSeq.skipWhile (filter>>not)
-                    |> AsyncSeq.tryFirst
-                return msg                                                    
-            }
-            let! finder = Async.StartChild(msgComp,?millisecondsTimeout=timeoutMs)
-            match! Async.Catch finder with
-            | Choice1Of2 m -> msg <- m
-            | Choice2Of2 ex -> Log.exn(ex,nameof this.AwaitAgentMsg)
-            this.agentChannel.UnSubscribe(guid)
-            return msg
-        }
+            this.AgentBus.Publish msg
+        member this.AwaitAgentMsg(filter:('agentMsg->bool),?timeoutMs:int) : Async<'agentMsg option> =
+            this.AgentBus.AwaitMessage(filter, ?timeoutMs=timeoutMs)
            

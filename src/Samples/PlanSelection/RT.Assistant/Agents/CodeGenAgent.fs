@@ -172,8 +172,8 @@ module CodeGenAgent =
         }
             
     let start viewRef (bus:WBus<FlowMsg, AgentMsg>) =
-        let channel = bus.agentChannel.Subscribe("codegen")
-        channel.Reader.ReadAllAsync()
+        let reader = bus.agentChannel.Subscribe("codegen")
+        reader.ReadAllAsync()
         |> AsyncSeq.scanAsync update (State.Create viewRef bus)
         |> AsyncSeq.iter(fun _ -> ())
         |> FlowUtils.catch bus.PostToFlow

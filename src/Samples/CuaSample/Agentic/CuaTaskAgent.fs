@@ -86,9 +86,8 @@ module CuaTaskAgent =
         }
             
     let start (bus: CuaBus) =
-        let channel = bus.agentChannel.Subscribe("task")
-        channel.Reader.ReadAllAsync()
+        let reader = bus.agentChannel.Subscribe("task")
+        reader.ReadAllAsync()
         |> AsyncSeq.scanAsync update (State.Create bus)
         |> AsyncSeq.iter(fun _ -> ())
         |> FlowUtils.catch bus.PostToFlow
-

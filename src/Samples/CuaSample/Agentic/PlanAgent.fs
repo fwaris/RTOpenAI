@@ -56,8 +56,8 @@ module PlanAgent =
 
     let start<'t,'o> (bus:CuaBus) =        
         let st0 = {bus=bus; runner=None}
-        let channel = bus.agentChannel.Subscribe("plan")
-        channel.Reader.ReadAllAsync()
+        let reader = bus.agentChannel.Subscribe("plan")
+        reader.ReadAllAsync()
         |> AsyncSeq.scanAsync update st0
         |> AsyncSeq.iter(fun _ -> ())
         |> FlowUtils.catch bus.PostToFlow

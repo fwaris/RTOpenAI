@@ -12,7 +12,7 @@ module Connect =
         
     let promptForKey() =
         Application.Current.Windows.[0].Page
-            .DisplayAlert("Key","Input OpenAI real-time API key and connect again","Ok")         
+            .DisplayAlertAsync("Key","Input OpenAI real-time API key and connect again","Ok")
       
     let checkKeys() =
         Settings.Values.anthropicKey() |> notEmpty

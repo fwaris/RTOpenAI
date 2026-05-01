@@ -27,6 +27,7 @@
   <Project Path="src/FsPlan/FsPlan.fsproj" />
   <Project Path="src/FsPlay.Abstractions/FsPlay.Abstractions.fsproj" />
   <Project Path="src/FsPlay/FsPlay.fsproj" />
+  <Project Path="src/RTFlow.Test/RTFlow.Test.fsproj" />
   <Project Path="src/RTFlow/RTFlow.fsproj" />
   <Project Path="src/RTOpenAI.Api/RTOpenAI.Api.fsproj" />
   <Project Path="src/RTOpenAI.Events.Test/RTOpenAI.Events.Test.fsproj" />

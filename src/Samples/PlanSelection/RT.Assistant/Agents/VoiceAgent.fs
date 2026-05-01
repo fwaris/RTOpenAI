@@ -191,9 +191,9 @@ module VoiceAgent =
     }
     
     let startFlow conn (bus:WBus<FlowMsg,AgentMsg>) =
-        let channel = bus.agentChannel.Subscribe("voice")
+        let reader = bus.agentChannel.Subscribe("voice")
         let st = {conn = conn; bus = bus}
-        channel.Reader.ReadAllAsync()
+        reader.ReadAllAsync()
         |> AsyncSeq.scanAsync handleFlow st
         |> AsyncSeq.iter(fun _ -> ())
         
@@ -205,4 +205,3 @@ module VoiceAgent =
             do! a2             
         }
         |> FlowUtils.catch bus.PostToFlow
-        
