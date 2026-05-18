@@ -23,89 +23,115 @@ module Connect =
         config.IceServers <- createIceServers clientConfig
         config
 
-    let createPeerConnection (fac:RTCPeerConnectionFactory) config constraints dlg =
-        try 
-            fac.PeerConnectionWithConfiguration(config, constraints, dlg)            
-        with ex -> 
-            Log.exn(ex,"unable to create peer connection")
+    let createPeerConnection (fac: RTCPeerConnectionFactory) config constraints dlg =
+        try
+            fac.PeerConnectionWithConfiguration(config, constraints, dlg)
+        with ex ->
+            Log.exn (ex, "unable to create peer connection")
             raise ex
 
-    let createAudioTrack(fac:RTCPeerConnectionFactory) = 
-        let audioConstraints = new RTCMediaConstraints(null,null)        
-        let audioSource = fac.AudioSourceWithConstraints(audioConstraints)        
-        let audioTrack = fac.AudioTrackWithSource(audioSource,trackId = "audio0")
+    let createAudioTrack (fac: RTCPeerConnectionFactory) =
+        let audioConstraints = new RTCMediaConstraints(null, null)
+        let audioSource = fac.AudioSourceWithConstraints(audioConstraints)
+        let audioTrack = fac.AudioTrackWithSource(audioSource, trackId = "audio0")
         audioSource, audioTrack
 
-    let createDataChannel (pc:RTCPeerConnection) =
+    let createDataChannel (pc: RTCPeerConnection) =
         let config = new RTCDataChannelConfiguration()
+
         try
             pc.DataChannelForLabel(Env.OPENAI_RT_DATA_CHANNEL.Value, config) |> Some
-        with ex -> 
-            Log.exn (ex,"createDataChannel")
+        with ex ->
+            Log.exn (ex, "createDataChannel")
             None
 
-    let createMediaSenders fac (pc:RTCPeerConnection)   = 
+    let createMediaSenders fac (pc: RTCPeerConnection) =
         let audioSource, audioTrack = createAudioTrack fac
         let dataChannel = createDataChannel pc
         audioSource, audioTrack, dataChannel
 
-    let mediaConstraints() = 
-        let mandatory = 
-            [
-                "OfferToReceiveAudio" :> obj, "true" :> obj
-                "OfferToReceiveVideo", "false"
-            ]
+    let mediaConstraints () =
+        let mandatory =
+            [ "OfferToReceiveAudio" :> obj, "true" :> obj; "OfferToReceiveVideo", "false" ]
             |> dict
-        let optional = dict ["DtlsSrtpKeyAgreement" :> obj, "true" :> obj]
-        let nMandatory = NSDictionary<NSString,NSString>.FromObjectsAndKeys(
-            Seq.toArray mandatory.Values, Seq.toArray mandatory.Keys)
-        let nOptional = NSDictionary<NSString,NSString>.FromObjectsAndKeys(
-            Seq.toArray optional.Values, Seq.toArray optional.Keys)
-        new RTCMediaConstraints(null,nOptional)
+
+        let optional = dict [ "DtlsSrtpKeyAgreement" :> obj, "true" :> obj ]
+
+        let nMandatory =
+            NSDictionary<NSString, NSString>
+                .FromObjectsAndKeys(Seq.toArray mandatory.Values, Seq.toArray mandatory.Keys)
+
+        let nOptional =
+            NSDictionary<NSString, NSString>.FromObjectsAndKeys(Seq.toArray optional.Values, Seq.toArray optional.Keys)
+
+        new RTCMediaConstraints(null, nOptional)
 
 
-  
-module AudioUtils = 
+
+module AudioUtils =
+    let private errorMessage (error: NSError) =
+        if isNull (box error) then
+            "unknown error"
+        else
+            error.LocalizedDescription
+
     let checkError src f =
-        let err : NSError = f()
+        let err: NSError = f ()
+
         if err <> null then
             let msg = $"error with recording session. Src {src}; Error {err}"
-            failwith msg                   
+            failwith msg
+
     let checkErrorB src f =
-        match f() with 
-        | true,null -> ()
-        | _,err -> 
+        match f () with
+        | true, null -> ()
+        | _, err ->
             if err <> null then
                 let msg = $"error with recording session. Src {src}; Error {err}"
-                failwith msg                   
+                failwith msg
 
-    let activate() =
-        let sess = AVAudioSession.SharedInstance()      
-        checkError "activate:SetActive" (fun () -> sess.SetActive(true))
-            
-    let release() =
+    let activate () =
         let sess = AVAudioSession.SharedInstance()
-        checkError "release" (fun () -> sess.SetActive(false))
+        checkError "activate:SetActive" (fun () -> sess.SetActive(true))
+
+    let release () =
+        let sess = AVAudioSession.SharedInstance()
+        use mutable error = null
+
+        if not (sess.SetActive(false, AVAudioSessionSetActiveOptions.NotifyOthersOnDeactivation, &error)) then
+            Log.warn $"error releasing recording session: {errorMessage error}"
 
     let configureAudioSession () =
-        let opts = AVAudioSessionCategoryOptions.AllowBluetooth ||| AVAudioSessionCategoryOptions.DefaultToSpeaker        
-        checkError "set cat. playRec" (fun () -> AVAudioSession.SharedInstance().SetCategory(AVAudioSessionCategory.PlayAndRecord,opts ))        
-        checkErrorB "set mode" (fun () -> AVAudioSession.SharedInstance().SetMode(AVAudioSessionMode.SpokenAudio))
+        let session = AVAudioSession.SharedInstance()
 
-    let configureIncomingAudio (audioTrack:RTCAudioTrack) =
+        let opts =
+            AVAudioSessionCategoryOptions.AllowBluetooth
+            ||| AVAudioSessionCategoryOptions.DefaultToSpeaker
+
+        checkError "set category play-and-record" (fun () ->
+            session.SetCategory(AVAudioSessionCategory.PlayAndRecord, opts))
+
+        checkErrorB "set voice chat mode" (fun () -> session.SetMode(AVAudioSessionMode.VoiceChat))
+        checkErrorB "set preferred sample rate" (fun () -> session.SetPreferredSampleRate(48000.))
+        checkErrorB "set preferred IO buffer duration" (fun () -> session.SetPreferredIOBufferDuration(0.01))
+        activate ()
+
+    let configureIncomingAudio (audioTrack: RTCAudioTrack) =
         audioTrack.Source.Volume <- 1.0
-        audioTrack.IsEnabled <- true        
-        checkErrorB "port override" (fun () -> AVAudioSession.SharedInstance().OverrideOutputAudioPort(AVAudioSessionPortOverride.Speaker))
+        audioTrack.IsEnabled <- true
+
+        checkErrorB "port override" (fun () ->
+            AVAudioSession.SharedInstance().OverrideOutputAudioPort(AVAudioSessionPortOverride.Speaker))
 
 //encapsulates peer connection for IOS
-type WebRtcClientIOS() =    
-    inherit NSObject() 
+type WebRtcClientIOS() =
+    inherit NSObject()
     //weak var delegate: WebRTCClientDelegate?
     let instanceId = Guid.NewGuid().ToString("N").Substring(0, 8)
-    let mutable peerConnection: RTCPeerConnection = null   
+    let mutable peerConnection: RTCPeerConnection = null
     let mutable peerConnectionFactory: RTCPeerConnectionFactory = null
-    let mutable audioQueue = MailboxProcessor.Start(ignore>>async.Return)
-    let mutable mediaConstraints = Connect.mediaConstraints()
+    let mutable audioQueue = MailboxProcessor.Start(ignore >> async.Return)
+    let mutable mediaConstraints = Connect.mediaConstraints ()
     let mutable audioSource: RTCAudioSource = null
     let mutable audioTrack: RTCAudioTrack = null
     let mutable audioSender: RTCRtpSender = null
@@ -114,13 +140,18 @@ type WebRtcClientIOS() =
     let mutable state = Disconnected
     let mutable disposeStarted = 0
     let stateEvent = Event<State>()
-    let mutable iceGatheringCompleted = TaskCompletionSource<unit>(TaskCreationOptions.RunContinuationsAsynchronously)
 
-    let setState s = state <- s; stateEvent.Trigger(s)
-    let resetIceGathering() =
+    let mutable iceGatheringCompleted =
+        TaskCompletionSource<unit>(TaskCreationOptions.RunContinuationsAsynchronously)
+
+    let setState s =
+        state <- s
+        stateEvent.Trigger(s)
+
+    let resetIceGathering () =
         iceGatheringCompleted <- TaskCompletionSource<unit>(TaskCreationOptions.RunContinuationsAsynchronously)
 
-    let tryCompleteIceGathering() =
+    let tryCompleteIceGathering () =
         iceGatheringCompleted.TrySetResult() |> ignore
 
     let describeNative name (value: obj) =
@@ -130,25 +161,26 @@ type WebRtcClientIOS() =
         | _ -> $"{name}={value.GetType().Name}"
 
     let logCleanupStart disposing pc dc sender track source factory constraints =
-        Log.info
-            ($"pc[{instanceId}]: dispose start disposing={disposing}; "
-             + String.concat
-                 "; "
-                 [ describeNative "peerConnection" pc
-                   describeNative "dataChannel" dc
-                   describeNative "audioSender" sender
-                   describeNative "audioTrack" track
-                   describeNative "audioSource" source
-                   describeNative "peerConnectionFactory" factory
-                   describeNative "mediaConstraints" constraints ])
+        Log.info (
+            $"pc[{instanceId}]: dispose start disposing={disposing}; "
+            + String.concat
+                "; "
+                [ describeNative "peerConnection" pc
+                  describeNative "dataChannel" dc
+                  describeNative "audioSender" sender
+                  describeNative "audioTrack" track
+                  describeNative "audioSource" source
+                  describeNative "peerConnectionFactory" factory
+                  describeNative "mediaConstraints" constraints ]
+        )
 
     let safeCleanup step action =
         try
-            action()
+            action ()
         with ex ->
-            Log.exn(ex, $"pc[{instanceId}]: cleanup step '{step}' failed")
+            Log.exn (ex, $"pc[{instanceId}]: cleanup step '{step}' failed")
 
-    let tryGetLocalOfferSdp() =
+    let tryGetLocalOfferSdp () =
         match peerConnection with
         | null -> None
         | pc ->
@@ -157,27 +189,27 @@ type WebRtcClientIOS() =
             | description when String.IsNullOrWhiteSpace description.Sdp -> None
             | description -> Some description.Sdp
 
-    let hasLocalCandidates() =
-        tryGetLocalOfferSdp()
-        |> Option.exists (fun sdp ->
-            sdp.Contains("a=candidate:")
-            || sdp.Contains("a=end-of-candidates"))
+    let hasLocalCandidates () =
+        tryGetLocalOfferSdp ()
+        |> Option.exists (fun sdp -> sdp.Contains("a=candidate:") || sdp.Contains("a=end-of-candidates"))
 
     let waitForLocalCandidatesAsync timeoutMs =
         task {
-            if hasLocalCandidates()
-               || (peerConnection <> null
-                   && peerConnection.IceGatheringState = RTCIceGatheringState.Complete) then
+            if
+                hasLocalCandidates ()
+                || (peerConnection <> null
+                    && peerConnection.IceGatheringState = RTCIceGatheringState.Complete)
+            then
                 ()
             else
                 use timeout = new CancellationTokenSource(millisecondsDelay = timeoutMs)
 
                 try
                     do! iceGatheringCompleted.Task.WaitAsync(timeout.Token)
-                with
-                | :? OperationCanceledException -> ()
+                with :? OperationCanceledException ->
+                    ()
 
-            if hasLocalCandidates() then
+            if hasLocalCandidates () then
                 Log.info "pc: local ICE candidates gathered for offer"
             else
                 Log.warn $"pc: continuing without local ICE candidates after waiting {timeoutMs}ms"
@@ -208,7 +240,7 @@ type WebRtcClientIOS() =
             outputChannel <- Unchecked.defaultof<_>
 
             logCleanupStart disposing pc dc sender track source factory constraints
-            tryCompleteIceGathering()
+            tryCompleteIceGathering ()
 
             if channel <> Unchecked.defaultof<_> then
                 channel.Writer.TryComplete() |> ignore
@@ -244,9 +276,11 @@ type WebRtcClientIOS() =
                 Log.info $"pc[{instanceId}]: dispose completed"
             else
                 state <- Disconnected
-                Log.warn
-                    ($"pc[{instanceId}]: finalizer-driven Dispose(false) reached; "
-                     + "native WebRTC teardown was skipped to avoid Objective-C cleanup on the finalizer thread.")
+
+                Log.warn (
+                    $"pc[{instanceId}]: finalizer-driven Dispose(false) reached; "
+                    + "native WebRTC teardown was skipped to avoid Objective-C cleanup on the finalizer thread."
+                )
 
         base.Dispose(disposing)
 
@@ -254,29 +288,34 @@ type WebRtcClientIOS() =
         member this.Handle = base.Handle
 
     interface IDisposable with
-        member this.Dispose() =
-            base.Dispose()
+        member this.Dispose() = base.Dispose()
 
     //initialize WebRTCClient
     member this.Init(clientConfig: WebRtcClientConfig) =
-        resetIceGathering()
+        resetIceGathering ()
+        AudioUtils.configureAudioSession ()
         let config = Connect.rtcConfiguration clientConfig
-        peerConnectionFactory <- new RTCPeerConnectionFactory(null,null)
-        peerConnection <- Connect.createPeerConnection peerConnectionFactory config mediaConstraints this    
-        let createdAudioSource, createdAudioTrack, _dataChannel = Connect.createMediaSenders peerConnectionFactory peerConnection
+        peerConnectionFactory <- new RTCPeerConnectionFactory(null, null)
+        peerConnection <- Connect.createPeerConnection peerConnectionFactory config mediaConstraints this
+
+        let createdAudioSource, createdAudioTrack, _dataChannel =
+            Connect.createMediaSenders peerConnectionFactory peerConnection
+
         audioSource <- createdAudioSource
         audioTrack <- createdAudioTrack
-        audioSender <- peerConnection.AddTrack(audioTrack, streamIds = [|"stream0"|])
-        match _dataChannel with 
-        | Some d -> dataChannel <- d; dataChannel.Delegate <- this
-        | None   -> failwith "unable to create data channel"
+        audioSender <- peerConnection.AddTrack(audioTrack, streamIds = [| "stream0" |])
+
+        match _dataChannel with
+        | Some d ->
+            dataChannel <- d
+            dataChannel.Delegate <- this
+        | None -> failwith "unable to create data channel"
 
         match clientConfig.BindAddress with
         | Some address ->
             Log.warn $"pc: bind address {address} was requested but is not supported on iOS/MacCatalyst; ignoring"
         | None -> ()
 
-        AudioUtils.configureAudioSession()
         let initDetails =
             [ describeNative "peerConnection" peerConnection
               describeNative "dataChannel" dataChannel
@@ -284,133 +323,192 @@ type WebRtcClientIOS() =
               describeNative "audioTrack" audioTrack
               describeNative "audioSource" audioSource ]
             |> String.concat "; "
+
         Log.info $"pc[{instanceId}]: initialized {initDetails}"
 
-    member this.SendOffer(ephemeralKey:string,url:string,clientConfig: WebRtcClientConfig) =
+    member this.SendOffer(ephemeralKey: string, url: string, clientConfig: WebRtcClientConfig) =
         task {
             use sem = new ManualResetEvent(false)
-            let completionHandler = RTCCreateSessionDescriptionCompletionHandler(fun sdp err  ->
-                if sdp <> null then
-                    peerConnection.SetLocalDescription(sdp, RTCSetSessionDescriptionCompletionHandler(fun err ->
-                        if err <> null then 
-                            Log.error($"pc: error set local description {err.Description}")
-                        else
-                            task {
-                                try
-                                    do! waitForLocalCandidatesAsync clientConfig.IceGatherTimeoutMs
 
-                                    match tryGetLocalOfferSdp() with
-                                    | Some offerSdp ->
-                                        Log.info $"pc: local sdp {offerSdp}"
-                                        let! answer = Utils.getAnswerSdp ephemeralKey url offerSdp
-                                        Log.info $"pc: remote sdp {answer}"
-                                        let answerSdp = new RTCSessionDescription(``type`` = RTCSdpType.Answer, sdp = answer)
-                                        peerConnection.SetRemoteDescription(answerSdp, RTCSetSessionDescriptionCompletionHandler(fun err -> 
-                                            if err <> null then 
-                                                Log.error $"pc: error setting remote description {err.Description}"
+            let completionHandler =
+                RTCCreateSessionDescriptionCompletionHandler(fun sdp err ->
+                    if sdp <> null then
+                        peerConnection.SetLocalDescription(
+                            sdp,
+                            RTCSetSessionDescriptionCompletionHandler(fun err ->
+                                if err <> null then
+                                    Log.error ($"pc: error set local description {err.Description}")
+                                else
+                                    task {
+                                        try
+                                            do! waitForLocalCandidatesAsync clientConfig.IceGatherTimeoutMs
 
+                                            match tryGetLocalOfferSdp () with
+                                            | Some offerSdp ->
+                                                Log.info $"pc: local sdp {offerSdp}"
+                                                let! answer = Utils.getAnswerSdp ephemeralKey url offerSdp
+                                                Log.info $"pc: remote sdp {answer}"
+
+                                                let answerSdp =
+                                                    new RTCSessionDescription(
+                                                        ``type`` = RTCSdpType.Answer,
+                                                        sdp = answer
+                                                    )
+
+                                                peerConnection.SetRemoteDescription(
+                                                    answerSdp,
+                                                    RTCSetSessionDescriptionCompletionHandler(fun err ->
+                                                        if err <> null then
+                                                            Log.error
+                                                                $"pc: error setting remote description {err.Description}"
+
+                                                        sem.Set() |> ignore)
+                                                )
+                                            | None ->
+                                                Log.error "pc: local sdp missing after ICE gathering"
+                                                sem.Set() |> ignore
+                                        with ex ->
+                                            Log.exn (ex, "pc: failed while exchanging SDP")
                                             sem.Set() |> ignore
-                                        ))
-                                    | None ->
-                                        Log.error "pc: local sdp missing after ICE gathering"
-                                        sem.Set() |> ignore
-                                with ex ->
-                                    Log.exn(ex, "pc: failed while exchanging SDP")
-                                    sem.Set() |> ignore
-                            }
-                            |> ignore
-                    ))
+                                    }
+                                    |> ignore)
+                        )
 
-                elif err <> null then 
-                    Log.error $"pc: sdp offer error {err.Description}"
-                else
-                    Log.error "pc: unknown issue when setting local error"
-                )
-            peerConnection.OfferForConstraints(mediaConstraints,completionHandler)
-            let! r = Async.AwaitWaitHandle(sem,30000)
-            if r then 
-                task{ setState Connected } |> ignore
+                    elif err <> null then
+                        Log.error $"pc: sdp offer error {err.Description}"
+                    else
+                        Log.error "pc: unknown issue when setting local error")
+
+            peerConnection.OfferForConstraints(mediaConstraints, completionHandler)
+            let! r = Async.AwaitWaitHandle(sem, 30000)
+
+            if r then
+                task { setState Connected } |> ignore
                 return ()
             else
-                task {setState Disconnected} |> ignore
+                task { setState Disconnected } |> ignore
                 let msg = "SDP answer timeout"
                 Log.error msg
                 return failwith msg
         }
 
     //Main cross-platform API
-    interface IWebRtcClient with     
-        member _.OutputChannel with get () = outputChannel
-        member _.State with get() = state
+    interface IWebRtcClient with
+        member _.OutputChannel = outputChannel
+        member _.State = state
         member _.StateChanged = stateEvent.Publish
-                    
-        member this.Connect (key,url,config) = 
+
+        member this.Connect(key, url, config) =
             let config = WebRtcClientConfigHelpers.normalize config
             this.Init(config)
             setState Connecting
-            this.SendOffer(key,url,config)
+            this.SendOffer(key, url, config)
 
-        member this.Send (data:string) =
-            if dataChannel <> null then 
-                use buffer = new RTCDataBuffer(data, isBinary=false)
+        member this.Send(data: string) =
+            if dataChannel <> null then
+                use buffer = new RTCDataBuffer(data, isBinary = false)
                 dataChannel.SendData(buffer)
             else
                 false
-             
-    interface IRTCPeerConnectionDelegate with        
-        member this.DidAddReceiver(peerConnection: RTCPeerConnection, rtpReceiver: RTCRtpReceiver, mediaStreams: RTCMediaStream array): unit = 
+
+    interface IRTCPeerConnectionDelegate with
+        member this.DidAddReceiver
+            (peerConnection: RTCPeerConnection, rtpReceiver: RTCRtpReceiver, mediaStreams: RTCMediaStream array)
+            : unit =
             Log.info $"pc: added receiver: {rtpReceiver.Description}"
-        member this.DidAddStream(peerConnection: RTCPeerConnection, stream: RTCMediaStream): unit =
+
+        member this.DidAddStream(peerConnection: RTCPeerConnection, stream: RTCMediaStream) : unit =
             Log.info $"pc: added remote stream: {stream.Description}"
+
             stream.AudioTracks
             |> Seq.tryHead
-            |> Option.map AudioUtils.configureIncomingAudio                     
-            |> Option.defaultWith(fun () -> Log.warn "No audio track in remote stream")            
-        member this.DidChangeConnectionState(peerConnection: RTCPeerConnection, newState: RTCPeerConnectionState): unit = 
+            |> Option.map AudioUtils.configureIncomingAudio
+            |> Option.defaultWith (fun () -> Log.warn "No audio track in remote stream")
+
+        member this.DidChangeConnectionState
+            (peerConnection: RTCPeerConnection, newState: RTCPeerConnectionState)
+            : unit =
             Log.info $"pc: connection state changed to %A{newState}"
-            match newState with 
-            | RTCPeerConnectionState.Disconnected 
+
+            match newState with
+            | RTCPeerConnectionState.Disconnected
             | RTCPeerConnectionState.Failed
             | RTCPeerConnectionState.Closed -> setState State.Disconnected
             | _ -> ()
-        member this.DidChangeIceConnectionState(peerConnection: RTCPeerConnection, newState: RTCIceConnectionState): unit = 
+
+        member this.DidChangeIceConnectionState
+            (peerConnection: RTCPeerConnection, newState: RTCIceConnectionState)
+            : unit =
             Log.info $"pc: ice connection state changed to %A{newState}"
-        member this.DidChangeIceGatheringState(peerConnection: RTCPeerConnection, newState: RTCIceGatheringState): unit = 
+
+        member this.DidChangeIceGatheringState
+            (peerConnection: RTCPeerConnection, newState: RTCIceGatheringState)
+            : unit =
             Log.info $"pc: ice gathering state changed to %A{newState}"
+
             if newState = RTCIceGatheringState.Complete then
-                tryCompleteIceGathering()
-        member this.DidChangeLocalCandidate(peerConnection: RTCPeerConnection, local: RTCIceCandidate, remote: RTCIceCandidate, lastDataReceivedMs: int, reason: string): unit = 
-            Log.info $"pc: ice ic local candidate changed, reason: %A{reason}"   
-        member this.DidChangeSignalingState(peerConnection: RTCPeerConnection, stateChanged: RTCSignalingState): unit = 
-            Log.info $"pc: signaling state changed %A{stateChanged}"   
-        member this.DidChangeStandardizedIceConnectionState(peerConnection: RTCPeerConnection, newState: RTCIceConnectionState): unit = 
-            Log.info $"pc: standardized ice connection state changed %A{newState}"   
-        member this.DidFailToGatherIceCandidate(peerConnection: RTCPeerConnection, event: RTCIceCandidateErrorEvent): unit = 
-            Log.info $"pc: failed to gather ice candidate %A{event.ErrorText}"   
-        member this.DidGenerateIceCandidate(peerConnection: RTCPeerConnection, candidate: RTCIceCandidate): unit = 
-            Log.info $"pc: generated ice candidate %A{candidate.Description}"   
-        member this.DidOpenDataChannel(peerConnection: RTCPeerConnection, dataChannel: RTCDataChannel): unit = 
-            Log.info $"pc: opened data channel %A{dataChannel.Description}"   
-        member this.DidRemoveIceCandidates(peerConnection: RTCPeerConnection, candidates: RTCIceCandidate array): unit = 
-            Log.info $"pc: removed ice candidates %A{candidates |> Seq.map _.Description |> Seq.toList}"   
-        member this.DidRemoveReceiver(peerConnection: RTCPeerConnection, rtpReceiver: RTCRtpReceiver): unit = 
-            Log.info $"pc: removed receiver %A{rtpReceiver.Description}"   
-        member this.DidRemoveStream(peerConnection: RTCPeerConnection, stream: RTCMediaStream): unit = 
-            Log.info $"pc: removed stream %A{stream.Description}"   
-        member this.DidStartReceivingOnTransceiver(peerConnection: RTCPeerConnection, transceiver: RTCRtpTransceiver): unit = 
-            Log.info $"pc: started receiving on transceiver %A{transceiver.Description}"   
-        member this.ShouldNegotiate(peerConnection: RTCPeerConnection): unit = 
-            Log.info $"pc: should negotiate called"   
-    
-    interface IRTCDataChannelDelegate with 
-        member _.DataChannelDidChangeState (dataChannel: RTCDataChannel) =
+                tryCompleteIceGathering ()
+
+        member this.DidChangeLocalCandidate
+            (
+                peerConnection: RTCPeerConnection,
+                local: RTCIceCandidate,
+                remote: RTCIceCandidate,
+                lastDataReceivedMs: int,
+                reason: string
+            ) : unit =
+            Log.info $"pc: ice ic local candidate changed, reason: %A{reason}"
+
+        member this.DidChangeSignalingState(peerConnection: RTCPeerConnection, stateChanged: RTCSignalingState) : unit =
+            Log.info $"pc: signaling state changed %A{stateChanged}"
+
+        member this.DidChangeStandardizedIceConnectionState
+            (peerConnection: RTCPeerConnection, newState: RTCIceConnectionState)
+            : unit =
+            Log.info $"pc: standardized ice connection state changed %A{newState}"
+
+        member this.DidFailToGatherIceCandidate
+            (peerConnection: RTCPeerConnection, event: RTCIceCandidateErrorEvent)
+            : unit =
+            Log.info $"pc: failed to gather ice candidate %A{event.ErrorText}"
+
+        member this.DidGenerateIceCandidate(peerConnection: RTCPeerConnection, candidate: RTCIceCandidate) : unit =
+            Log.info $"pc: generated ice candidate %A{candidate.Description}"
+
+        member this.DidOpenDataChannel(peerConnection: RTCPeerConnection, dataChannel: RTCDataChannel) : unit =
+            Log.info $"pc: opened data channel %A{dataChannel.Description}"
+
+        member this.DidRemoveIceCandidates
+            (peerConnection: RTCPeerConnection, candidates: RTCIceCandidate array)
+            : unit =
+            Log.info $"pc: removed ice candidates %A{candidates |> Seq.map _.Description |> Seq.toList}"
+
+        member this.DidRemoveReceiver(peerConnection: RTCPeerConnection, rtpReceiver: RTCRtpReceiver) : unit =
+            Log.info $"pc: removed receiver %A{rtpReceiver.Description}"
+
+        member this.DidRemoveStream(peerConnection: RTCPeerConnection, stream: RTCMediaStream) : unit =
+            Log.info $"pc: removed stream %A{stream.Description}"
+
+        member this.DidStartReceivingOnTransceiver
+            (peerConnection: RTCPeerConnection, transceiver: RTCRtpTransceiver)
+            : unit =
+            Log.info $"pc: started receiving on transceiver %A{transceiver.Description}"
+
+        member this.ShouldNegotiate(peerConnection: RTCPeerConnection) : unit = Log.info $"pc: should negotiate called"
+
+    interface IRTCDataChannelDelegate with
+        member _.DataChannelDidChangeState(dataChannel: RTCDataChannel) =
             Log.info $"dc: channel changed {dataChannel.Description}"
+
         member _.DidChangeBufferedAmount(dataChannel: RTCDataChannel, amount: uint64) =
             Log.info $"dc: buffer amount changed {dataChannel.Description}"
-        member this.DidReceiveMessageWithBuffer( dataChannel: RTCDataChannel,  buffer: RTCDataBuffer) =            
-            let json = System.Text.Json.JsonSerializer.Deserialize<System.Text.Json.JsonDocument>(buffer.Data.AsStream())
-            if outputChannel <> Unchecked.defaultof<_> then 
-                if not(outputChannel.Writer.TryWrite json) then 
+
+        member this.DidReceiveMessageWithBuffer(dataChannel: RTCDataChannel, buffer: RTCDataBuffer) =
+            let json =
+                System.Text.Json.JsonSerializer.Deserialize<System.Text.Json.JsonDocument>(buffer.Data.AsStream())
+
+            if outputChannel <> Unchecked.defaultof<_> then
+                if not (outputChannel.Writer.TryWrite json) then
                     Log.warn $"dropped message from server {json}"
 
 #endif
