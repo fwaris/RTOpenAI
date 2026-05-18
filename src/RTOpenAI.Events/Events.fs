@@ -209,10 +209,20 @@ type OutputTokensTypeConverter() =
     inherit JsonConverter<OutputTokens>()
 
     override _.Read(reader, _, _) =
-        let value = reader.GetString()
-        match value with
-        | "inf" -> OutputTokens.Inf
-        | x     -> OutputTokens.Value (int x)    
+        match reader.TokenType with
+        | JsonTokenType.String ->
+            match reader.GetString() with
+            | "inf" -> OutputTokens.Inf
+            | value -> OutputTokens.Value (Int32.Parse value)
+        | JsonTokenType.Number ->
+            let mutable value = 0
+
+            if reader.TryGetInt32(&value) then
+                OutputTokens.Value value
+            else
+                raise (JsonException("Expected max_output_tokens to be an integer or \"inf\"."))
+        | _ -> raise (JsonException("Expected max_output_tokens to be an integer or \"inf\"."))
+
     override _.Write(writer, value, _) =
         match value with
         | Inf -> writer.WriteStringValue("inf") 

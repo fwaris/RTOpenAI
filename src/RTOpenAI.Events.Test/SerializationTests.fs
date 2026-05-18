@@ -730,6 +730,47 @@ let ``ResponseDone event deserialization`` () =
         Assert.That(e.event_id, Is.EqualTo("event_CCXHxcMy86rrKhBLDdqCh"))
     | _ -> Assert.Fail("Expected ResponseDone event")
 
+[<Test>]
+let ``ResponseDone event deserializes numeric max output tokens`` () =
+    let responseDoneJson = """
+    {
+        "type": "response.done",
+        "event_id": "event_numeric_max_tokens",
+        "response": {
+            "object": "realtime.response",
+            "id": "resp_numeric_max_tokens",
+            "status": "completed",
+            "status_details": null,
+            "output": [],
+            "conversation_id": "conv_numeric_max_tokens",
+            "output_modalities": ["audio"],
+            "max_output_tokens": 16,
+            "usage": {
+                "total_tokens": 12,
+                "input_tokens": 8,
+                "output_tokens": 4,
+                "input_token_details": {
+                    "text_tokens": 8,
+                    "audio_tokens": 0
+                }
+            },
+            "metadata": null
+        }
+    }"""
+
+    use doc = JsonDocument.Parse(responseDoneJson)
+    let serverEvent = SerDe.toEvent doc
+
+    match serverEvent with
+    | ServerEvent.ResponseDone e ->
+        Assert.That(e.event_id, Is.EqualTo("event_numeric_max_tokens"))
+
+        match e.response.max_output_tokens with
+        | Skippable.Include(Some(OutputTokens.Value value)) -> Assert.That(value, Is.EqualTo(16))
+        | other -> Assert.Fail($"Expected numeric max_output_tokens, got {other}")
+    | ServerEvent.EventHandlingError(_, msg, _) -> Assert.Fail($"Expected ResponseDone event, got parse error: {msg}")
+    | _ -> Assert.Fail("Expected ResponseDone event")
+
 // Response Output Item Added Event Tests
 [<Test>]
 let ``ResponseOutputItemAdded event deserialization`` () =
