@@ -75,53 +75,102 @@ module AudioUtils =
         else
             error.LocalizedDescription
 
-    let checkError src f =
-        let err: NSError = f ()
+    let private describeRoute (route: AVAudioSessionRouteDescription) =
+        if isNull (box route) then
+            "route=unknown"
+        else
+            let inputs =
+                route.Inputs
+                |> Seq.map (fun port -> $"{port.PortType}:{port.PortName}")
+                |> String.concat ", "
 
-        if err <> null then
-            let msg = $"error with recording session. Src {src}; Error {err}"
+            let outputs =
+                route.Outputs
+                |> Seq.map (fun port -> $"{port.PortType}:{port.PortName}")
+                |> String.concat ", "
+
+            $"inputs=[{inputs}]; outputs=[{outputs}]"
+
+    let private requireSessionCall src succeeded error =
+        if not succeeded then
+            let msg = $"error with recording session. Src {src}; Error {errorMessage error}"
             failwith msg
 
-    let checkErrorB src f =
-        match f () with
-        | true, null -> ()
-        | _, err ->
-            if err <> null then
-                let msg = $"error with recording session. Src {src}; Error {err}"
-                failwith msg
-
-    let activate () =
-        let sess = AVAudioSession.SharedInstance()
-        checkError "activate:SetActive" (fun () -> sess.SetActive(true))
+    let private warnSessionCall src succeeded error =
+        if not succeeded then
+            Log.warn $"error with recording session. Src {src}; Error {errorMessage error}"
 
     let release () =
-        let sess = AVAudioSession.SharedInstance()
+        let audioSession = RTCAudioSession.SharedInstance()
         use mutable error = null
 
-        if not (sess.SetActive(false, AVAudioSessionSetActiveOptions.NotifyOthersOnDeactivation, &error)) then
+        if not (audioSession.SetActive(false, &error)) then
             Log.warn $"error releasing recording session: {errorMessage error}"
 
     let configureAudioSession () =
-        let session = AVAudioSession.SharedInstance()
+        let audioSession = RTCAudioSession.SharedInstance()
 
         let opts =
             AVAudioSessionCategoryOptions.AllowBluetooth
             ||| AVAudioSessionCategoryOptions.DefaultToSpeaker
 
-        checkError "set category play-and-record" (fun () ->
-            session.SetCategory(AVAudioSessionCategory.PlayAndRecord, opts))
+        audioSession.LockForConfiguration()
 
-        checkErrorB "set voice chat mode" (fun () -> session.SetMode(AVAudioSessionMode.VoiceChat))
-        checkErrorB "set preferred sample rate" (fun () -> session.SetPreferredSampleRate(48000.))
-        checkErrorB "set preferred IO buffer duration" (fun () -> session.SetPreferredIOBufferDuration(0.01))
-        activate ()
+        try
+            audioSession.IgnoresPreferredAttributeConfigurationErrors <- true
+
+            use mutable error = null
+
+            let categoryConfigured =
+                audioSession.SetCategory(
+                    AVAudioSession.CategoryPlayAndRecord,
+                    AVAudioSession.ModeVoiceChat,
+                    opts,
+                    &error
+                )
+
+            requireSessionCall "set WebRTC audio session category/mode" categoryConfigured error
+
+            error <- null
+            let sampleRateConfigured = audioSession.SetPreferredSampleRate(48000., &error)
+            warnSessionCall "set preferred sample rate" sampleRateConfigured error
+
+            error <- null
+
+            let bufferDurationConfigured =
+                audioSession.SetPreferredIOBufferDuration(0.01, &error)
+
+            warnSessionCall "set preferred IO buffer duration" bufferDurationConfigured error
+
+            error <- null
+            let audioSessionActivated = audioSession.SetActive(true, &error)
+            requireSessionCall "activate WebRTC audio session" audioSessionActivated error
+
+            Log.info
+                $"audio session configured: category={audioSession.Category}; mode={audioSession.Mode}; outputVolume={audioSession.OutputVolume}; {describeRoute audioSession.CurrentRoute}"
+        finally
+            audioSession.UnlockForConfiguration()
 
     let configureIncomingAudio (audioTrack: RTCAudioTrack) =
         audioTrack.Source.Volume <- 1.0
         audioTrack.IsEnabled <- true
 
-        checkErrorB "port override" (fun () ->
-            AVAudioSession.SharedInstance().OverrideOutputAudioPort(AVAudioSessionPortOverride.Speaker))
+        let audioSession = RTCAudioSession.SharedInstance()
+        audioSession.LockForConfiguration()
+
+        try
+            use mutable error = null
+
+            if not (audioSession.OverrideOutputAudioPort(AVAudioSessionPortOverride.Speaker, &error)) then
+                let msg =
+                    $"error with recording session. Src port override; Error {errorMessage error}"
+
+                failwith msg
+
+            Log.info
+                $"audio session speaker route: category={audioSession.Category}; mode={audioSession.Mode}; outputVolume={audioSession.OutputVolume}; {describeRoute audioSession.CurrentRoute}"
+        finally
+            audioSession.UnlockForConfiguration()
 
 //encapsulates peer connection for IOS
 type WebRtcClientIOS() =
