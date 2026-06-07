@@ -107,12 +107,27 @@ module AudioUtils =
         if not (audioSession.SetActive(false, &error)) then
             Log.warn $"error releasing recording session: {errorMessage error}"
 
-    let configureAudioSession () =
-        let audioSession = RTCAudioSession.SharedInstance()
-
-        let opts =
+    let private categoryOptionsForPolicy policy =
+        match policy with
+        | IosAudioRoutePolicy.Speakerphone ->
             AVAudioSessionCategoryOptions.AllowBluetooth
             ||| AVAudioSessionCategoryOptions.DefaultToSpeaker
+        | IosAudioRoutePolicy.ReceiverOrHeadset -> AVAudioSessionCategoryOptions.AllowBluetooth
+
+    let private portOverrideForPolicy policy =
+        match policy with
+        | IosAudioRoutePolicy.Speakerphone -> AVAudioSessionPortOverride.Speaker
+        | IosAudioRoutePolicy.ReceiverOrHeadset -> AVAudioSessionPortOverride.None
+
+    let private policyName policy =
+        match policy with
+        | IosAudioRoutePolicy.Speakerphone -> "speakerphone"
+        | IosAudioRoutePolicy.ReceiverOrHeadset -> "receiver-or-headset"
+
+    let configureAudioSession (clientConfig: WebRtcClientConfig) =
+        let audioSession = RTCAudioSession.SharedInstance()
+        let routePolicy = clientConfig.IosAudioRoutePolicy
+        let opts = categoryOptionsForPolicy routePolicy
 
         audioSession.LockForConfiguration()
 
@@ -147,28 +162,30 @@ module AudioUtils =
             requireSessionCall "activate WebRTC audio session" audioSessionActivated error
 
             Log.info
-                $"audio session configured: category={audioSession.Category}; mode={audioSession.Mode}; outputVolume={audioSession.OutputVolume}; {describeRoute audioSession.CurrentRoute}"
+                $"audio session configured: routePolicy={policyName routePolicy}; category={audioSession.Category}; mode={audioSession.Mode}; outputVolume={audioSession.OutputVolume}; {describeRoute audioSession.CurrentRoute}"
         finally
             audioSession.UnlockForConfiguration()
 
-    let configureIncomingAudio (audioTrack: RTCAudioTrack) =
+    let configureIncomingAudio (clientConfig: WebRtcClientConfig) (audioTrack: RTCAudioTrack) =
         audioTrack.Source.Volume <- 1.0
         audioTrack.IsEnabled <- true
 
         let audioSession = RTCAudioSession.SharedInstance()
+        let routePolicy = clientConfig.IosAudioRoutePolicy
         audioSession.LockForConfiguration()
 
         try
             use mutable error = null
+            let portOverride = portOverrideForPolicy routePolicy
 
-            if not (audioSession.OverrideOutputAudioPort(AVAudioSessionPortOverride.Speaker, &error)) then
+            if not (audioSession.OverrideOutputAudioPort(portOverride, &error)) then
                 let msg =
                     $"error with recording session. Src port override; Error {errorMessage error}"
 
                 failwith msg
 
             Log.info
-                $"audio session speaker route: category={audioSession.Category}; mode={audioSession.Mode}; outputVolume={audioSession.OutputVolume}; {describeRoute audioSession.CurrentRoute}"
+                $"audio session route applied: routePolicy={policyName routePolicy}; category={audioSession.Category}; mode={audioSession.Mode}; outputVolume={audioSession.OutputVolume}; {describeRoute audioSession.CurrentRoute}"
         finally
             audioSession.UnlockForConfiguration()
 
@@ -188,6 +205,7 @@ type WebRtcClientIOS() =
     let mutable outputChannel = Channels.Channel.CreateBounded<JsonDocument>(30)
     let mutable state = Disconnected
     let mutable disposeStarted = 0
+    let mutable activeClientConfig = WebRtcClientConfig.Default
     let stateEvent = Event<State>()
 
     let mutable iceGatheringCompleted =
@@ -341,8 +359,9 @@ type WebRtcClientIOS() =
 
     //initialize WebRTCClient
     member this.Init(clientConfig: WebRtcClientConfig) =
+        activeClientConfig <- clientConfig
         resetIceGathering ()
-        AudioUtils.configureAudioSession ()
+        AudioUtils.configureAudioSession clientConfig
         let config = Connect.rtcConfiguration clientConfig
         peerConnectionFactory <- new RTCPeerConnectionFactory(null, null)
         peerConnection <- Connect.createPeerConnection peerConnectionFactory config mediaConstraints this
@@ -471,7 +490,7 @@ type WebRtcClientIOS() =
 
             stream.AudioTracks
             |> Seq.tryHead
-            |> Option.map AudioUtils.configureIncomingAudio
+            |> Option.map (AudioUtils.configureIncomingAudio activeClientConfig)
             |> Option.defaultWith (fun () -> Log.warn "No audio track in remote stream")
 
         member this.DidChangeConnectionState

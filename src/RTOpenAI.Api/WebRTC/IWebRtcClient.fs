@@ -7,14 +7,21 @@ open System.Text.Json
 
 type State = Disconnected | Connected | Connecting
 
+[<RequireQualifiedAccess>]
+type IosAudioRoutePolicy =
+    | ReceiverOrHeadset
+    | Speakerphone
+
 type WebRtcClientConfig =
     { BindAddress: IPAddress option
       IceServerUrls: string list
-      IceGatherTimeoutMs: int }
+      IceGatherTimeoutMs: int
+      IosAudioRoutePolicy: IosAudioRoutePolicy }
     static member Default =
         { BindAddress = None
           IceServerUrls = [ "stun:stun.l.google.com:19302" ]
-          IceGatherTimeoutMs = 4000 }
+          IceGatherTimeoutMs = 4000
+          IosAudioRoutePolicy = IosAudioRoutePolicy.ReceiverOrHeadset }
 
 [<RequireQualifiedAccess>]
 module internal WebRtcClientConfigHelpers =
