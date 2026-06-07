@@ -25,6 +25,8 @@ let private waitTaskWithResult (task: Task<'T>) =
 let private waitCanRead (reader: ChannelReader<'T>) =
     reader.WaitToReadAsync().AsTask().WaitAsync(TimeSpan.FromSeconds 2.).GetAwaiter().GetResult()
 
+let private testAction f = Action(f)
+
 let private waitUntil (predicate: unit -> bool) =
     let deadline = DateTimeOffset.UtcNow.AddSeconds 2.
     let mutable doneWaiting = predicate()
@@ -54,7 +56,7 @@ let ``AgentBus rejects duplicate subscriber names`` () =
     let bus = AgentBus<int>(cts.Token)
     bus.Subscribe "agent" |> ignore
 
-    Assert.Throws<InvalidOperationException>(fun () -> bus.Subscribe "agent" |> ignore)
+    Assert.Throws<InvalidOperationException>(testAction (fun () -> bus.Subscribe "agent" |> ignore))
     |> ignore
 
     bus.Close()
@@ -68,7 +70,7 @@ let ``AgentBus unsubscribe completes reader and removes subscriber`` () =
     bus.Unsubscribe "agent"
 
     Assert.That(reader.Completion.Wait(TimeSpan.FromSeconds 2.), Is.True)
-    Assert.DoesNotThrow(fun () -> bus.Publish 1)
+    Assert.DoesNotThrow(testAction (fun () -> bus.Publish 1))
     bus.Close()
 
 [<Test>]
@@ -87,7 +89,7 @@ let ``AgentBus unsubscribe drains pending messages and completes reader`` () =
     let mutable remaining = 0
     Assert.That(reader.TryRead(&remaining), Is.False)
 
-    Assert.DoesNotThrow(fun () -> bus.Subscribe "agent" |> ignore)
+    Assert.DoesNotThrow(testAction (fun () -> bus.Subscribe "agent" |> ignore))
     bus.Close()
 
 [<Test>]

@@ -137,13 +137,6 @@
 	</ItemGroup>
 
 	<ItemGroup>
-		<PackageReference Update="Microsoft.Maui" Version="9.0.120" />
-		<PackageReference Update="Microsoft.Maui.Core" Version="9.0.120" />
-		<PackageReference Update="Microsoft.Maui.Controls" Version="9.0.120" />
-		<PackageReference Update="Microsoft.Maui.Controls.Compatibility" Version="9.0.120" />
-	</ItemGroup>
-
-	<ItemGroup>
 	  <ProjectReference Include="..\..\..\RTFlow\RTFlow.fsproj" />
 	  <ProjectReference Include="..\..\..\RTOpenAI.Api\RTOpenAI.Api.fsproj" />
 	</ItemGroup>
