@@ -69,6 +69,8 @@ module Connect =
 
 
 module AudioUtils =
+    let private audioSessionSettleDelayMs = 250
+
     let private errorMessage (error: NSError) =
         if isNull (box error) then
             "unknown error"
@@ -100,13 +102,6 @@ module AudioUtils =
         if not succeeded then
             Log.warn $"error with recording session. Src {src}; Error {errorMessage error}"
 
-    let release () =
-        let audioSession = RTCAudioSession.SharedInstance()
-        use mutable error = null
-
-        if not (audioSession.SetActive(false, &error)) then
-            Log.warn $"error releasing recording session: {errorMessage error}"
-
     let private categoryOptionsForPolicy policy =
         match policy with
         | IosAudioRoutePolicy.Speakerphone ->
@@ -124,6 +119,41 @@ module AudioUtils =
         | IosAudioRoutePolicy.Speakerphone -> "speakerphone"
         | IosAudioRoutePolicy.ReceiverOrHeadset -> "receiver-or-headset"
 
+    let private describeAudioSession (audioSession: RTCAudioSession) =
+        $"active={audioSession.IsActive}; category={audioSession.Category}; mode={audioSession.Mode}; outputVolume={audioSession.OutputVolume}; {describeRoute audioSession.CurrentRoute}"
+
+    let private logAudioSessionState phase routePolicy (audioSession: RTCAudioSession) =
+        Log.info $"audio session {phase}: routePolicy={policyName routePolicy}; {describeAudioSession audioSession}"
+
+    let private clearOutputAudioPortOverride src (audioSession: RTCAudioSession) =
+        use mutable error = null
+
+        let overrideCleared =
+            audioSession.OverrideOutputAudioPort(AVAudioSessionPortOverride.None, &error)
+
+        warnSessionCall src overrideCleared error
+
+    let release (clientConfig: WebRtcClientConfig) =
+        let audioSession = RTCAudioSession.SharedInstance()
+        let routePolicy = clientConfig.IosAudioRoutePolicy
+
+        audioSession.LockForConfiguration()
+
+        try
+            logAudioSessionState "teardown begin" routePolicy audioSession
+            clearOutputAudioPortOverride "clear output audio port override before release" audioSession
+
+            use mutable error = null
+            let audioSessionDeactivated = audioSession.SetActive(false, &error)
+            warnSessionCall "deactivate WebRTC audio session" audioSessionDeactivated error
+
+            logAudioSessionState "teardown deactivate requested" routePolicy audioSession
+        finally
+            audioSession.UnlockForConfiguration()
+
+        Thread.Sleep audioSessionSettleDelayMs
+        logAudioSessionState $"teardown settled ({audioSessionSettleDelayMs}ms)" routePolicy audioSession
+
     let configureAudioSession (clientConfig: WebRtcClientConfig) =
         let audioSession = RTCAudioSession.SharedInstance()
         let routePolicy = clientConfig.IosAudioRoutePolicy
@@ -132,6 +162,7 @@ module AudioUtils =
         audioSession.LockForConfiguration()
 
         try
+            logAudioSessionState "configure begin" routePolicy audioSession
             audioSession.IgnoresPreferredAttributeConfigurationErrors <- true
 
             use mutable error = null
@@ -145,6 +176,8 @@ module AudioUtils =
                 )
 
             requireSessionCall "set WebRTC audio session category/mode" categoryConfigured error
+
+            clearOutputAudioPortOverride "clear stale output audio port override before activation" audioSession
 
             error <- null
             let sampleRateConfigured = audioSession.SetPreferredSampleRate(48000., &error)
@@ -161,8 +194,7 @@ module AudioUtils =
             let audioSessionActivated = audioSession.SetActive(true, &error)
             requireSessionCall "activate WebRTC audio session" audioSessionActivated error
 
-            Log.info
-                $"audio session configured: routePolicy={policyName routePolicy}; category={audioSession.Category}; mode={audioSession.Mode}; outputVolume={audioSession.OutputVolume}; {describeRoute audioSession.CurrentRoute}"
+            logAudioSessionState "configured" routePolicy audioSession
         finally
             audioSession.UnlockForConfiguration()
 
@@ -338,7 +370,7 @@ type WebRtcClientIOS() =
                 if factory <> null then
                     safeCleanup "dispose peer connection factory" (fun () -> factory.Dispose())
 
-                safeCleanup "release audio session" AudioUtils.release
+                safeCleanup "release audio session" (fun () -> AudioUtils.release activeClientConfig)
                 setState Disconnected
                 Log.info $"pc[{instanceId}]: dispose completed"
             else
