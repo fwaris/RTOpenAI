@@ -69,7 +69,12 @@ module Connect =
 
 
 module AudioUtils =
+    let private routeExperimentName =
+        "variant6-videochat-speaker-override-output-gain-065"
+
     let private audioSessionSettleDelayMs = 250
+
+    let private speakerphoneIncomingAudioVolume = 0.65
 
     let private errorMessage (error: NSError) =
         if isNull (box error) then
@@ -109,21 +114,66 @@ module AudioUtils =
             ||| AVAudioSessionCategoryOptions.DefaultToSpeaker
         | IosAudioRoutePolicy.ReceiverOrHeadset -> AVAudioSessionCategoryOptions.AllowBluetooth
 
-    let private portOverrideForPolicy policy =
-        match policy with
-        | IosAudioRoutePolicy.Speakerphone -> AVAudioSessionPortOverride.Speaker
-        | IosAudioRoutePolicy.ReceiverOrHeadset -> AVAudioSessionPortOverride.None
-
     let private policyName policy =
         match policy with
         | IosAudioRoutePolicy.Speakerphone -> "speakerphone"
         | IosAudioRoutePolicy.ReceiverOrHeadset -> "receiver-or-headset"
 
+    let private incomingAudioVolume policy =
+        match policy with
+        | IosAudioRoutePolicy.Speakerphone -> speakerphoneIncomingAudioVolume
+        | IosAudioRoutePolicy.ReceiverOrHeadset -> 1.0
+
+    let private isPreferredHeadsetPort (port: AVAudioSessionPortDescription) =
+        let portType = string port.PortType
+
+        [ "Bluetooth"; "Headset"; "Headphones"; "HearingAid"; "USBAudio"; "CarAudio" ]
+        |> List.exists (fun marker -> portType.IndexOf(marker, StringComparison.OrdinalIgnoreCase) >= 0)
+
+    let private routeHasPreferredHeadset (route: AVAudioSessionRouteDescription) =
+        if isNull (box route) then
+            false
+        else
+            (route.Inputs |> Seq.exists isPreferredHeadsetPort)
+            || (route.Outputs |> Seq.exists isPreferredHeadsetPort)
+
+    let private isBuiltInSpeakerPort (port: AVAudioSessionPortDescription) =
+        let portType = string port.PortType
+        let speakerPort = string AVAudioSession.PortBuiltInSpeaker
+
+        portType.Equals(speakerPort, StringComparison.OrdinalIgnoreCase)
+        || portType.IndexOf("Speaker", StringComparison.OrdinalIgnoreCase) >= 0
+
+    let private routeOutputsBuiltInSpeaker (route: AVAudioSessionRouteDescription) =
+        if isNull (box route) then
+            false
+        else
+            route.Outputs |> Seq.exists isBuiltInSpeakerPort
+
+    let private portOverrideForPolicy (audioSession: RTCAudioSession) policy =
+        let route = audioSession.CurrentRoute
+        let headsetRoutePreferred = routeHasPreferredHeadset route
+        let outputAlreadySpeaker = routeOutputsBuiltInSpeaker route
+
+        match policy with
+        | IosAudioRoutePolicy.Speakerphone when headsetRoutePreferred ->
+            AVAudioSessionPortOverride.None, headsetRoutePreferred, outputAlreadySpeaker, "headset route preferred"
+        | IosAudioRoutePolicy.Speakerphone when outputAlreadySpeaker ->
+            AVAudioSessionPortOverride.None, headsetRoutePreferred, outputAlreadySpeaker, "defaultToSpeaker route"
+        | IosAudioRoutePolicy.Speakerphone ->
+            AVAudioSessionPortOverride.Speaker,
+            headsetRoutePreferred,
+            outputAlreadySpeaker,
+            "speaker setting fallback override"
+        | IosAudioRoutePolicy.ReceiverOrHeadset ->
+            AVAudioSessionPortOverride.None, headsetRoutePreferred, outputAlreadySpeaker, "receiver/headset policy"
+
     let private describeAudioSession (audioSession: RTCAudioSession) =
         $"active={audioSession.IsActive}; category={audioSession.Category}; mode={audioSession.Mode}; outputVolume={audioSession.OutputVolume}; {describeRoute audioSession.CurrentRoute}"
 
     let private logAudioSessionState phase routePolicy (audioSession: RTCAudioSession) =
-        Log.info $"audio session {phase}: routePolicy={policyName routePolicy}; {describeAudioSession audioSession}"
+        Log.info
+            $"audio session {phase}: experiment={routeExperimentName}; routePolicy={policyName routePolicy}; {describeAudioSession audioSession}"
 
     let private clearOutputAudioPortOverride src (audioSession: RTCAudioSession) =
         use mutable error = null
@@ -170,7 +220,7 @@ module AudioUtils =
             let categoryConfigured =
                 audioSession.SetCategory(
                     AVAudioSession.CategoryPlayAndRecord,
-                    AVAudioSession.ModeVoiceChat,
+                    AVAudioSession.ModeVideoChat,
                     opts,
                     &error
                 )
@@ -199,16 +249,20 @@ module AudioUtils =
             audioSession.UnlockForConfiguration()
 
     let configureIncomingAudio (clientConfig: WebRtcClientConfig) (audioTrack: RTCAudioTrack) =
-        audioTrack.Source.Volume <- 1.0
-        audioTrack.IsEnabled <- true
-
         let audioSession = RTCAudioSession.SharedInstance()
         let routePolicy = clientConfig.IosAudioRoutePolicy
+        let audioVolume = incomingAudioVolume routePolicy
+
+        audioTrack.Source.Volume <- audioVolume
+        audioTrack.IsEnabled <- true
+
         audioSession.LockForConfiguration()
 
         try
             use mutable error = null
-            let portOverride = portOverrideForPolicy routePolicy
+
+            let portOverride, headsetRoutePreferred, outputAlreadySpeaker, routeReason =
+                portOverrideForPolicy audioSession routePolicy
 
             if not (audioSession.OverrideOutputAudioPort(portOverride, &error)) then
                 let msg =
@@ -217,7 +271,7 @@ module AudioUtils =
                 failwith msg
 
             Log.info
-                $"audio session route applied: routePolicy={policyName routePolicy}; category={audioSession.Category}; mode={audioSession.Mode}; outputVolume={audioSession.OutputVolume}; {describeRoute audioSession.CurrentRoute}"
+                $"audio session route applied: experiment={routeExperimentName}; routePolicy={policyName routePolicy}; routeReason={routeReason}; headsetRoutePreferred={headsetRoutePreferred}; outputAlreadySpeaker={outputAlreadySpeaker}; portOverride={portOverride}; incomingAudioVolume={audioVolume}; category={audioSession.Category}; mode={audioSession.Mode}; outputVolume={audioSession.OutputVolume}; {describeRoute audioSession.CurrentRoute}"
         finally
             audioSession.UnlockForConfiguration()
 
@@ -238,6 +292,7 @@ type WebRtcClientIOS() =
     let mutable state = Disconnected
     let mutable disposeStarted = 0
     let mutable activeClientConfig = WebRtcClientConfig.Default
+    let mutable microphoneEnabled = true
     let stateEvent = Event<State>()
 
     let mutable iceGatheringCompleted =
@@ -252,6 +307,17 @@ type WebRtcClientIOS() =
 
     let tryCompleteIceGathering () =
         iceGatheringCompleted.TrySetResult() |> ignore
+
+    let applyMicrophoneEnabled enabled =
+        microphoneEnabled <- enabled
+
+        match audioTrack with
+        | null ->
+            Log.info
+                $"pc[{instanceId}]: microphone enabled requested before local audio track exists: enabled={enabled}"
+        | track ->
+            track.IsEnabled <- enabled
+            Log.info $"pc[{instanceId}]: microphone enabled={enabled}"
 
     let describeNative name (value: obj) =
         match value with
@@ -403,6 +469,7 @@ type WebRtcClientIOS() =
 
         audioSource <- createdAudioSource
         audioTrack <- createdAudioTrack
+        applyMicrophoneEnabled microphoneEnabled
         audioSender <- peerConnection.AddTrack(audioTrack, streamIds = [| "stream0" |])
 
         match _dataChannel with
@@ -510,6 +577,8 @@ type WebRtcClientIOS() =
                 dataChannel.SendData(buffer)
             else
                 false
+
+        member _.SetMicrophoneEnabled(enabled: bool) = applyMicrophoneEnabled enabled
 
     interface IRTCPeerConnectionDelegate with
         member this.DidAddReceiver
