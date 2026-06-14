@@ -13,6 +13,7 @@
 
   <PropertyGroup>
     <PackageId>FsWebRTC.Bindings.Maui.Android</PackageId>
+    <PackageVersion>0.9.3.15</PackageVersion>
     <Description>Maui bindings to Android WebRTC library libwebrtc.aar</Description>
     <Authors>Faisal Waris</Authors>
     <PackageLicenseExpression>MIT</PackageLicenseExpression>

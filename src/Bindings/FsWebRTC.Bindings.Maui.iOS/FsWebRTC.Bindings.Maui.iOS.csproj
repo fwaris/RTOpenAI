@@ -13,45 +13,24 @@
   
   <PropertyGroup>
     <PackageId>FsWebRTC.Bindings.Maui.iOS</PackageId>
-    <Description>Maui bindings to the WebRTC.xcframewor</Description>
+    <Description>MAUI bindings to LiveKitWebRTC.xcframework for iOS, iOS simulator, and Mac Catalyst.</Description>
     <Authors>Faisal Waris</Authors>
     <PackageLicenseExpression>MIT</PackageLicenseExpression>
-    <PackageTags>webrtc;maui</PackageTags>
+    <PackageTags>webrtc;livekit;maui;ios;maccatalyst</PackageTags>
     <RepositoryUrl>https://github.com/fwaris/RTOpenAI</RepositoryUrl>
   </PropertyGroup>
 
-  <!--
-  <PropertyGroup Condition=" '$(Configuration)' == 'Debug' ">
-    <CodesignKey>iPhone Developer</CodesignKey>
-  </PropertyGroup>
-  -->
-
   <ItemGroup Condition="'$(TargetPlatformIdentifier)' == 'ios' Or '$(TargetPlatformIdentifier)' == 'maccatalyst'">
     <ObjcBindingApiDefinition Include="ApiDefinitions.cs" />
+    <ObjcBindingApiDefinition Include="LiveKitAdditions.cs" />
     <ObjcBindingCoreSource Include="StructsAndEnums.cs" />
   </ItemGroup>
 
   <ItemGroup>
-<!--    
-    <NativeReference Include="WebRTC.xcframework">
-      <Kind>Framework</Kind>
-      <Frameworks></Frameworks>
-      <LinkerFlags></LinkerFlags>
-      <WeakFrameworks></WeakFrameworks>
-      <ForceLoad>False</ForceLoad>
-      <NeedsGccExceptionHandling>False</NeedsGccExceptionHandling>
-      <IsCxx>False</IsCxx>
-      <SmartLink>False</SmartLink>
-    </NativeReference>
--->
-    <NativeReference Include="WebRTC.xcframework">
+    <NativeReference Include="LiveKitWebRTC.xcframework">
       <Kind>Framework</Kind>
       <Frameworks></Frameworks>
       <LinkerFlags></LinkerFlags>
     </NativeReference>
-  </ItemGroup>
-
-  <ItemGroup>
-    <PackageReference Include="FSharp.SystemTextJson" />
   </ItemGroup>
 </Project>

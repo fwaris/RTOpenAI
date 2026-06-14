@@ -3,19 +3,19 @@ using Foundation;
 using ObjCRuntime;
 ////using WebRTC;
 
-namespace IOS.WebRTC
+namespace FsWebRTC.Bindings
 {
 	[Native]
-	public enum RTCVideoRotation : long
+	public enum LKRTCVideoRotation : long
 	{
-		RTCVideoRotation_0 = 0,
-		RTCVideoRotation_90 = 90,
-		RTCVideoRotation_180 = 180,
-		RTCVideoRotation_270 = 270
+		LKRTCVideoRotation_0 = 0,
+		LKRTCVideoRotation_90 = 90,
+		LKRTCVideoRotation_180 = 180,
+		LKRTCVideoRotation_270 = 270
 	}
 
 	[Native]
-	public enum RTCFrameType : ulong
+	public enum LKRTCFrameType : ulong
 	{
 		EmptyFrame = 0,
 		AudioFrameSpeech = 1,
@@ -25,14 +25,14 @@ namespace IOS.WebRTC
 	}
 
 	[Native]
-	public enum RTCVideoContentType : ulong
+	public enum LKRTCVideoContentType : ulong
 	{
 		Unspecified,
 		Screenshare
 	}
 
 	[Native]
-	public enum RTCLoggingSeverity : long
+	public enum LKRTCLoggingSeverity : long
 	{
 		Verbose,
 		Info,
@@ -43,83 +43,83 @@ namespace IOS.WebRTC
 
 	static class CFunctions
 	{
-		// extern void RTCLogEx (RTCLoggingSeverity severity, NSString *log_string);
+		// extern void LKRTCLogEx (LKRTCLoggingSeverity severity, NSString *log_string);
 		[DllImport ("__Internal")]
 		////[Verify (PlatformInvoke)]
-		static extern void RTCLogEx (RTCLoggingSeverity severity, NSString log_string);
+		static extern void LKRTCLogEx (LKRTCLoggingSeverity severity, NSString log_string);
 
-		// extern void RTCSetMinDebugLogLevel (RTCLoggingSeverity severity);
+		// extern void LKRTCSetMinDebugLogLevel (LKRTCLoggingSeverity severity);
 		[DllImport ("__Internal")]
 		////[Verify (PlatformInvoke)]
-		static extern void RTCSetMinDebugLogLevel (RTCLoggingSeverity severity);
+		static extern void LKRTCSetMinDebugLogLevel (LKRTCLoggingSeverity severity);
 
-		// extern NSString * RTCFileName (const char *filePath);
+		// extern NSString * LKRTCFileName (const char *filePath);
 		[DllImport ("__Internal")]
 		////[Verify (PlatformInvoke)]
-		static extern unsafe NSString RTCFileName (sbyte* filePath);
+		static extern unsafe NSString LKRTCFileName (sbyte* filePath);
 
-		// extern void RTCInitFieldTrialDictionary (NSDictionary<NSString *,NSString *> *fieldTrials);
+		// extern void LKRTCInitFieldTrialDictionary (NSDictionary<NSString *,NSString *> *fieldTrials);
 		[DllImport ("__Internal")]
 		////[Verify (PlatformInvoke)]
-		static extern void RTCInitFieldTrialDictionary (NSDictionary<NSString, NSString> fieldTrials);
+		static extern void LKRTCInitFieldTrialDictionary (NSDictionary<NSString, NSString> fieldTrials);
 
 		// extern void RTCEnableMetrics ();
 		[DllImport ("__Internal")]
 		////[Verify (PlatformInvoke)]
 		static extern void RTCEnableMetrics ();
 
-		// extern NSArray<RTCMetricsSampleInfo *> * RTCGetAndResetMetrics ();
+		// extern NSArray<LKRTCMetricsSampleInfo *> * RTCGetAndResetMetrics ();
 		//[DllImport ("__Internal")]
 		////[Verify (PlatformInvoke)]
-		//static extern RTCMetricsSampleInfo[] RTCGetAndResetMetrics ();
+		//static extern LKRTCMetricsSampleInfo[] RTCGetAndResetMetrics ();
 
-		// extern BOOL RTCInitializeSSL ();
+		// extern BOOL LKRTCInitializeSSL ();
 		[DllImport ("__Internal")]
 		////[Verify (PlatformInvoke)]
-		static extern bool RTCInitializeSSL ();
+		static extern bool LKRTCInitializeSSL ();
 
-		// extern BOOL RTCCleanupSSL ();
+		// extern BOOL LKRTCCleanupSSL ();
 		[DllImport ("__Internal")]
 		////[Verify (PlatformInvoke)]
-		static extern bool RTCCleanupSSL ();
+		static extern bool LKRTCCleanupSSL ();
 
-		// extern void RTCSetupInternalTracer ();
+		// extern void LKRTCSetupInternalTracer ();
 		[DllImport ("__Internal")]
 		////[Verify (PlatformInvoke)]
-		static extern void RTCSetupInternalTracer ();
+		static extern void LKRTCSetupInternalTracer ();
 
-		// extern BOOL RTCStartInternalCapture (NSString *filePath);
+		// extern BOOL LKRTCStartInternalCapture (NSString *filePath);
 		[DllImport ("__Internal")]
 		////[Verify (PlatformInvoke)]
-		static extern bool RTCStartInternalCapture (NSString filePath);
+		static extern bool LKRTCStartInternalCapture (NSString filePath);
 
-		// extern void RTCStopInternalCapture ();
+		// extern void LKRTCStopInternalCapture ();
 		[DllImport ("__Internal")]
 		////[Verify (PlatformInvoke)]
-		static extern void RTCStopInternalCapture ();
+		static extern void LKRTCStopInternalCapture ();
 
-		// extern void RTCShutdownInternalTracer ();
+		// extern void LKRTCShutdownInternalTracer ();
 		[DllImport ("__Internal")]
 		////[Verify (PlatformInvoke)]
-		static extern void RTCShutdownInternalTracer ();
+		static extern void LKRTCShutdownInternalTracer ();
 	}
 
 	[Native]
-	public enum RTCVideoCodecMode : ulong
+	public enum LKRTCVideoCodecMode : ulong
 	{
 		RealtimeVideo,
 		Screensharing
 	}
 
 	[Native]
-	public enum RTCH264PacketizationMode : ulong
+	public enum LKRTCH264PacketizationMode : ulong
 	{
 		NonInterleaved = 0,
 		SingleNalUnit
 	}
 
 	[Native]
-	public enum RTCH264Profile : ulong
+	public enum LKRTCH264Profile : ulong
 	{
 		ConstrainedBaseline,
 		Baseline,
@@ -129,29 +129,29 @@ namespace IOS.WebRTC
 	}
 
 	[Native]
-	public enum RTCH264Level : ulong
+	public enum LKRTCH264Level : ulong
 	{
-		RTCH264Level1_b = 0,
-		RTCH264Level1 = 10,
-		RTCH264Level1_1 = 11,
-		RTCH264Level1_2 = 12,
-		RTCH264Level1_3 = 13,
-		RTCH264Level2 = 20,
-		RTCH264Level2_1 = 21,
-		RTCH264Level2_2 = 22,
-		RTCH264Level3 = 30,
-		RTCH264Level3_1 = 31,
-		RTCH264Level3_2 = 32,
-		RTCH264Level4 = 40,
-		RTCH264Level4_1 = 41,
-		RTCH264Level4_2 = 42,
-		RTCH264Level5 = 50,
-		RTCH264Level5_1 = 51,
-		RTCH264Level5_2 = 52
+		LKRTCH264Level1_b = 0,
+		LKRTCH264Level1 = 10,
+		LKRTCH264Level1_1 = 11,
+		LKRTCH264Level1_2 = 12,
+		LKRTCH264Level1_3 = 13,
+		LKRTCH264Level2 = 20,
+		LKRTCH264Level2_1 = 21,
+		LKRTCH264Level2_2 = 22,
+		LKRTCH264Level3 = 30,
+		LKRTCH264Level3_1 = 31,
+		LKRTCH264Level3_2 = 32,
+		LKRTCH264Level4 = 40,
+		LKRTCH264Level4_1 = 41,
+		LKRTCH264Level4_2 = 42,
+		LKRTCH264Level5 = 50,
+		LKRTCH264Level5_1 = 51,
+		LKRTCH264Level5_2 = 52
 	}
 
 	[Native]
-	public enum RTCDispatcherQueueType : long
+	public enum LKRTCDispatcherQueueType : long
 	{
 		Main,
 		CaptureSession,
@@ -160,7 +160,7 @@ namespace IOS.WebRTC
 	}
 
 	[Native]
-	public enum RTCSourceState : long
+	public enum LKRTCSourceState : long
 	{
 		Initializing,
 		Live,
@@ -169,14 +169,14 @@ namespace IOS.WebRTC
 	}
 
 	[Native]
-	public enum RTCMediaStreamTrackState : long
+	public enum LKRTCMediaStreamTrackState : long
 	{
 		Live,
 		Ended
 	}
 
 	[Native]
-	public enum RTCIceTransportPolicy : long
+	public enum LKRTCIceTransportPolicy : long
 	{
 		None,
 		Relay,
@@ -185,7 +185,7 @@ namespace IOS.WebRTC
 	}
 
 	[Native]
-	public enum RTCBundlePolicy : long
+	public enum LKRTCBundlePolicy : long
 	{
 		Balanced,
 		MaxCompat,
@@ -193,49 +193,49 @@ namespace IOS.WebRTC
 	}
 
 	[Native]
-	public enum RTCRtcpMuxPolicy : long
+	public enum LKRTCRtcpMuxPolicy : long
 	{
 		Negotiate,
 		Require
 	}
 
 	[Native]
-	public enum RTCTcpCandidatePolicy : long
+	public enum LKRTCTcpCandidatePolicy : long
 	{
 		Enabled,
 		Disabled
 	}
 
 	[Native]
-	public enum RTCCandidateNetworkPolicy : long
+	public enum LKRTCCandidateNetworkPolicy : long
 	{
 		All,
 		LowCost
 	}
 
 	[Native]
-	public enum RTCContinualGatheringPolicy : long
+	public enum LKRTCContinualGatheringPolicy : long
 	{
 		Once,
 		Continually
 	}
 
 	[Native]
-	public enum RTCEncryptionKeyType : long
+	public enum LKRTCEncryptionKeyType : long
 	{
 		Rsa,
 		Ecdsa
 	}
 
 	[Native]
-	public enum RTCSdpSemantics : long
+	public enum LKRTCSdpSemantics : long
 	{
 		PlanB,
 		UnifiedPlan
 	}
 
 	[Native]
-	public enum RTCDataChannelState : long
+	public enum LKRTCDataChannelState : long
 	{
 		Connecting,
 		Open,
@@ -244,14 +244,14 @@ namespace IOS.WebRTC
 	}
 
 	[Native]
-	public enum RTCTlsCertPolicy : ulong
+	public enum LKRTCTlsCertPolicy : ulong
 	{
 		Secure,
 		InsecureNoCheck
 	}
 
 	[Native]
-	public enum RTCSignalingState : long
+	public enum LKRTCSignalingState : long
 	{
 		Stable,
 		HaveLocalOffer,
@@ -262,7 +262,7 @@ namespace IOS.WebRTC
 	}
 
 	[Native]
-	public enum RTCIceConnectionState : long
+	public enum LKRTCIceConnectionState : long
 	{
 		New,
 		Checking,
@@ -275,7 +275,7 @@ namespace IOS.WebRTC
 	}
 
 	[Native]
-	public enum RTCPeerConnectionState : long
+	public enum LKRTCPeerConnectionState : long
 	{
 		New,
 		Connecting,
@@ -286,7 +286,7 @@ namespace IOS.WebRTC
 	}
 
 	[Native]
-	public enum RTCIceGatheringState : long
+	public enum LKRTCIceGatheringState : long
 	{
 		New,
 		Gathering,
@@ -294,14 +294,14 @@ namespace IOS.WebRTC
 	}
 
 	[Native]
-	public enum RTCStatsOutputLevel : long
+	public enum LKRTCStatsOutputLevel : long
 	{
 		Standard,
 		Debug
 	}
 
 	[Native]
-	public enum RTCPriority : long
+	public enum LKRTCPriority : long
 	{
 		VeryLow,
 		Low,
@@ -310,7 +310,7 @@ namespace IOS.WebRTC
 	}
 
 	[Native]
-	public enum RTCDegradationPreference : long
+	public enum LKRTCDegradationPreference : long
 	{
 		Disabled,
 		MaintainFramerate,
@@ -319,7 +319,7 @@ namespace IOS.WebRTC
 	}
 
 	[Native]
-	public enum RTCRtpMediaType : long
+	public enum LKRTCRtpMediaType : long
 	{
 		Audio,
 		Video,
@@ -328,7 +328,14 @@ namespace IOS.WebRTC
 	}
 
 	[Native]
-	public enum RTCRtpTransceiverDirection : long
+	public enum RTCRtpSourceType : long
+	{
+		Contributing,
+		Synchronization
+	}
+
+	[Native]
+	public enum LKRTCRtpTransceiverDirection : long
 	{
 		SendRecv,
 		SendOnly,
@@ -338,7 +345,7 @@ namespace IOS.WebRTC
 	}
 
 	[Native]
-	public enum RTCSdpType : long
+	public enum LKRTCSdpType : long
 	{
 		Offer,
 		PrAnswer,
@@ -347,7 +354,7 @@ namespace IOS.WebRTC
 	}
 
 	[Native]
-	public enum RTCFileLoggerSeverity : ulong
+	public enum LKRTCFileLoggerSeverity : ulong
 	{
 		Verbose,
 		Info,
@@ -356,9 +363,134 @@ namespace IOS.WebRTC
 	}
 
 	[Native]
-	public enum RTCFileLoggerRotationType : ulong
+	public enum LKRTCFileLoggerRotationType : ulong
 	{
 		Call,
 		App
+	}
+
+	[Native]
+	public enum LKRTCIODeviceType : long
+	{
+		Output,
+		Input
+	}
+
+	[Native]
+	public enum LKRTCAudioDeviceModuleType : long
+	{
+		PlatformDefault,
+		AudioEngine
+	}
+
+	[Native]
+	public enum LKRTCSpeechActivityEvent : long
+	{
+		Started,
+		Ended
+	}
+
+	[Native]
+	public enum LKRTCAudioEngineMuteMode : long
+	{
+		Unknown = -1,
+		VoiceProcessing = 0,
+		RestartEngine = 1,
+		InputMixer = 2
+	}
+
+	[Native]
+	public enum LKRTCAudioDuckingLevel : long
+	{
+		Default = 0,
+		Min = 1,
+		Mid = 2,
+		Max = 3
+	}
+
+	[StructLayout(LayoutKind.Sequential)]
+	public struct LKRTCAudioEngineState
+	{
+		public bool outputEnabled;
+		public bool outputRunning;
+		public bool inputEnabled;
+		public bool inputRunning;
+		public bool inputMuted;
+		public LKRTCAudioEngineMuteMode muteMode;
+	}
+
+	[StructLayout(LayoutKind.Sequential)]
+	public struct LKRTCAudioEngineAvailability
+	{
+		public bool isInputAvailable;
+		public bool isOutputAvailable;
+	}
+
+	[Native]
+	public enum LKRTCPlatformAudioProcessingTopology : long
+	{
+		Independent = 0,
+		EchoCancellationAndNoiseSuppressionCoupled = 1
+	}
+
+	[Native]
+	public enum LKRTCAudioProcessingMode : long
+	{
+		Automatic = 0,
+		Platform = 1,
+		Software = 2
+	}
+
+	[Native]
+	public enum LKRTCAudioProcessingOptionsResultCode : long
+	{
+		Applied = 0,
+		Stored = 1,
+		RejectedRemoteTrack = 2,
+		RejectedInvalidCombination = 3,
+		RejectedPlatformUnavailable = 4,
+		ApplyFailed = 5
+	}
+
+	[Native]
+	public enum LKRTCAudioProcessingImplementation : long
+	{
+		Unknown = 0,
+		Disabled = 1,
+		Software = 2,
+		Platform = 3,
+		SoftwareAndPlatform = 4
+	}
+
+	[Native]
+	public enum LKRTCCryptorAlgorithm : ulong
+	{
+		AesGcm = 0
+	}
+
+	[Native]
+	public enum LKRTCFrameCryptorState : long
+	{
+		New = 0,
+		Ok,
+		EncryptionFailed,
+		DecryptionFailed,
+		MissingKey,
+		KeyRatcheted,
+		InternalError
+	}
+
+	[Native]
+	public enum LKRTCKeyDerivationAlgorithm : ulong
+	{
+		Pbkdf2 = 0,
+		Hkdf
+	}
+
+	[Native]
+	public enum RTCH265PacketizationMode : ulong
+	{
+		NonInterleaved = 0,
+		SingleNalUnit
 	}
 }

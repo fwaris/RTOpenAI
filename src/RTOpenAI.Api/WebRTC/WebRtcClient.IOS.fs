@@ -5,7 +5,7 @@ open System.Threading
 open System.Threading.Tasks
 open RTOpenAI.Api
 open RTOpenAI.WebRTC
-open IOS.WebRTC
+open FsWebRTC.Bindings
 open Foundation
 open AVFoundation
 open ObjCRuntime
@@ -14,30 +14,30 @@ open System.Text.Json
 module Connect =
     let private createIceServers (clientConfig: WebRtcClientConfig) =
         clientConfig.IceServerUrls
-        |> List.map (fun url -> new RTCIceServer([| url |]))
+        |> List.map (fun url -> new LKRTCIceServer([| url |]))
         |> List.toArray
 
     let rtcConfiguration (clientConfig: WebRtcClientConfig) =
-        let config = new RTCConfiguration()
-        config.SdpSemantics <- RTCSdpSemantics.UnifiedPlan
+        let config = new LKRTCConfiguration()
+        config.SdpSemantics <- LKRTCSdpSemantics.UnifiedPlan
         config.IceServers <- createIceServers clientConfig
         config
 
-    let createPeerConnection (fac: RTCPeerConnectionFactory) config constraints dlg =
+    let createPeerConnection (fac: LKRTCPeerConnectionFactory) config constraints dlg =
         try
             fac.PeerConnectionWithConfiguration(config, constraints, dlg)
         with ex ->
             Log.exn (ex, "unable to create peer connection")
             raise ex
 
-    let createAudioTrack (fac: RTCPeerConnectionFactory) =
-        let audioConstraints = new RTCMediaConstraints(null, null)
+    let createAudioTrack (fac: LKRTCPeerConnectionFactory) =
+        let audioConstraints = new LKRTCMediaConstraints(null, null)
         let audioSource = fac.AudioSourceWithConstraints(audioConstraints)
         let audioTrack = fac.AudioTrackWithSource(audioSource, trackId = "audio0")
         audioSource, audioTrack
 
-    let createDataChannel (pc: RTCPeerConnection) =
-        let config = new RTCDataChannelConfiguration()
+    let createDataChannel (pc: LKRTCPeerConnection) =
+        let config = new LKRTCDataChannelConfiguration()
 
         try
             pc.DataChannelForLabel(Env.OPENAI_RT_DATA_CHANNEL.Value, config) |> Some
@@ -45,7 +45,7 @@ module Connect =
             Log.exn (ex, "createDataChannel")
             None
 
-    let createMediaSenders fac (pc: RTCPeerConnection) =
+    let createMediaSenders fac (pc: LKRTCPeerConnection) =
         let audioSource, audioTrack = createAudioTrack fac
         let dataChannel = createDataChannel pc
         audioSource, audioTrack, dataChannel
@@ -64,13 +64,13 @@ module Connect =
         let nOptional =
             NSDictionary<NSString, NSString>.FromObjectsAndKeys(Seq.toArray optional.Values, Seq.toArray optional.Keys)
 
-        new RTCMediaConstraints(null, nOptional)
+        new LKRTCMediaConstraints(null, nOptional)
 
 
 
 module AudioUtils =
     let private routeExperimentName =
-        "variant6-videochat-speaker-override-output-gain-065"
+        "variant7-livekit-webrtc-config-manual-audio"
 
     let private audioSessionSettleDelayMs = 250
 
@@ -150,7 +150,7 @@ module AudioUtils =
         else
             route.Outputs |> Seq.exists isBuiltInSpeakerPort
 
-    let private portOverrideForPolicy (audioSession: RTCAudioSession) policy =
+    let private portOverrideForPolicy (audioSession: LKRTCAudioSession) policy =
         let route = audioSession.CurrentRoute
         let headsetRoutePreferred = routeHasPreferredHeadset route
         let outputAlreadySpeaker = routeOutputsBuiltInSpeaker route
@@ -168,14 +168,14 @@ module AudioUtils =
         | IosAudioRoutePolicy.ReceiverOrHeadset ->
             AVAudioSessionPortOverride.None, headsetRoutePreferred, outputAlreadySpeaker, "receiver/headset policy"
 
-    let private describeAudioSession (audioSession: RTCAudioSession) =
+    let private describeAudioSession (audioSession: LKRTCAudioSession) =
         $"active={audioSession.IsActive}; category={audioSession.Category}; mode={audioSession.Mode}; outputVolume={audioSession.OutputVolume}; {describeRoute audioSession.CurrentRoute}"
 
-    let private logAudioSessionState phase routePolicy (audioSession: RTCAudioSession) =
+    let private logAudioSessionState phase routePolicy (audioSession: LKRTCAudioSession) =
         Log.info
             $"audio session {phase}: experiment={routeExperimentName}; routePolicy={policyName routePolicy}; {describeAudioSession audioSession}"
 
-    let private clearOutputAudioPortOverride src (audioSession: RTCAudioSession) =
+    let private clearOutputAudioPortOverride src (audioSession: LKRTCAudioSession) =
         use mutable error = null
 
         let overrideCleared =
@@ -183,14 +183,41 @@ module AudioUtils =
 
         warnSessionCall src overrideCleared error
 
+    let private webRtcAudioConfiguration opts =
+        let config = LKRTCAudioSessionConfiguration.WebRTCConfiguration()
+        config.Category <- AVAudioSession.CategoryPlayAndRecord
+        config.Mode <- AVAudioSession.ModeVideoChat
+        config.CategoryOptions <- opts
+        config.SampleRate <- 48000.
+        config.IoBufferDuration <- 0.01
+        config.InputNumberOfChannels <- 1n
+        config.OutputNumberOfChannels <- 1n
+        LKRTCAudioSessionConfiguration.SetWebRTCConfiguration(config)
+        config
+
+    let private enableManualAudio (audioSession: LKRTCAudioSession) =
+        audioSession.UseManualAudio <- true
+        audioSession.IsAudioEnabled <- true
+
+    let private applyWebRtcAudioConfiguration src routePolicy (audioSession: LKRTCAudioSession) =
+        let opts = categoryOptionsForPolicy routePolicy
+        let config = webRtcAudioConfiguration opts
+
+        use mutable error = null
+        let configured = audioSession.SetConfiguration(config, true, &error)
+        warnSessionCall src configured error
+
+        configured
+
     let release (clientConfig: WebRtcClientConfig) =
-        let audioSession = RTCAudioSession.SharedInstance()
+        let audioSession = LKRTCAudioSession.SharedInstance()
         let routePolicy = clientConfig.IosAudioRoutePolicy
 
         audioSession.LockForConfiguration()
 
         try
             logAudioSessionState "teardown begin" routePolicy audioSession
+            audioSession.IsAudioEnabled <- false
             clearOutputAudioPortOverride "clear output audio port override before release" audioSession
 
             use mutable error = null
@@ -205,51 +232,26 @@ module AudioUtils =
         logAudioSessionState $"teardown settled ({audioSessionSettleDelayMs}ms)" routePolicy audioSession
 
     let configureAudioSession (clientConfig: WebRtcClientConfig) =
-        let audioSession = RTCAudioSession.SharedInstance()
+        let audioSession = LKRTCAudioSession.SharedInstance()
         let routePolicy = clientConfig.IosAudioRoutePolicy
-        let opts = categoryOptionsForPolicy routePolicy
 
         audioSession.LockForConfiguration()
 
         try
             logAudioSessionState "configure begin" routePolicy audioSession
             audioSession.IgnoresPreferredAttributeConfigurationErrors <- true
-
-            use mutable error = null
-
-            let categoryConfigured =
-                audioSession.SetCategory(
-                    AVAudioSession.CategoryPlayAndRecord,
-                    AVAudioSession.ModeVideoChat,
-                    opts,
-                    &error
-                )
-
-            requireSessionCall "set WebRTC audio session category/mode" categoryConfigured error
+            enableManualAudio audioSession
+            applyWebRtcAudioConfiguration "set LiveKit WebRTC audio configuration" routePolicy audioSession
+            |> ignore
 
             clearOutputAudioPortOverride "clear stale output audio port override before activation" audioSession
-
-            error <- null
-            let sampleRateConfigured = audioSession.SetPreferredSampleRate(48000., &error)
-            warnSessionCall "set preferred sample rate" sampleRateConfigured error
-
-            error <- null
-
-            let bufferDurationConfigured =
-                audioSession.SetPreferredIOBufferDuration(0.01, &error)
-
-            warnSessionCall "set preferred IO buffer duration" bufferDurationConfigured error
-
-            error <- null
-            let audioSessionActivated = audioSession.SetActive(true, &error)
-            requireSessionCall "activate WebRTC audio session" audioSessionActivated error
 
             logAudioSessionState "configured" routePolicy audioSession
         finally
             audioSession.UnlockForConfiguration()
 
-    let configureIncomingAudio (clientConfig: WebRtcClientConfig) (audioTrack: RTCAudioTrack) =
-        let audioSession = RTCAudioSession.SharedInstance()
+    let configureIncomingAudio (clientConfig: WebRtcClientConfig) (audioTrack: LKRTCAudioTrack) =
+        let audioSession = LKRTCAudioSession.SharedInstance()
         let routePolicy = clientConfig.IosAudioRoutePolicy
         let audioVolume = incomingAudioVolume routePolicy
 
@@ -259,6 +261,12 @@ module AudioUtils =
         audioSession.LockForConfiguration()
 
         try
+            enableManualAudio audioSession
+
+            if audioSession.Category <> AVAudioSession.CategoryPlayAndRecord then
+                applyWebRtcAudioConfiguration "reapply LiveKit WebRTC audio configuration for incoming audio" routePolicy audioSession
+                |> ignore
+
             use mutable error = null
 
             let portOverride, headsetRoutePreferred, outputAlreadySpeaker, routeReason =
@@ -280,14 +288,14 @@ type WebRtcClientIOS() =
     inherit NSObject()
     //weak var delegate: WebRTCClientDelegate?
     let instanceId = Guid.NewGuid().ToString("N").Substring(0, 8)
-    let mutable peerConnection: RTCPeerConnection = null
-    let mutable peerConnectionFactory: RTCPeerConnectionFactory = null
+    let mutable peerConnection: LKRTCPeerConnection = null
+    let mutable peerConnectionFactory: LKRTCPeerConnectionFactory = null
     let mutable audioQueue = MailboxProcessor.Start(ignore >> async.Return)
     let mutable mediaConstraints = Connect.mediaConstraints ()
-    let mutable audioSource: RTCAudioSource = null
-    let mutable audioTrack: RTCAudioTrack = null
-    let mutable audioSender: RTCRtpSender = null
-    let mutable dataChannel: RTCDataChannel = Unchecked.defaultof<_>
+    let mutable audioSource: LKRTCAudioSource = null
+    let mutable audioTrack: LKRTCAudioTrack = null
+    let mutable audioSender: LKRTCRtpSender = null
+    let mutable dataChannel: LKRTCDataChannel = Unchecked.defaultof<_>
     let mutable outputChannel = Channels.Channel.CreateBounded<JsonDocument>(30)
     let mutable state = Disconnected
     let mutable disposeStarted = 0
@@ -345,6 +353,39 @@ type WebRtcClientIOS() =
         with ex ->
             Log.exn (ex, $"pc[{instanceId}]: cleanup step '{step}' failed")
 
+    let logAudioDeviceModuleState phase =
+        if peerConnectionFactory = null then
+            Log.warn $"pc[{instanceId}]: audio module {phase}: peerConnectionFactory=null"
+        else
+            let audioModule = peerConnectionFactory.AudioDeviceModule
+
+            if audioModule = null then
+                Log.warn $"pc[{instanceId}]: audio module {phase}: null"
+            else
+                Log.info
+                    $"pc[{instanceId}]: audio module {phase}: isPlayoutInitialized={audioModule.IsPlayoutInitialized}; isPlaying={audioModule.IsPlaying}; playing={audioModule.Playing}; isRecordingInitialized={audioModule.IsRecordingInitialized}; isRecording={audioModule.IsRecording}; recording={audioModule.Recording}; isEngineRunning={audioModule.IsEngineRunning}; manualRenderingMode={audioModule.ManualRenderingMode}; muteMode={audioModule.MuteMode}; platformVoiceProcessingAllowed={audioModule.PlatformVoiceProcessingAllowed}; voiceProcessingBypassed={audioModule.VoiceProcessingBypassed}; voiceProcessingAGCEnabled={audioModule.VoiceProcessingAgcEnabled}"
+
+    let ensurePlayoutStarted phase =
+        if peerConnectionFactory = null then
+            Log.warn $"pc[{instanceId}]: audio module {phase}: cannot start playout because peerConnectionFactory=null"
+        else
+            let audioModule = peerConnectionFactory.AudioDeviceModule
+
+            if audioModule = null then
+                Log.warn $"pc[{instanceId}]: audio module {phase}: cannot start playout because audio module=null"
+            else
+                logAudioDeviceModuleState $"{phase} before playout ensure"
+
+                if not audioModule.IsPlayoutInitialized then
+                    let initResult = audioModule.InitPlayout()
+                    Log.info $"pc[{instanceId}]: audio module {phase}: InitPlayout result={initResult}"
+
+                if not audioModule.IsPlaying then
+                    let startResult = audioModule.StartPlayout()
+                    Log.info $"pc[{instanceId}]: audio module {phase}: StartPlayout result={startResult}"
+
+                logAudioDeviceModuleState $"{phase} after playout ensure"
+
     let tryGetLocalOfferSdp () =
         match peerConnection with
         | null -> None
@@ -363,7 +404,7 @@ type WebRtcClientIOS() =
             if
                 hasLocalCandidates ()
                 || (peerConnection <> null
-                    && peerConnection.IceGatheringState = RTCIceGatheringState.Complete)
+                    && peerConnection.IceGatheringState = LKRTCIceGatheringState.Complete)
             then
                 ()
             else
@@ -461,7 +502,10 @@ type WebRtcClientIOS() =
         resetIceGathering ()
         AudioUtils.configureAudioSession clientConfig
         let config = Connect.rtcConfiguration clientConfig
-        peerConnectionFactory <- new RTCPeerConnectionFactory(null, null)
+        peerConnectionFactory <-
+            new LKRTCPeerConnectionFactory(LKRTCAudioDeviceModuleType.AudioEngine, false, null, null, null)
+
+        logAudioDeviceModuleState "after factory create"
         peerConnection <- Connect.createPeerConnection peerConnectionFactory config mediaConstraints this
 
         let createdAudioSource, createdAudioTrack, _dataChannel =
@@ -498,11 +542,11 @@ type WebRtcClientIOS() =
             use sem = new ManualResetEvent(false)
 
             let completionHandler =
-                RTCCreateSessionDescriptionCompletionHandler(fun sdp err ->
+                LKRTCCreateSessionDescriptionCompletionHandler(fun sdp err ->
                     if sdp <> null then
                         peerConnection.SetLocalDescription(
                             sdp,
-                            RTCSetSessionDescriptionCompletionHandler(fun err ->
+                            LKRTCSetSessionDescriptionCompletionHandler(fun err ->
                                 if err <> null then
                                     Log.error ($"pc: error set local description {err.Description}")
                                 else
@@ -517,14 +561,14 @@ type WebRtcClientIOS() =
                                                 Log.info $"pc: remote sdp {answer}"
 
                                                 let answerSdp =
-                                                    new RTCSessionDescription(
-                                                        ``type`` = RTCSdpType.Answer,
+                                                    new LKRTCSessionDescription(
+                                                        ``type`` = LKRTCSdpType.Answer,
                                                         sdp = answer
                                                     )
 
                                                 peerConnection.SetRemoteDescription(
                                                     answerSdp,
-                                                    RTCSetSessionDescriptionCompletionHandler(fun err ->
+                                                    LKRTCSetSessionDescriptionCompletionHandler(fun err ->
                                                         if err <> null then
                                                             Log.error
                                                                 $"pc: error setting remote description {err.Description}"
@@ -573,20 +617,20 @@ type WebRtcClientIOS() =
 
         member this.Send(data: string) =
             if dataChannel <> null then
-                use buffer = new RTCDataBuffer(data, isBinary = false)
+                use buffer = new LKRTCDataBuffer(data, isBinary = false)
                 dataChannel.SendData(buffer)
             else
                 false
 
         member _.SetMicrophoneEnabled(enabled: bool) = applyMicrophoneEnabled enabled
 
-    interface IRTCPeerConnectionDelegate with
+    interface ILKRTCPeerConnectionDelegate with
         member this.DidAddReceiver
-            (peerConnection: RTCPeerConnection, rtpReceiver: RTCRtpReceiver, mediaStreams: RTCMediaStream array)
+            (peerConnection: LKRTCPeerConnection, rtpReceiver: LKRTCRtpReceiver, mediaStreams: LKRTCMediaStream array)
             : unit =
             Log.info $"pc: added receiver: {rtpReceiver.Description}"
 
-        member this.DidAddStream(peerConnection: RTCPeerConnection, stream: RTCMediaStream) : unit =
+        member this.DidAddStream(peerConnection: LKRTCPeerConnection, stream: LKRTCMediaStream) : unit =
             Log.info $"pc: added remote stream: {stream.Description}"
 
             stream.AudioTracks
@@ -594,85 +638,87 @@ type WebRtcClientIOS() =
             |> Option.map (AudioUtils.configureIncomingAudio activeClientConfig)
             |> Option.defaultWith (fun () -> Log.warn "No audio track in remote stream")
 
+            ensurePlayoutStarted "remote stream"
+
         member this.DidChangeConnectionState
-            (peerConnection: RTCPeerConnection, newState: RTCPeerConnectionState)
+            (peerConnection: LKRTCPeerConnection, newState: LKRTCPeerConnectionState)
             : unit =
             Log.info $"pc: connection state changed to %A{newState}"
 
             match newState with
-            | RTCPeerConnectionState.Disconnected
-            | RTCPeerConnectionState.Failed
-            | RTCPeerConnectionState.Closed -> setState State.Disconnected
+            | LKRTCPeerConnectionState.Disconnected
+            | LKRTCPeerConnectionState.Failed
+            | LKRTCPeerConnectionState.Closed -> setState State.Disconnected
             | _ -> ()
 
         member this.DidChangeIceConnectionState
-            (peerConnection: RTCPeerConnection, newState: RTCIceConnectionState)
+            (peerConnection: LKRTCPeerConnection, newState: LKRTCIceConnectionState)
             : unit =
             Log.info $"pc: ice connection state changed to %A{newState}"
 
         member this.DidChangeIceGatheringState
-            (peerConnection: RTCPeerConnection, newState: RTCIceGatheringState)
+            (peerConnection: LKRTCPeerConnection, newState: LKRTCIceGatheringState)
             : unit =
             Log.info $"pc: ice gathering state changed to %A{newState}"
 
-            if newState = RTCIceGatheringState.Complete then
+            if newState = LKRTCIceGatheringState.Complete then
                 tryCompleteIceGathering ()
 
         member this.DidChangeLocalCandidate
             (
-                peerConnection: RTCPeerConnection,
-                local: RTCIceCandidate,
-                remote: RTCIceCandidate,
+                peerConnection: LKRTCPeerConnection,
+                local: LKRTCIceCandidate,
+                remote: LKRTCIceCandidate,
                 lastDataReceivedMs: int,
                 reason: string
             ) : unit =
             Log.info $"pc: ice ic local candidate changed, reason: %A{reason}"
 
-        member this.DidChangeSignalingState(peerConnection: RTCPeerConnection, stateChanged: RTCSignalingState) : unit =
+        member this.DidChangeSignalingState(peerConnection: LKRTCPeerConnection, stateChanged: LKRTCSignalingState) : unit =
             Log.info $"pc: signaling state changed %A{stateChanged}"
 
         member this.DidChangeStandardizedIceConnectionState
-            (peerConnection: RTCPeerConnection, newState: RTCIceConnectionState)
+            (peerConnection: LKRTCPeerConnection, newState: LKRTCIceConnectionState)
             : unit =
             Log.info $"pc: standardized ice connection state changed %A{newState}"
 
         member this.DidFailToGatherIceCandidate
-            (peerConnection: RTCPeerConnection, event: RTCIceCandidateErrorEvent)
+            (peerConnection: LKRTCPeerConnection, event: LKRTCIceCandidateErrorEvent)
             : unit =
             Log.info $"pc: failed to gather ice candidate %A{event.ErrorText}"
 
-        member this.DidGenerateIceCandidate(peerConnection: RTCPeerConnection, candidate: RTCIceCandidate) : unit =
+        member this.DidGenerateIceCandidate(peerConnection: LKRTCPeerConnection, candidate: LKRTCIceCandidate) : unit =
             Log.info $"pc: generated ice candidate %A{candidate.Description}"
 
-        member this.DidOpenDataChannel(peerConnection: RTCPeerConnection, dataChannel: RTCDataChannel) : unit =
+        member this.DidOpenDataChannel(peerConnection: LKRTCPeerConnection, dataChannel: LKRTCDataChannel) : unit =
             Log.info $"pc: opened data channel %A{dataChannel.Description}"
 
         member this.DidRemoveIceCandidates
-            (peerConnection: RTCPeerConnection, candidates: RTCIceCandidate array)
+            (peerConnection: LKRTCPeerConnection, candidates: LKRTCIceCandidate array)
             : unit =
             Log.info $"pc: removed ice candidates %A{candidates |> Seq.map _.Description |> Seq.toList}"
 
-        member this.DidRemoveReceiver(peerConnection: RTCPeerConnection, rtpReceiver: RTCRtpReceiver) : unit =
+        member this.DidRemoveReceiver(peerConnection: LKRTCPeerConnection, rtpReceiver: LKRTCRtpReceiver) : unit =
             Log.info $"pc: removed receiver %A{rtpReceiver.Description}"
 
-        member this.DidRemoveStream(peerConnection: RTCPeerConnection, stream: RTCMediaStream) : unit =
+        member this.DidRemoveStream(peerConnection: LKRTCPeerConnection, stream: LKRTCMediaStream) : unit =
             Log.info $"pc: removed stream %A{stream.Description}"
 
         member this.DidStartReceivingOnTransceiver
-            (peerConnection: RTCPeerConnection, transceiver: RTCRtpTransceiver)
+            (peerConnection: LKRTCPeerConnection, transceiver: LKRTCRtpTransceiver)
             : unit =
             Log.info $"pc: started receiving on transceiver %A{transceiver.Description}"
 
-        member this.ShouldNegotiate(peerConnection: RTCPeerConnection) : unit = Log.info $"pc: should negotiate called"
+        member this.ShouldNegotiate(peerConnection: LKRTCPeerConnection) : unit = Log.info $"pc: should negotiate called"
 
-    interface IRTCDataChannelDelegate with
-        member _.DataChannelDidChangeState(dataChannel: RTCDataChannel) =
+    interface ILKRTCDataChannelDelegate with
+        member _.DataChannelDidChangeState(dataChannel: LKRTCDataChannel) =
             Log.info $"dc: channel changed {dataChannel.Description}"
 
-        member _.DidChangeBufferedAmount(dataChannel: RTCDataChannel, amount: uint64) =
+        member _.DidChangeBufferedAmount(dataChannel: LKRTCDataChannel, amount: uint64) =
             Log.info $"dc: buffer amount changed {dataChannel.Description}"
 
-        member this.DidReceiveMessageWithBuffer(dataChannel: RTCDataChannel, buffer: RTCDataBuffer) =
+        member this.DidReceiveMessageWithBuffer(dataChannel: LKRTCDataChannel, buffer: LKRTCDataBuffer) =
             let json =
                 System.Text.Json.JsonSerializer.Deserialize<System.Text.Json.JsonDocument>(buffer.Data.AsStream())
 

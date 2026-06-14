@@ -20,10 +20,16 @@ module VoiceAgent =
     let FUNCTION_CALL_OUTPUT = "function_call_output"
     
     type PlanTitle = {planTitle: string}
+
+    let calmerSpeakerOutput =
+        { AudioOutput.Default with
+            speed = Include(Some 1.0)
+            voice = "marin" }
     
     let sessionAudio =
         {Audio.Default with
             input = Include (Some {AudioInput.Default with
+                                     noise_reduction = Include(Some { ``type`` = "near_field" })
                                      transcription = {
                                         language = "en"
                                         model = "gpt-4o-mini-transcribe"
@@ -32,14 +38,31 @@ module VoiceAgent =
                                      |> Some
                                      |> Include
                                   })
+            output = Include(Some calmerSpeakerOutput)
             }
     
     //sends 'response.create' to prompt the LLM to generate audio (otherwise it seems to wait).
     let sendResponseCreate conn instructions=
-        let rc = { ResponseCreate.Default with event_id = Utils.newId()}
+        let audioResponse =
+            { Response.Default with
+                output_modalities = Include(Some [ M_AUDIO ]) }
+
+        let rc =
+            { ResponseCreate.Default with
+                event_id = Utils.newId()
+                response = Include(Some audioResponse) }
+
         let rc =            
             instructions
-            |> Option.map (fun i ->  {rc with response = Include (Some {Response.Default with instructions = Include (Some i) }) })
+            |> Option.map (fun i ->
+                { rc with
+                    response =
+                        Include(
+                            Some
+                                { audioResponse with
+                                    instructions = Include(Some i)
+                                    output_modalities = Include(Some [ M_AUDIO ]) }
+                        ) })
             |> Option.defaultValue rc
         rc |> ClientEvent.ResponseCreate |> Api.Connection.sendClientEvent conn
                 

@@ -5,7 +5,7 @@ This repo the following reusable library projects.
 - [RTOpenAI.Api](/src//RTOpenAI.Api/) - A Maui library to interface with the OpenAI realtime voice API via the WebRTC protocol.
     - [RTOpenAI.Events](/src/RTOpenAI.Events/) - strongly typed wrappers for OpenAI realtime API events
     - [Bindings/FsWebRTC.Bindings.Maui.Android](/src/Bindings/FsWebRTC.Bindings.Maui.Android/) - Maui WebRTC bindings for Android
-    - [Bindings/FsWebRTC.Bindings.Maui.iOS](/src/Bindings/FsWebRTC.Bindings.Maui.iOS/) - Maui WebRTC bindings for iOS
+    - [Bindings/FsWebRTC.Bindings.Maui.iOS](/src/Bindings/FsWebRTC.Bindings.Maui.iOS/) - Maui LiveKitWebRTC bindings for iOS and Mac Catalyst
 - [RTFlow](/src/RTFlow/) - A framework for building realtime multi-agents systems.
 - [FsPlan](/src/FsPlan/) - A library for organizing a collection of tasks into a plan with either linear or graphical flow
 - [FsPlay](/src/FsPlay/) - A Maui library for programmatically driving embedded mobile browsers, e.g. using computer-use-agents or CUA
@@ -99,7 +99,8 @@ Use the following command to build packages:
 # Acknowledgements
 
 - Tim Lariviere and others for [Fabulous Maui](https://github.com/fabulous-dev/Fabulous.MauiControls)  
-- [WebRTCme](https://github.com/melihercan/WebRTCme) - provided the base bindings for Maui WebRTC. These where modified (significantly for IOS) to make them work for RTOpenAI.
+- [LiveKit WebRTC](https://github.com/livekit/webrtc-xcframework) - provides the Apple WebRTC framework used by `FsWebRTC.Bindings.Maui.iOS`.
+- [WebRTCme](https://github.com/melihercan/WebRTCme) - provided the base bindings for Maui WebRTC. These were modified to make them work for RTOpenAI.
 - Aaron Clauson and team for [SipSorcery](https://github.com/sipsorcery-org/sipsorcery) - WebRTC for the Windows platform.
 - [Tau Prolog](http://tau-prolog.org/) - a javascript Prolog interpreter used in the RT.Assistant sample. 
 - Loïc Denuzière and others for [FSharp.SystemTextJson](https://github.com/Tarmil/FSharp.SystemTextJson) - for F# types definitions

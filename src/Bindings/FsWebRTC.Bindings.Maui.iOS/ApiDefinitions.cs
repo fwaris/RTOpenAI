@@ -10,12 +10,12 @@ using ObjCRuntime;
 using UIKit;
 ////using WebRTC;
 
-namespace IOS.WebRTC
+namespace FsWebRTC.Bindings
 {
     //// WebRTCme additions.
     delegate void dispatch_block_t();
 
-    interface IRTCVideoFrameBuffer 
+    interface ILKRTCVideoFrameBuffer 
 	{
         [Abstract]
         [Export("width")]
@@ -26,26 +26,26 @@ namespace IOS.WebRTC
         [Export("height")]
         int Height { get; }
 
-        // @required -(id<RTCI420Buffer> _Nonnull)toI420;
+        // @required -(id<LKRTCI420Buffer> _Nonnull)toI420;
         [Abstract]
         [Export("toI420")]
         ////[Verify (MethodToProperty)]
-        RTCI420Buffer ToI420 { get; }
+        LKRTCI420Buffer ToI420 { get; }
 
     }
-    interface IRTCMutableI420Buffer { }
-	interface IRTCVideoRenderer 
+    interface ILKRTCMutableI420Buffer { }
+	interface ILKRTCVideoRenderer 
 	{
         [Abstract]
         [Export("setSize:")]
         void SetSize(CGSize size);
 
-        // @required -(void)renderFrame:(RTCVideoFrame * _Nullable)frame;
+        // @required -(void)renderFrame:(LKRTCVideoFrame * _Nullable)frame;
         [Abstract]
         [Export("renderFrame:")]
-        void RenderFrame([NullAllowed] RTCVideoFrame frame);
+        void RenderFrame([NullAllowed] LKRTCVideoFrame frame);
     }
-    interface IRTCYUVPlanarBuffer : IRTCVideoFrameBuffer
+    interface ILKRTCYUVPlanarBuffer : ILKRTCVideoFrameBuffer
 	{
         [Abstract]
         [Export("chromaWidth")]
@@ -106,26 +106,26 @@ namespace IOS.WebRTC
         NativeHandle /****Height****/InitWithWidth(int width, int height, int strideY, int strideU, int strideV);
 
     }
-    interface IRTCVideoDecoderFactory { }
-    interface IRTCVideoEncoderFactory { }
-	interface IRTCVideoEncoder { }
-	interface IRTCI420Buffer { }
-	interface IRTCAudioSessionActivationDelegate { }
-    interface IRTCVideoDecoder { }
-    interface IRTCCodecSpecificInfo { }
-	interface IRTCVideoCapturerDelegate 
+    interface ILKRTCVideoDecoderFactory { }
+    interface ILKRTCVideoEncoderFactory { }
+	interface ILKRTCVideoEncoder { }
+	interface ILKRTCI420Buffer { }
+	interface ILKRTCAudioSessionActivationDelegate { }
+    interface ILKRTCVideoDecoder { }
+    interface ILKRTCCodecSpecificInfo { }
+	interface ILKRTCVideoCapturerDelegate 
 	{
         [Abstract]
         [Export("capturer:didCaptureVideoFrame:")]
-        void DidCaptureVideoFrame(RTCVideoCapturer capturer, RTCVideoFrame frame);
+        void DidCaptureVideoFrame(LKRTCVideoCapturer capturer, LKRTCVideoFrame frame);
 
     }
-    interface IRTCDataChannelDelegate { }
-	interface IRTCPeerConnectionDelegate { }
-	interface IRTCVideoViewDelegate { }
-    interface IRTCRtpReceiverDelegate { }
+    interface ILKRTCDataChannelDelegate { }
+	interface ILKRTCPeerConnectionDelegate { }
+	interface ILKRTCVideoViewDelegate { }
+    interface ILKRTCRtpReceiverDelegate { }
 
-    // @protocol RTCCodecSpecificInfo <NSObject>
+    // @protocol LKRTCCodecSpecificInfo <NSObject>
     /*
     Check whether adding [Model] to this declaration is appropriate.
     [Model] is used to generate a C# class that implements this protocol,
@@ -137,14 +137,14 @@ namespace IOS.WebRTC
     */
     [Protocol]
 	[BaseType (typeof(NSObject))]
-	interface RTCCodecSpecificInfo
+	interface LKRTCCodecSpecificInfo
 	{
 	}
 
-	// @interface RTCVideoFrame : NSObject
+	// @interface LKRTCVideoFrame : NSObject
 	[BaseType (typeof(NSObject))]
 	[DisableDefaultCtor]
-	interface RTCVideoFrame
+	interface LKRTCVideoFrame
 	{
 		// @property (readonly, nonatomic) int width;
 		[Export ("width")]
@@ -154,9 +154,9 @@ namespace IOS.WebRTC
 		[Export ("height")]
 		int Height { get; }
 
-		// @property (readonly, nonatomic) RTCVideoRotation rotation;
+		// @property (readonly, nonatomic) LKRTCVideoRotation rotation;
 		[Export ("rotation")]
-		RTCVideoRotation Rotation { get; }
+		LKRTCVideoRotation Rotation { get; }
 
 		// @property (readonly, nonatomic) int64_t timeStampNs;
 		[Export ("timeStampNs")]
@@ -166,31 +166,31 @@ namespace IOS.WebRTC
 		[Export ("timeStamp")]
 		int TimeStamp { get; set; }
 
-		// @property (readonly, nonatomic) id<RTCVideoFrameBuffer> _Nonnull buffer;
+		// @property (readonly, nonatomic) id<LKRTCVideoFrameBuffer> _Nonnull buffer;
 		[Export ("buffer")]
-		RTCVideoFrameBuffer Buffer { get; }
+		LKRTCVideoFrameBuffer Buffer { get; }
 
-		// -(instancetype _Nonnull)initWithPixelBuffer:(CVPixelBufferRef _Nonnull)pixelBuffer rotation:(RTCVideoRotation)rotation timeStampNs:(int64_t)timeStampNs __attribute__((deprecated("use initWithBuffer instead")));
+		// -(instancetype _Nonnull)initWithPixelBuffer:(CVPixelBufferRef _Nonnull)pixelBuffer rotation:(LKRTCVideoRotation)rotation timeStampNs:(int64_t)timeStampNs __attribute__((deprecated("use initWithBuffer instead")));
 		[Export ("initWithPixelBuffer:rotation:timeStampNs:")]
-		NativeHandle Constructor (CVPixelBuffer pixelBuffer, RTCVideoRotation rotation, long timeStampNs);
+		NativeHandle Constructor (CVPixelBuffer pixelBuffer, LKRTCVideoRotation rotation, long timeStampNs);
 
-		// -(instancetype _Nonnull)initWithPixelBuffer:(CVPixelBufferRef _Nonnull)pixelBuffer scaledWidth:(int)scaledWidth scaledHeight:(int)scaledHeight cropWidth:(int)cropWidth cropHeight:(int)cropHeight cropX:(int)cropX cropY:(int)cropY rotation:(RTCVideoRotation)rotation timeStampNs:(int64_t)timeStampNs __attribute__((deprecated("use initWithBuffer instead")));
+		// -(instancetype _Nonnull)initWithPixelBuffer:(CVPixelBufferRef _Nonnull)pixelBuffer scaledWidth:(int)scaledWidth scaledHeight:(int)scaledHeight cropWidth:(int)cropWidth cropHeight:(int)cropHeight cropX:(int)cropX cropY:(int)cropY rotation:(LKRTCVideoRotation)rotation timeStampNs:(int64_t)timeStampNs __attribute__((deprecated("use initWithBuffer instead")));
 		[Export ("initWithPixelBuffer:scaledWidth:scaledHeight:cropWidth:cropHeight:cropX:cropY:rotation:timeStampNs:")]
-		NativeHandle Constructor (CVPixelBuffer pixelBuffer, int scaledWidth, int scaledHeight, int cropWidth, int cropHeight, int cropX, int cropY, RTCVideoRotation rotation, long timeStampNs);
+		NativeHandle Constructor (CVPixelBuffer pixelBuffer, int scaledWidth, int scaledHeight, int cropWidth, int cropHeight, int cropX, int cropY, LKRTCVideoRotation rotation, long timeStampNs);
 
-		// -(instancetype _Nonnull)initWithBuffer:(id<RTCVideoFrameBuffer> _Nonnull)frameBuffer rotation:(RTCVideoRotation)rotation timeStampNs:(int64_t)timeStampNs;
+		// -(instancetype _Nonnull)initWithBuffer:(id<LKRTCVideoFrameBuffer> _Nonnull)frameBuffer rotation:(LKRTCVideoRotation)rotation timeStampNs:(int64_t)timeStampNs;
 		[Export ("initWithBuffer:rotation:timeStampNs:")]
-		NativeHandle Constructor (RTCVideoFrameBuffer frameBuffer, RTCVideoRotation rotation, long timeStampNs);
+		NativeHandle Constructor (LKRTCVideoFrameBuffer frameBuffer, LKRTCVideoRotation rotation, long timeStampNs);
 
-		// -(RTCVideoFrame * _Nonnull)newI420VideoFrame;
+		// -(LKRTCVideoFrame * _Nonnull)newI420VideoFrame;
 		[Export ("newI420VideoFrame")]
 		////[Verify (MethodToProperty)]
-		RTCVideoFrame NewI420VideoFrame { get; }
+		LKRTCVideoFrame NewI420VideoFrame { get; }
 	}
 
-	// @interface RTCEncodedImage : NSObject
+	// @interface LKRTCEncodedImage : NSObject
 	[BaseType (typeof(NSObject))]
-	interface RTCEncodedImage
+	interface LKRTCEncodedImage
 	{
 		// @property (nonatomic, strong) NSData * _Nonnull buffer;
 		[Export ("buffer", ArgumentSemantic.Strong)]
@@ -228,24 +228,24 @@ namespace IOS.WebRTC
 		[Export ("encodeFinishMs")]
 		long EncodeFinishMs { get; set; }
 
-		// @property (assign, nonatomic) RTCFrameType frameType;
+		// @property (assign, nonatomic) LKRTCFrameType frameType;
 		[Export ("frameType", ArgumentSemantic.Assign)]
-		RTCFrameType FrameType { get; set; }
+		LKRTCFrameType FrameType { get; set; }
 
-		// @property (assign, nonatomic) RTCVideoRotation rotation;
+		// @property (assign, nonatomic) LKRTCVideoRotation rotation;
 		[Export ("rotation", ArgumentSemantic.Assign)]
-		RTCVideoRotation Rotation { get; set; }
+		LKRTCVideoRotation Rotation { get; set; }
 
 		// @property (nonatomic, strong) NSNumber * _Nonnull qp;
 		[Export ("qp", ArgumentSemantic.Strong)]
 		NSNumber Qp { get; set; }
 
-		// @property (assign, nonatomic) RTCVideoContentType contentType;
+		// @property (assign, nonatomic) LKRTCVideoContentType contentType;
 		[Export ("contentType", ArgumentSemantic.Assign)]
-		RTCVideoContentType ContentType { get; set; }
+		LKRTCVideoContentType ContentType { get; set; }
 	}
 
-	// @protocol RTCVideoFrameBuffer <NSObject>
+	// @protocol LKRTCVideoFrameBuffer <NSObject>
 	/*
   Check whether adding [Model] to this declaration is appropriate.
   [Model] is used to generate a C# class that implements this protocol,
@@ -256,7 +256,7 @@ namespace IOS.WebRTC
   be used.
 */[Protocol]
 	[BaseType (typeof(NSObject))]
-	interface RTCVideoFrameBuffer
+	interface LKRTCVideoFrameBuffer
 	{
 		// @required @property (readonly, nonatomic) int width;
 		[Abstract]
@@ -268,18 +268,18 @@ namespace IOS.WebRTC
 		[Export ("height")]
 		int Height { get; }
 
-		// @required -(id<RTCI420Buffer> _Nonnull)toI420;
+		// @required -(id<LKRTCI420Buffer> _Nonnull)toI420;
 		[Abstract]
 		[Export ("toI420")]
 		////[Verify (MethodToProperty)]
-		RTCI420Buffer ToI420 { get; }
+		LKRTCI420Buffer ToI420 { get; }
 
-		// @optional -(id<RTCVideoFrameBuffer> _Nonnull)cropAndScaleWith:(int)offsetX offsetY:(int)offsetY cropWidth:(int)cropWidth cropHeight:(int)cropHeight scaleWidth:(int)scaleWidth scaleHeight:(int)scaleHeight;
+		// @optional -(id<LKRTCVideoFrameBuffer> _Nonnull)cropAndScaleWith:(int)offsetX offsetY:(int)offsetY cropWidth:(int)cropWidth cropHeight:(int)cropHeight scaleWidth:(int)scaleWidth scaleHeight:(int)scaleHeight;
 		[Export ("cropAndScaleWith:offsetY:cropWidth:cropHeight:scaleWidth:scaleHeight:")]
-		RTCVideoFrameBuffer OffsetY (int offsetX, int offsetY, int cropWidth, int cropHeight, int scaleWidth, int scaleHeight);
+		LKRTCVideoFrameBuffer OffsetY (int offsetX, int offsetY, int cropWidth, int cropHeight, int scaleWidth, int scaleHeight);
 	}
 
-	// @protocol RTCYUVPlanarBuffer <RTCVideoFrameBuffer>
+	// @protocol LKRTCYUVPlanarBuffer <LKRTCVideoFrameBuffer>
 	/*
   Check whether adding [Model] to this declaration is appropriate.
   [Model] is used to generate a C# class that implements this protocol,
@@ -289,7 +289,7 @@ namespace IOS.WebRTC
   protocol, then [Model] is redundant and will generate code that will never
   be used.
 */[Protocol]
-	interface RTCYUVPlanarBuffer : /****I****/RTCVideoFrameBuffer
+	interface LKRTCYUVPlanarBuffer : /****I****/LKRTCVideoFrameBuffer
 	{
 		// @required @property (readonly, nonatomic) int chromaWidth;
 		[Abstract]
@@ -347,7 +347,7 @@ namespace IOS.WebRTC
 		NativeHandle /****Height****/InitWithWidth(int width, int height, int strideY, int strideU, int strideV);
 	}
 
-	// @protocol RTCI420Buffer <RTCYUVPlanarBuffer>
+	// @protocol LKRTCI420Buffer <LKRTCYUVPlanarBuffer>
 	/*
   Check whether adding [Model] to this declaration is appropriate.
   [Model] is used to generate a C# class that implements this protocol,
@@ -357,11 +357,11 @@ namespace IOS.WebRTC
   protocol, then [Model] is redundant and will generate code that will never
   be used.
 */////[Protocol]
-	////interface RTCI420Buffer : IRTCYUVPlanarBuffer
+	////interface LKRTCI420Buffer : ILKRTCYUVPlanarBuffer
 	////{
 	////}
 
-	// @protocol RTCMutableYUVPlanarBuffer <RTCYUVPlanarBuffer>
+	// @protocol LKRTCMutableYUVPlanarBuffer <LKRTCYUVPlanarBuffer>
 	/*
   Check whether adding [Model] to this declaration is appropriate.
   [Model] is used to generate a C# class that implements this protocol,
@@ -371,7 +371,7 @@ namespace IOS.WebRTC
   protocol, then [Model] is redundant and will generate code that will never
   be used.
 */[Protocol]
-	interface RTCMutableYUVPlanarBuffer : /****I****/RTCYUVPlanarBuffer
+	interface LKRTCMutableYUVPlanarBuffer : /****I****/LKRTCYUVPlanarBuffer
 	{
 		// @required @property (readonly, nonatomic) uint8_t * _Nonnull mutableDataY;
 		[Abstract]
@@ -389,7 +389,7 @@ namespace IOS.WebRTC
 		/**** unsafe byte* ****/IntPtr MutableDataV { get; }
 	}
 
-    // @protocol RTCMutableI420Buffer <RTCI420Buffer, RTCMutableYUVPlanarBuffer>
+    // @protocol LKRTCMutableI420Buffer <LKRTCI420Buffer, LKRTCMutableYUVPlanarBuffer>
     /*
   Check whether adding [Model] to this declaration is appropriate.
   [Model] is used to generate a C# class that implements this protocol,
@@ -399,11 +399,11 @@ namespace IOS.WebRTC
   protocol, then [Model] is redundant and will generate code that will never
   be used.
 */////[Protocol]
-  ////interface RTCMutableI420Buffer : IRTCI420Buffer, IRTCMutableYUVPlanarBuffer
+  ////interface LKRTCMutableI420Buffer : ILKRTCI420Buffer, ILKRTCMutableYUVPlanarBuffer
   ////{
   ////}
 
-    // @protocol RTCSSLCertificateVerifier <NSObject>
+    // @protocol LKRTCSSLCertificateVerifier <NSObject>
     /*
     Check whether adding [Model] to this declaration is appropriate.
     [Model] is used to generate a C# class that implements this protocol,
@@ -415,7 +415,7 @@ namespace IOS.WebRTC
     */
     [Protocol]
 	[BaseType (typeof(NSObject))]
-	interface RTCSSLCertificateVerifier
+	interface LKRTCSSLCertificateVerifier
 	{
 		// @required -(BOOL)verify:(NSData * _Nonnull)derCertificate;
 		[Abstract]
@@ -423,38 +423,38 @@ namespace IOS.WebRTC
 		bool Verify (NSData derCertificate);
 	}
 
-	// @protocol RTCVideoCapturerDelegate <NSObject>
+	// @protocol LKRTCVideoCapturerDelegate <NSObject>
 	[Protocol, Model /****(AutoGeneratedName = true)****/]
 	[BaseType (typeof(NSObject))]
-	interface RTCVideoCapturerDelegate
+	interface LKRTCVideoCapturerDelegate
 	{
-		// @required -(void)capturer:(RTCVideoCapturer * _Nonnull)capturer didCaptureVideoFrame:(RTCVideoFrame * _Nonnull)frame;
+		// @required -(void)capturer:(LKRTCVideoCapturer * _Nonnull)capturer didCaptureVideoFrame:(LKRTCVideoFrame * _Nonnull)frame;
 		[Abstract]
 		[Export ("capturer:didCaptureVideoFrame:")]
-		void DidCaptureVideoFrame (RTCVideoCapturer capturer, RTCVideoFrame frame);
+		void DidCaptureVideoFrame (LKRTCVideoCapturer capturer, LKRTCVideoFrame frame);
 	}
 
-	// @interface RTCVideoCapturer : NSObject
+	// @interface LKRTCVideoCapturer : NSObject
 	[BaseType (typeof(NSObject))]
-	interface RTCVideoCapturer
+	interface LKRTCVideoCapturer
 	{
 		[Wrap ("WeakDelegate")]
 		[NullAllowed]
-		IRTCVideoCapturerDelegate Delegate { get; set; }
+		ILKRTCVideoCapturerDelegate Delegate { get; set; }
 
-		// @property (nonatomic, weak) id<RTCVideoCapturerDelegate> _Nullable delegate;
+		// @property (nonatomic, weak) id<LKRTCVideoCapturerDelegate> _Nullable delegate;
 		[NullAllowed, Export ("delegate", ArgumentSemantic.Weak)]
 		NSObject WeakDelegate { get; set; }
 
-		// -(instancetype _Nonnull)initWithDelegate:(id<RTCVideoCapturerDelegate> _Nonnull)delegate;
+		// -(instancetype _Nonnull)initWithDelegate:(id<LKRTCVideoCapturerDelegate> _Nonnull)delegate;
 		[Export ("initWithDelegate:")]
-		NativeHandle Constructor (RTCVideoCapturerDelegate @delegate);
+		NativeHandle Constructor (LKRTCVideoCapturerDelegate @delegate);
 	}
 
-	// @interface RTCVideoCodecInfo : NSObject <NSCoding>
+	// @interface LKRTCVideoCodecInfo : NSObject <NSCoding>
 	[BaseType (typeof(NSObject))]
 	[DisableDefaultCtor]
-	interface RTCVideoCodecInfo : INSCoding
+	interface LKRTCVideoCodecInfo : INSCoding
 	{
 		// -(instancetype _Nonnull)initWithName:(NSString * _Nonnull)name;
 		[Export ("initWithName:")]
@@ -465,9 +465,9 @@ namespace IOS.WebRTC
 		[DesignatedInitializer]
 		NativeHandle Constructor (string name, [NullAllowed] NSDictionary<NSString, NSString> parameters);
 
-		// -(BOOL)isEqualToCodecInfo:(RTCVideoCodecInfo * _Nonnull)info;
+		// -(BOOL)isEqualToCodecInfo:(LKRTCVideoCodecInfo * _Nonnull)info;
 		[Export ("isEqualToCodecInfo:")]
-		bool IsEqualToCodecInfo (RTCVideoCodecInfo info);
+		bool IsEqualToCodecInfo (LKRTCVideoCodecInfo info);
 
 		// @property (readonly, nonatomic) NSString * _Nonnull name;
 		[Export ("name")]
@@ -478,9 +478,9 @@ namespace IOS.WebRTC
 		NSDictionary<NSString, NSString> Parameters { get; }
 	}
 
-	// @interface RTCVideoEncoderSettings : NSObject
+	// @interface LKRTCVideoEncoderSettings : NSObject
 	[BaseType (typeof(NSObject))]
-	interface RTCVideoEncoderSettings
+	interface LKRTCVideoEncoderSettings
 	{
 		// @property (nonatomic, strong) NSString * _Nonnull name;
 		[Export ("name", ArgumentSemantic.Strong)]
@@ -514,15 +514,15 @@ namespace IOS.WebRTC
 		[Export ("qpMax")]
 		uint QpMax { get; set; }
 
-		// @property (assign, nonatomic) RTCVideoCodecMode mode;
+		// @property (assign, nonatomic) LKRTCVideoCodecMode mode;
 		[Export ("mode", ArgumentSemantic.Assign)]
-		RTCVideoCodecMode Mode { get; set; }
+		LKRTCVideoCodecMode Mode { get; set; }
 	}
 
-	// typedef void (^RTCVideoDecoderCallback)(RTCVideoFrame * _Nonnull);
-	delegate void RTCVideoDecoderCallback (RTCVideoFrame arg0);
+	// typedef void (^LKRTCVideoDecoderCallback)(LKRTCVideoFrame * _Nonnull);
+	delegate void LKRTCVideoDecoderCallback (LKRTCVideoFrame arg0);
 
-	// @protocol RTCVideoDecoder <NSObject>
+	// @protocol LKRTCVideoDecoder <NSObject>
 	/*
   Check whether adding [Model] to this declaration is appropriate.
   [Model] is used to generate a C# class that implements this protocol,
@@ -533,12 +533,12 @@ namespace IOS.WebRTC
   be used.
 */[Protocol]
 	[BaseType (typeof(NSObject))]
-	interface RTCVideoDecoder
+	interface LKRTCVideoDecoder
 	{
-		// @required -(void)setCallback:(RTCVideoDecoderCallback _Nonnull)callback;
+		// @required -(void)setCallback:(LKRTCVideoDecoderCallback _Nonnull)callback;
 		[Abstract]
 		[Export ("setCallback:")]
-		void SetCallback (RTCVideoDecoderCallback callback);
+		void SetCallback (LKRTCVideoDecoderCallback callback);
 
 		// @required -(NSInteger)startDecodeWithNumberOfCores:(int)numberOfCores;
 		[Abstract]
@@ -551,10 +551,10 @@ namespace IOS.WebRTC
 		////[Verify (MethodToProperty)]
 		nint ReleaseDecoder { get; }
 
-		// @required -(NSInteger)decode:(RTCEncodedImage * _Nonnull)encodedImage missingFrames:(BOOL)missingFrames codecSpecificInfo:(id<RTCCodecSpecificInfo> _Nullable)info renderTimeMs:(int64_t)renderTimeMs;
+		// @required -(NSInteger)decode:(LKRTCEncodedImage * _Nonnull)encodedImage missingFrames:(BOOL)missingFrames codecSpecificInfo:(id<LKRTCCodecSpecificInfo> _Nullable)info renderTimeMs:(int64_t)renderTimeMs;
 		[Abstract]
 		[Export ("decode:missingFrames:codecSpecificInfo:renderTimeMs:")]
-		nint Decode (RTCEncodedImage encodedImage, bool missingFrames, [NullAllowed] RTCCodecSpecificInfo info, long renderTimeMs);
+		nint Decode (LKRTCEncodedImage encodedImage, bool missingFrames, [NullAllowed] LKRTCCodecSpecificInfo info, long renderTimeMs);
 
 		// @required -(NSString * _Nonnull)implementationName;
 		[Abstract]
@@ -563,7 +563,7 @@ namespace IOS.WebRTC
 		string ImplementationName { get; }
 	}
 
-	// @protocol RTCVideoDecoderFactory <NSObject>
+	// @protocol LKRTCVideoDecoderFactory <NSObject>
 	/*
   Check whether adding [Model] to this declaration is appropriate.
   [Model] is used to generate a C# class that implements this protocol,
@@ -574,24 +574,24 @@ namespace IOS.WebRTC
   be used.
 */[Protocol]
 	[BaseType (typeof(NSObject))]
-	interface RTCVideoDecoderFactory
+	interface LKRTCVideoDecoderFactory
 	{
-		// @required -(id<RTCVideoDecoder> _Nullable)createDecoder:(RTCVideoCodecInfo * _Nonnull)info;
+		// @required -(id<LKRTCVideoDecoder> _Nullable)createDecoder:(LKRTCVideoCodecInfo * _Nonnull)info;
 		[Abstract]
 		[Export ("createDecoder:")]
 		[return: NullAllowed]
-		RTCVideoDecoder CreateDecoder (RTCVideoCodecInfo info);
+		LKRTCVideoDecoder CreateDecoder (LKRTCVideoCodecInfo info);
 
-		// @required -(NSArray<RTCVideoCodecInfo *> * _Nonnull)supportedCodecs;
+		// @required -(NSArray<LKRTCVideoCodecInfo *> * _Nonnull)supportedCodecs;
 		[Abstract]
 		[Export ("supportedCodecs")]
 		////[Verify (MethodToProperty)]
-		RTCVideoCodecInfo[] SupportedCodecs { get; }
+		LKRTCVideoCodecInfo[] SupportedCodecs { get; }
 	}
 
-	// @interface RTCVideoEncoderQpThresholds : NSObject
+	// @interface LKRTCVideoEncoderQpThresholds : NSObject
 	[BaseType (typeof(NSObject))]
-	interface RTCVideoEncoderQpThresholds
+	interface LKRTCVideoEncoderQpThresholds
 	{
 		// -(instancetype _Nonnull)initWithThresholdsLow:(NSInteger)low high:(NSInteger)high;
 		[Export ("initWithThresholdsLow:high:")]
@@ -606,10 +606,10 @@ namespace IOS.WebRTC
 		nint High { get; }
 	}
 
-	// typedef BOOL (^RTCVideoEncoderCallback)(RTCEncodedImage * _Nonnull, id<RTCCodecSpecificInfo> _Nonnull);
-	delegate bool RTCVideoEncoderCallback (RTCEncodedImage arg0, RTCCodecSpecificInfo arg1);
+	// typedef BOOL (^LKRTCVideoEncoderCallback)(LKRTCEncodedImage * _Nonnull, id<LKRTCCodecSpecificInfo> _Nonnull);
+	delegate bool LKRTCVideoEncoderCallback (LKRTCEncodedImage arg0, LKRTCCodecSpecificInfo arg1);
 
-	// @protocol RTCVideoEncoder <NSObject>
+	// @protocol LKRTCVideoEncoder <NSObject>
 	/*
   Check whether adding [Model] to this declaration is appropriate.
   [Model] is used to generate a C# class that implements this protocol,
@@ -620,17 +620,17 @@ namespace IOS.WebRTC
   be used.
 */[Protocol]
 	[BaseType (typeof(NSObject))]
-	interface RTCVideoEncoder
+	interface LKRTCVideoEncoder
 	{
-		// @required -(void)setCallback:(RTCVideoEncoderCallback _Nullable)callback;
+		// @required -(void)setCallback:(LKRTCVideoEncoderCallback _Nullable)callback;
 		[Abstract]
 		[Export ("setCallback:")]
-		void SetCallback ([NullAllowed] RTCVideoEncoderCallback callback);
+		void SetCallback ([NullAllowed] LKRTCVideoEncoderCallback callback);
 
-		// @required -(NSInteger)startEncodeWithSettings:(RTCVideoEncoderSettings * _Nonnull)settings numberOfCores:(int)numberOfCores;
+		// @required -(NSInteger)startEncodeWithSettings:(LKRTCVideoEncoderSettings * _Nonnull)settings numberOfCores:(int)numberOfCores;
 		[Abstract]
 		[Export ("startEncodeWithSettings:numberOfCores:")]
-		nint StartEncodeWithSettings (RTCVideoEncoderSettings settings, int numberOfCores);
+		nint StartEncodeWithSettings (LKRTCVideoEncoderSettings settings, int numberOfCores);
 
 		// @required -(NSInteger)releaseEncoder;
 		[Abstract]
@@ -638,10 +638,10 @@ namespace IOS.WebRTC
 		////[Verify (MethodToProperty)]
 		nint ReleaseEncoder { get; }
 
-		// @required -(NSInteger)encode:(RTCVideoFrame * _Nonnull)frame codecSpecificInfo:(id<RTCCodecSpecificInfo> _Nullable)info frameTypes:(NSArray<NSNumber *> * _Nonnull)frameTypes;
+		// @required -(NSInteger)encode:(LKRTCVideoFrame * _Nonnull)frame codecSpecificInfo:(id<LKRTCCodecSpecificInfo> _Nullable)info frameTypes:(NSArray<NSNumber *> * _Nonnull)frameTypes;
 		[Abstract]
 		[Export ("encode:codecSpecificInfo:frameTypes:")]
-		nint Encode (RTCVideoFrame frame, [NullAllowed] RTCCodecSpecificInfo info, NSNumber[] frameTypes);
+		nint Encode (LKRTCVideoFrame frame, [NullAllowed] LKRTCCodecSpecificInfo info, NSNumber[] frameTypes);
 
 		// @required -(int)setBitrate:(uint32_t)bitrateKbit framerate:(uint32_t)framerate;
 		[Abstract]
@@ -654,11 +654,11 @@ namespace IOS.WebRTC
 		////[Verify (MethodToProperty)]
 		string ImplementationName { get; }
 
-		// @required -(RTCVideoEncoderQpThresholds * _Nullable)scalingSettings;
+		// @required -(LKRTCVideoEncoderQpThresholds * _Nullable)scalingSettings;
 		[Abstract]
 		[NullAllowed, Export ("scalingSettings")]
 		////[Verify (MethodToProperty)]
-		RTCVideoEncoderQpThresholds ScalingSettings { get; }
+		LKRTCVideoEncoderQpThresholds ScalingSettings { get; }
 
 		// @required @property (readonly, nonatomic) NSInteger resolutionAlignment;
 		[Abstract]
@@ -676,7 +676,7 @@ namespace IOS.WebRTC
 		bool SupportsNativeHandle { get; }
 	}
 
-	// @protocol RTCVideoEncoderSelector <NSObject>
+	// @protocol LKRTCVideoEncoderSelector <NSObject>
 	/*
   Check whether adding [Model] to this declaration is appropriate.
   [Model] is used to generate a C# class that implements this protocol,
@@ -687,32 +687,32 @@ namespace IOS.WebRTC
   be used.
 */[Protocol]
 	[BaseType (typeof(NSObject))]
-	interface RTCVideoEncoderSelector
+	interface LKRTCVideoEncoderSelector
 	{
-		// @required -(void)registerCurrentEncoderInfo:(RTCVideoCodecInfo * _Nonnull)info;
+		// @required -(void)registerCurrentEncoderInfo:(LKRTCVideoCodecInfo * _Nonnull)info;
 		[Abstract]
 		[Export ("registerCurrentEncoderInfo:")]
-		void RegisterCurrentEncoderInfo (RTCVideoCodecInfo info);
+		void RegisterCurrentEncoderInfo (LKRTCVideoCodecInfo info);
 
-		// @required -(RTCVideoCodecInfo * _Nullable)encoderForBitrate:(NSInteger)bitrate;
+		// @required -(LKRTCVideoCodecInfo * _Nullable)encoderForBitrate:(NSInteger)bitrate;
 		[Abstract]
 		[Export ("encoderForBitrate:")]
 		[return: NullAllowed]
-		RTCVideoCodecInfo EncoderForBitrate (nint bitrate);
+		LKRTCVideoCodecInfo EncoderForBitrate (nint bitrate);
 
-		// @required -(RTCVideoCodecInfo * _Nullable)encoderForBrokenEncoder;
+		// @required -(LKRTCVideoCodecInfo * _Nullable)encoderForBrokenEncoder;
 		[Abstract]
 		[NullAllowed, Export ("encoderForBrokenEncoder")]
 		////[Verify (MethodToProperty)]
-		RTCVideoCodecInfo EncoderForBrokenEncoder { get; }
+		LKRTCVideoCodecInfo EncoderForBrokenEncoder { get; }
 
-		// @optional -(RTCVideoCodecInfo * _Nullable)encoderForResolutionChangeBySize:(CGSize)size;
+		// @optional -(LKRTCVideoCodecInfo * _Nullable)encoderForResolutionChangeBySize:(CGSize)size;
 		[Export ("encoderForResolutionChangeBySize:")]
 		[return: NullAllowed]
-		RTCVideoCodecInfo EncoderForResolutionChangeBySize (CGSize size);
+		LKRTCVideoCodecInfo EncoderForResolutionChangeBySize (CGSize size);
 	}
 
-	// @protocol RTCVideoEncoderFactory <NSObject>
+	// @protocol LKRTCVideoEncoderFactory <NSObject>
 	/*
   Check whether adding [Model] to this declaration is appropriate.
   [Model] is used to generate a C# class that implements this protocol,
@@ -723,32 +723,32 @@ namespace IOS.WebRTC
   be used.
 */[Protocol]
 	[BaseType (typeof(NSObject))]
-	interface RTCVideoEncoderFactory
+	interface LKRTCVideoEncoderFactory
 	{
-		// @required -(id<RTCVideoEncoder> _Nullable)createEncoder:(RTCVideoCodecInfo * _Nonnull)info;
+		// @required -(id<LKRTCVideoEncoder> _Nullable)createEncoder:(LKRTCVideoCodecInfo * _Nonnull)info;
 		[Abstract]
 		[Export ("createEncoder:")]
 		[return: NullAllowed]
-		RTCVideoEncoder CreateEncoder (RTCVideoCodecInfo info);
+		LKRTCVideoEncoder CreateEncoder (LKRTCVideoCodecInfo info);
 
-		// @required -(NSArray<RTCVideoCodecInfo *> * _Nonnull)supportedCodecs;
+		// @required -(NSArray<LKRTCVideoCodecInfo *> * _Nonnull)supportedCodecs;
 		[Abstract]
 		[Export ("supportedCodecs")]
 		////[Verify (MethodToProperty)]
-		RTCVideoCodecInfo[] SupportedCodecs { get; }
+		LKRTCVideoCodecInfo[] SupportedCodecs { get; }
 
-		// @optional -(NSArray<RTCVideoCodecInfo *> * _Nonnull)implementations;
+		// @optional -(NSArray<LKRTCVideoCodecInfo *> * _Nonnull)implementations;
 		[Export ("implementations")]
 		////[Verify (MethodToProperty)]
-		RTCVideoCodecInfo[] Implementations { get; }
+		LKRTCVideoCodecInfo[] Implementations { get; }
 
-		// @optional -(id<RTCVideoEncoderSelector> _Nullable)encoderSelector;
+		// @optional -(id<LKRTCVideoEncoderSelector> _Nullable)encoderSelector;
 		[NullAllowed, Export ("encoderSelector")]
 		////[Verify (MethodToProperty)]
-		RTCVideoEncoderSelector EncoderSelector { get; }
+		LKRTCVideoEncoderSelector EncoderSelector { get; }
 	}
 
-	// @protocol RTCVideoRenderer <NSObject>
+	// @protocol LKRTCVideoRenderer <NSObject>
 	/*
   Check whether adding [Model] to this declaration is appropriate.
   [Model] is used to generate a C# class that implements this protocol,
@@ -759,48 +759,48 @@ namespace IOS.WebRTC
   be used.
 */[Protocol]
 	[BaseType (typeof(NSObject))]
-	interface RTCVideoRenderer
+	interface LKRTCVideoRenderer
 	{
 		// @required -(void)setSize:(CGSize)size;
 		[Abstract]
 		[Export ("setSize:")]
 		void SetSize (CGSize size);
 
-		// @required -(void)renderFrame:(RTCVideoFrame * _Nullable)frame;
+		// @required -(void)renderFrame:(LKRTCVideoFrame * _Nullable)frame;
 		[Abstract]
 		[Export ("renderFrame:")]
-		void RenderFrame ([NullAllowed] RTCVideoFrame frame);
+		void RenderFrame ([NullAllowed] LKRTCVideoFrame frame);
 	}
 
-	// @protocol RTCVideoViewDelegate
+	// @protocol LKRTCVideoViewDelegate
 	[Protocol, Model /****(AutoGeneratedName = true)****/]
 [BaseType(typeof(NSObject))]
-    interface RTCVideoViewDelegate
+    interface LKRTCVideoViewDelegate
 	{
-		// @required -(void)videoView:(id<RTCVideoRenderer> _Nonnull)videoView didChangeVideoSize:(CGSize)size;
+		// @required -(void)videoView:(id<LKRTCVideoRenderer> _Nonnull)videoView didChangeVideoSize:(CGSize)size;
 		[Abstract]
 		[Export ("videoView:didChangeVideoSize:")]
-		void DidChangeVideoSize (IRTCVideoRenderer videoView, CGSize size);
+		void DidChangeVideoSize (ILKRTCVideoRenderer videoView, CGSize size);
 	}
 
-	// typedef OSStatus (^RTCAudioDeviceGetPlayoutDataBlock)(AudioUnitRenderActionFlags * _Nonnull, const AudioTimeStamp * _Nonnull, NSInteger, UInt32, AudioBufferList * _Nonnull);
-	/****unsafe****/ delegate int RTCAudioDeviceGetPlayoutDataBlock (/****AudioUnitRenderActionFlags* ****/IntPtr arg0, /****AudioTimeStamp* ****/IntPtr arg1, nint arg2, uint arg3, /****AudioBufferList* ****/IntPtr arg4);
+	// typedef OSStatus (^LKRTCAudioDeviceGetPlayoutDataBlock)(AudioUnitRenderActionFlags * _Nonnull, const AudioTimeStamp * _Nonnull, NSInteger, UInt32, AudioBufferList * _Nonnull);
+	/****unsafe****/ delegate int LKRTCAudioDeviceGetPlayoutDataBlock (/****AudioUnitRenderActionFlags* ****/IntPtr arg0, /****AudioTimeStamp* ****/IntPtr arg1, nint arg2, uint arg3, /****AudioBufferList* ****/IntPtr arg4);
 
-	// typedef OSStatus (^RTCAudioDeviceRenderRecordedDataBlock)(AudioUnitRenderActionFlags * _Nonnull, const AudioTimeStamp * _Nonnull, NSInteger, UInt32, AudioBufferList * _Nonnull, void * _Nullable);
-	/****unsafe****/ delegate int RTCAudioDeviceRenderRecordedDataBlock (/****AudioUnitRenderActionFlags* ****/IntPtr arg0, /****AudioTimeStamp* ****/IntPtr arg1, nint arg2, uint arg3, /****AudioBufferList* ****/IntPtr arg4, [NullAllowed] /****void* ****/IntPtr arg5);
+	// typedef OSStatus (^LKRTCAudioDeviceRenderRecordedDataBlock)(AudioUnitRenderActionFlags * _Nonnull, const AudioTimeStamp * _Nonnull, NSInteger, UInt32, AudioBufferList * _Nonnull, void * _Nullable);
+	/****unsafe****/ delegate int LKRTCAudioDeviceRenderRecordedDataBlock (/****AudioUnitRenderActionFlags* ****/IntPtr arg0, /****AudioTimeStamp* ****/IntPtr arg1, nint arg2, uint arg3, /****AudioBufferList* ****/IntPtr arg4, [NullAllowed] /****void* ****/IntPtr arg5);
 
-	// typedef OSStatus (^RTCAudioDeviceDeliverRecordedDataBlock)(AudioUnitRenderActionFlags * _Nonnull, const AudioTimeStamp * _Nonnull, NSInteger, UInt32, const AudioBufferList * _Nullable, void * _Nullable, RTCAudioDeviceRenderRecordedDataBlock _Nullable);
-	/****unsafe****/ delegate int RTCAudioDeviceDeliverRecordedDataBlock (/****AudioUnitRenderActionFlags* ****/IntPtr arg0, /****AudioTimeStamp* ***/IntPtr arg1, nint arg2, uint arg3, [NullAllowed] /****AudioBufferList* ****/IntPtr arg4, [NullAllowed] /****void* ****/IntPtr arg5, [NullAllowed] RTCAudioDeviceRenderRecordedDataBlock arg6);
+	// typedef OSStatus (^LKRTCAudioDeviceDeliverRecordedDataBlock)(AudioUnitRenderActionFlags * _Nonnull, const AudioTimeStamp * _Nonnull, NSInteger, UInt32, const AudioBufferList * _Nullable, void * _Nullable, LKRTCAudioDeviceRenderRecordedDataBlock _Nullable);
+	/****unsafe****/ delegate int LKRTCAudioDeviceDeliverRecordedDataBlock (/****AudioUnitRenderActionFlags* ****/IntPtr arg0, /****AudioTimeStamp* ***/IntPtr arg1, nint arg2, uint arg3, [NullAllowed] /****AudioBufferList* ****/IntPtr arg4, [NullAllowed] /****void* ****/IntPtr arg5, [NullAllowed] LKRTCAudioDeviceRenderRecordedDataBlock arg6);
 
-	// @protocol RTCAudioDeviceDelegate <NSObject>
+	// @protocol LKRTCAudioDeviceDelegate <NSObject>
 	[Protocol, Model /****(AutoGeneratedName = true)****/]
 	[BaseType (typeof(NSObject))]
-	interface RTCAudioDeviceDelegate
+	interface LKRTCAudioDeviceDelegate
 	{
-		// @required @property (readonly) RTCAudioDeviceDeliverRecordedDataBlock _Nonnull deliverRecordedData;
+		// @required @property (readonly) LKRTCAudioDeviceDeliverRecordedDataBlock _Nonnull deliverRecordedData;
 		[Abstract]
 		[Export ("deliverRecordedData")]
-		RTCAudioDeviceDeliverRecordedDataBlock DeliverRecordedData { get; }
+		LKRTCAudioDeviceDeliverRecordedDataBlock DeliverRecordedData { get; }
 
 		// @required @property (readonly) double preferredInputSampleRate;
 		[Abstract]
@@ -822,10 +822,10 @@ namespace IOS.WebRTC
 		[Export ("preferredOutputIOBufferDuration")]
 		double PreferredOutputIOBufferDuration { get; }
 
-		// @required @property (readonly) RTCAudioDeviceGetPlayoutDataBlock _Nonnull getPlayoutData;
+		// @required @property (readonly) LKRTCAudioDeviceGetPlayoutDataBlock _Nonnull getPlayoutData;
 		[Abstract]
 		[Export ("getPlayoutData")]
-		RTCAudioDeviceGetPlayoutDataBlock GetPlayoutData { get; }
+		LKRTCAudioDeviceGetPlayoutDataBlock GetPlayoutData { get; }
 
 		// @required -(void)notifyAudioInputParametersChange;
 		[Abstract]
@@ -858,7 +858,7 @@ namespace IOS.WebRTC
 		void DispatchSync (dispatch_block_t block);
 	}
 
-	// @protocol RTCAudioDevice <NSObject>
+	// @protocol LKRTCAudioDevice <NSObject>
 	/*
   Check whether adding [Model] to this declaration is appropriate.
   [Model] is used to generate a C# class that implements this protocol,
@@ -869,7 +869,7 @@ namespace IOS.WebRTC
   be used.
 */[Protocol]
 	[BaseType (typeof(NSObject))]
-	interface RTCAudioDevice
+	interface LKRTCAudioDevice
 	{
 		// @required @property (readonly) double deviceInputSampleRate;
 		[Abstract]
@@ -916,10 +916,10 @@ namespace IOS.WebRTC
 		[Export ("isInitialized")]
 		bool IsInitialized { get; }
 
-		// @required -(BOOL)initializeWithDelegate:(id<RTCAudioDeviceDelegate> _Nonnull)delegate;
+		// @required -(BOOL)initializeWithDelegate:(id<LKRTCAudioDeviceDelegate> _Nonnull)delegate;
 		[Abstract]
 		[Export ("initializeWithDelegate:")]
-		bool InitializeWithDelegate (RTCAudioDeviceDelegate @delegate);
+		bool InitializeWithDelegate (LKRTCAudioDeviceDelegate @delegate);
 
 		// @required -(BOOL)terminateDevice;
 		[Abstract]
@@ -989,90 +989,90 @@ namespace IOS.WebRTC
 	partial interface Constants
 	{
 		/*
-		// extern NSString *const _Nonnull kRTCAudioSessionErrorDomain;
-		[Field ("kRTCAudioSessionErrorDomain", "__Internal")]
-		NSString kRTCAudioSessionErrorDomain { get; }
+		// extern NSString *const _Nonnull kLKRTCAudioSessionErrorDomain;
+		[Field ("kLKRTCAudioSessionErrorDomain", "__Internal")]
+		NSString kLKRTCAudioSessionErrorDomain { get; }
 		*/
 		
 		/*
-		// extern const NSInteger kRTCAudioSessionErrorLockRequired;
-		[Field ("kRTCAudioSessionErrorLockRequired", "__Internal")]
-		nint kRTCAudioSessionErrorLockRequired { get; }
+		// extern const NSInteger kLKRTCAudioSessionErrorLockRequired;
+		[Field ("kLKRTCAudioSessionErrorLockRequired", "__Internal")]
+		nint kLKRTCAudioSessionErrorLockRequired { get; }
 		*/
 		
 		/*
-		// extern const NSInteger kRTCAudioSessionErrorConfiguration;
-		[Field ("kRTCAudioSessionErrorConfiguration", "__Internal")]
-		nint kRTCAudioSessionErrorConfiguration { get; }
+		// extern const NSInteger kLKRTCAudioSessionErrorConfiguration;
+		[Field ("kLKRTCAudioSessionErrorConfiguration", "__Internal")]
+		nint kLKRTCAudioSessionErrorConfiguration { get; }
 		*/
 	}
 
-	// @protocol RTCAudioSessionDelegate <NSObject>
+	// @protocol LKRTCAudioSessionDelegate <NSObject>
 	[Protocol, Model /****(AutoGeneratedName = true)****/]
 	[BaseType (typeof(NSObject))]
-	interface RTCAudioSessionDelegate
+	interface LKRTCAudioSessionDelegate
 	{
-		// @optional -(void)audioSessionDidBeginInterruption:(RTCAudioSession * _Nonnull)session;
+		// @optional -(void)audioSessionDidBeginInterruption:(LKRTCAudioSession * _Nonnull)session;
 		[Export ("audioSessionDidBeginInterruption:")]
-		void AudioSessionDidBeginInterruption (RTCAudioSession session);
+		void AudioSessionDidBeginInterruption (LKRTCAudioSession session);
 
-		// @optional -(void)audioSessionDidEndInterruption:(RTCAudioSession * _Nonnull)session shouldResumeSession:(BOOL)shouldResumeSession;
+		// @optional -(void)audioSessionDidEndInterruption:(LKRTCAudioSession * _Nonnull)session shouldResumeSession:(BOOL)shouldResumeSession;
 		[Export ("audioSessionDidEndInterruption:shouldResumeSession:")]
-		void AudioSessionDidEndInterruption (RTCAudioSession session, bool shouldResumeSession);
+		void AudioSessionDidEndInterruption (LKRTCAudioSession session, bool shouldResumeSession);
 
-		// @optional -(void)audioSessionDidChangeRoute:(RTCAudioSession * _Nonnull)session reason:(AVAudioSessionRouteChangeReason)reason previousRoute:(AVAudioSessionRouteDescription * _Nonnull)previousRoute;
+		// @optional -(void)audioSessionDidChangeRoute:(LKRTCAudioSession * _Nonnull)session reason:(AVAudioSessionRouteChangeReason)reason previousRoute:(AVAudioSessionRouteDescription * _Nonnull)previousRoute;
 		[Export ("audioSessionDidChangeRoute:reason:previousRoute:")]
-		void AudioSessionDidChangeRoute (RTCAudioSession session, AVAudioSessionRouteChangeReason reason, AVAudioSessionRouteDescription previousRoute);
+		void AudioSessionDidChangeRoute (LKRTCAudioSession session, AVAudioSessionRouteChangeReason reason, AVAudioSessionRouteDescription previousRoute);
 
-		// @optional -(void)audioSessionMediaServerTerminated:(RTCAudioSession * _Nonnull)session;
+		// @optional -(void)audioSessionMediaServerTerminated:(LKRTCAudioSession * _Nonnull)session;
 		[Export ("audioSessionMediaServerTerminated:")]
-		void AudioSessionMediaServerTerminated (RTCAudioSession session);
+		void AudioSessionMediaServerTerminated (LKRTCAudioSession session);
 
-		// @optional -(void)audioSessionMediaServerReset:(RTCAudioSession * _Nonnull)session;
+		// @optional -(void)audioSessionMediaServerReset:(LKRTCAudioSession * _Nonnull)session;
 		[Export ("audioSessionMediaServerReset:")]
-		void AudioSessionMediaServerReset (RTCAudioSession session);
+		void AudioSessionMediaServerReset (LKRTCAudioSession session);
 
-		// @optional -(void)audioSession:(RTCAudioSession * _Nonnull)session didChangeCanPlayOrRecord:(BOOL)canPlayOrRecord;
+		// @optional -(void)audioSession:(LKRTCAudioSession * _Nonnull)session didChangeCanPlayOrRecord:(BOOL)canPlayOrRecord;
 		[Export ("audioSession:didChangeCanPlayOrRecord:")]
-		void AudioSessionDidChangeCanPlayOrRecord(RTCAudioSession session, bool canPlayOrRecord);
+		void AudioSessionDidChangeCanPlayOrRecord(LKRTCAudioSession session, bool canPlayOrRecord);
 
-		// @optional -(void)audioSessionDidStartPlayOrRecord:(RTCAudioSession * _Nonnull)session;
+		// @optional -(void)audioSessionDidStartPlayOrRecord:(LKRTCAudioSession * _Nonnull)session;
 		[Export ("audioSessionDidStartPlayOrRecord:")]
-		void AudioSessionDidStartPlayOrRecord (RTCAudioSession session);
+		void AudioSessionDidStartPlayOrRecord (LKRTCAudioSession session);
 
-		// @optional -(void)audioSessionDidStopPlayOrRecord:(RTCAudioSession * _Nonnull)session;
+		// @optional -(void)audioSessionDidStopPlayOrRecord:(LKRTCAudioSession * _Nonnull)session;
 		[Export ("audioSessionDidStopPlayOrRecord:")]
-		void AudioSessionDidStopPlayOrRecord (RTCAudioSession session);
+		void AudioSessionDidStopPlayOrRecord (LKRTCAudioSession session);
 
-		// @optional -(void)audioSession:(RTCAudioSession * _Nonnull)audioSession didChangeOutputVolume:(float)outputVolume;
+		// @optional -(void)audioSession:(LKRTCAudioSession * _Nonnull)audioSession didChangeOutputVolume:(float)outputVolume;
 		[Export ("audioSession:didChangeOutputVolume:")]
-		void AudioSessionDidChangeOutputVolume(RTCAudioSession audioSession, float outputVolume);
+		void AudioSessionDidChangeOutputVolume(LKRTCAudioSession audioSession, float outputVolume);
 
-		// @optional -(void)audioSession:(RTCAudioSession * _Nonnull)audioSession didDetectPlayoutGlitch:(int64_t)totalNumberOfGlitches;
+		// @optional -(void)audioSession:(LKRTCAudioSession * _Nonnull)audioSession didDetectPlayoutGlitch:(int64_t)totalNumberOfGlitches;
 		[Export ("audioSession:didDetectPlayoutGlitch:")]
-		void AudioSessionDidDetectPlayoutGlitch(RTCAudioSession audioSession, long totalNumberOfGlitches);
+		void AudioSessionDidDetectPlayoutGlitch(LKRTCAudioSession audioSession, long totalNumberOfGlitches);
 
-		// @optional -(void)audioSession:(RTCAudioSession * _Nonnull)audioSession willSetActive:(BOOL)active;
+		// @optional -(void)audioSession:(LKRTCAudioSession * _Nonnull)audioSession willSetActive:(BOOL)active;
 		[Export ("audioSession:willSetActive:")]
-		void AudioSessionWillSetActive(RTCAudioSession audioSession, bool active);
+		void AudioSessionWillSetActive(LKRTCAudioSession audioSession, bool active);
 
-		// @optional -(void)audioSession:(RTCAudioSession * _Nonnull)audioSession didSetActive:(BOOL)active;
+		// @optional -(void)audioSession:(LKRTCAudioSession * _Nonnull)audioSession didSetActive:(BOOL)active;
 		[Export ("audioSession:didSetActive:")]
-		void AudioSessionDidSetActive(RTCAudioSession audioSession, bool active);
+		void AudioSessionDidSetActive(LKRTCAudioSession audioSession, bool active);
 
-		// @optional -(void)audioSession:(RTCAudioSession * _Nonnull)audioSession failedToSetActive:(BOOL)active error:(NSError * _Nonnull)error;
+		// @optional -(void)audioSession:(LKRTCAudioSession * _Nonnull)audioSession failedToSetActive:(BOOL)active error:(NSError * _Nonnull)error;
 		[Export ("audioSession:failedToSetActive:error:")]
-		void AudioSessionFailedToSetActive(RTCAudioSession audioSession, bool active, NSError error);
+		void AudioSessionFailedToSetActive(LKRTCAudioSession audioSession, bool active, NSError error);
 
-		// @optional -(void)audioSession:(RTCAudioSession * _Nonnull)audioSession audioUnitStartFailedWithError:(NSError * _Nonnull)error;
+		// @optional -(void)audioSession:(LKRTCAudioSession * _Nonnull)audioSession audioUnitStartFailedWithError:(NSError * _Nonnull)error;
 		[Export ("audioSession:audioUnitStartFailedWithError:")]
-		void AudioSessionAudioUnitStartFailedWithError(RTCAudioSession audioSession, NSError error);
+		void AudioSessionAudioUnitStartFailedWithError(LKRTCAudioSession audioSession, NSError error);
 	}
 
-	// @protocol RTCAudioSessionActivationDelegate <NSObject>
+	// @protocol LKRTCAudioSessionActivationDelegate <NSObject>
 	[Protocol, Model /****(AutoGeneratedName = true)****/]
 	[BaseType (typeof(NSObject))]
-	interface RTCAudioSessionActivationDelegate
+	interface LKRTCAudioSessionActivationDelegate
 	{
 		// @required -(void)audioSessionDidActivate:(AVAudioSession * _Nonnull)session;
 		[Abstract]
@@ -1085,10 +1085,10 @@ namespace IOS.WebRTC
 		void AudioSessionDidDeactivate (AVAudioSession session);
 	}
 
-	// @interface RTCAudioSession : NSObject <RTCAudioSessionActivationDelegate>
+	// @interface LKRTCAudioSession : NSObject <LKRTCAudioSessionActivationDelegate>
 	[BaseType (typeof(NSObject))]
 	[DisableDefaultCtor]
-	interface RTCAudioSession : IRTCAudioSessionActivationDelegate
+	interface LKRTCAudioSession : ILKRTCAudioSessionActivationDelegate
 	{
 		// @property (readonly, nonatomic) AVAudioSession * _Nonnull session;
 		[Export ("session")]
@@ -1213,15 +1213,15 @@ namespace IOS.WebRTC
 		// +(instancetype _Nonnull)sharedInstance;
 		[Static]
 		[Export ("sharedInstance")]
-		RTCAudioSession SharedInstance ();
+		LKRTCAudioSession SharedInstance ();
 
-		// -(void)addDelegate:(id<RTCAudioSessionDelegate> _Nonnull)delegate;
+		// -(void)addDelegate:(id<LKRTCAudioSessionDelegate> _Nonnull)delegate;
 		[Export ("addDelegate:")]
-		void AddDelegate (RTCAudioSessionDelegate @delegate);
+		void AddDelegate (LKRTCAudioSessionDelegate @delegate);
 
-		// -(void)removeDelegate:(id<RTCAudioSessionDelegate> _Nonnull)delegate;
+		// -(void)removeDelegate:(id<LKRTCAudioSessionDelegate> _Nonnull)delegate;
 		[Export ("removeDelegate:")]
-		void RemoveDelegate (RTCAudioSessionDelegate @delegate);
+		void RemoveDelegate (LKRTCAudioSessionDelegate @delegate);
 
 		// -(void)lockForConfiguration;
 		[Export ("lockForConfiguration")]
@@ -1284,40 +1284,40 @@ namespace IOS.WebRTC
 		bool SetOutputDataSource (AVAudioSessionDataSourceDescription dataSource, [NullAllowed] out NSError outError);
 	}
 
-	// @interface Configuration (RTCAudioSession)
+	// @interface Configuration (LKRTCAudioSession)
 	[Category]
-	[BaseType (typeof(RTCAudioSession))]
-	interface RTCAudioSession_Configuration
+	[BaseType (typeof(LKRTCAudioSession))]
+	interface LKRTCAudioSession_Configuration
 	{
-		// -(BOOL)setConfiguration:(RTCAudioSessionConfiguration * _Nonnull)configuration error:(NSError * _Nullable * _Nullable)outError;
+		// -(BOOL)setConfiguration:(LKRTCAudioSessionConfiguration * _Nonnull)configuration error:(NSError * _Nullable * _Nullable)outError;
 		[Export ("setConfiguration:error:")]
-		bool SetConfiguration (RTCAudioSessionConfiguration configuration, [NullAllowed] out NSError outError);
+		bool SetConfiguration (LKRTCAudioSessionConfiguration configuration, [NullAllowed] out NSError outError);
 
-		// -(BOOL)setConfiguration:(RTCAudioSessionConfiguration * _Nonnull)configuration active:(BOOL)active error:(NSError * _Nullable * _Nullable)outError;
+		// -(BOOL)setConfiguration:(LKRTCAudioSessionConfiguration * _Nonnull)configuration active:(BOOL)active error:(NSError * _Nullable * _Nullable)outError;
 		[Export ("setConfiguration:active:error:")]
-		bool SetConfiguration (RTCAudioSessionConfiguration configuration, bool active, [NullAllowed] out NSError outError);
+		bool SetConfiguration (LKRTCAudioSessionConfiguration configuration, bool active, [NullAllowed] out NSError outError);
 	}
 
     ////[Static]
     ////[Verify (ConstantsInterfaceAssociation)]
     partial interface Constants
 	{
-		// extern const int kRTCAudioSessionPreferredNumberOfChannels;
-		[Field ("kRTCAudioSessionPreferredNumberOfChannels", "__Internal")]
-		int kRTCAudioSessionPreferredNumberOfChannels { get; }
+		// extern const int kLKRTCAudioSessionPreferredNumberOfChannels;
+		[Field ("kLKRTCAudioSessionPreferredNumberOfChannels", "__Internal")]
+		int kLKRTCAudioSessionPreferredNumberOfChannels { get; }
 
-		// extern const double kRTCAudioSessionHighPerformanceSampleRate;
-		[Field ("kRTCAudioSessionHighPerformanceSampleRate", "__Internal")]
-		double kRTCAudioSessionHighPerformanceSampleRate { get; }
+		// extern const double kLKRTCAudioSessionHighPerformanceSampleRate;
+		[Field ("kLKRTCAudioSessionHighPerformanceSampleRate", "__Internal")]
+		double kLKRTCAudioSessionHighPerformanceSampleRate { get; }
 
-		// extern const double kRTCAudioSessionHighPerformanceIOBufferDuration;
-		[Field ("kRTCAudioSessionHighPerformanceIOBufferDuration", "__Internal")]
-		double kRTCAudioSessionHighPerformanceIOBufferDuration { get; }
+		// extern const double kLKRTCAudioSessionHighPerformanceIOBufferDuration;
+		[Field ("kLKRTCAudioSessionHighPerformanceIOBufferDuration", "__Internal")]
+		double kLKRTCAudioSessionHighPerformanceIOBufferDuration { get; }
 	}
 
-	// @interface RTCAudioSessionConfiguration : NSObject
+	// @interface LKRTCAudioSessionConfiguration : NSObject
 	[BaseType (typeof(NSObject))]
-	interface RTCAudioSessionConfiguration
+	interface LKRTCAudioSessionConfiguration
 	{
 		// @property (nonatomic, strong) NSString * _Nonnull category;
 		[Export ("category", ArgumentSemantic.Strong)]
@@ -1350,23 +1350,23 @@ namespace IOS.WebRTC
 		// +(instancetype _Nonnull)currentConfiguration;
 		[Static]
 		[Export ("currentConfiguration")]
-		RTCAudioSessionConfiguration CurrentConfiguration ();
+		LKRTCAudioSessionConfiguration CurrentConfiguration ();
 
 		// +(instancetype _Nonnull)webRTCConfiguration;
 		[Static]
 		[Export ("webRTCConfiguration")]
-		RTCAudioSessionConfiguration WebRTCConfiguration ();
+		LKRTCAudioSessionConfiguration WebRTCConfiguration ();
 
-		// +(void)setWebRTCConfiguration:(RTCAudioSessionConfiguration * _Nonnull)configuration;
+		// +(void)setWebRTCConfiguration:(LKRTCAudioSessionConfiguration * _Nonnull)configuration;
 		[Static]
 		[Export ("setWebRTCConfiguration:")]
-		void SetWebRTCConfiguration (RTCAudioSessionConfiguration configuration);
+		void SetWebRTCConfiguration (LKRTCAudioSessionConfiguration configuration);
 	}
 
-	// @interface RTCCameraVideoCapturer : RTCVideoCapturer
+	// @interface LKRTCCameraVideoCapturer : LKRTCVideoCapturer
 	////[Unavailable (PlatformName.iOSAppExtension)]
-	[BaseType (typeof(RTCVideoCapturer))]
-	interface RTCCameraVideoCapturer
+	[BaseType (typeof(LKRTCVideoCapturer))]
+	interface LKRTCCameraVideoCapturer
 	{
 		// @property (readonly, nonatomic) AVCaptureSession * _Nonnull captureSession;
 		[Export ("captureSession")]
@@ -1405,41 +1405,41 @@ namespace IOS.WebRTC
 		void StopCapture ();
 	}
 
-	// typedef void (^RTCFileVideoCapturerErrorBlock)(NSError * _Nonnull);
-	delegate void RTCFileVideoCapturerErrorBlock (NSError arg0);
+	// typedef void (^LKRTCFileVideoCapturerErrorBlock)(NSError * _Nonnull);
+	delegate void LKRTCFileVideoCapturerErrorBlock (NSError arg0);
 
-	// @interface RTCFileVideoCapturer : RTCVideoCapturer
+	// @interface LKRTCFileVideoCapturer : LKRTCVideoCapturer
 	////[iOS (10,0)]
-	[BaseType (typeof(RTCVideoCapturer))]
-	interface RTCFileVideoCapturer
+	[BaseType (typeof(LKRTCVideoCapturer))]
+	interface LKRTCFileVideoCapturer
 	{
-		// -(void)startCapturingFromFileNamed:(NSString * _Nonnull)nameOfFile onError:(RTCFileVideoCapturerErrorBlock _Nullable)errorBlock;
+		// -(void)startCapturingFromFileNamed:(NSString * _Nonnull)nameOfFile onError:(LKRTCFileVideoCapturerErrorBlock _Nullable)errorBlock;
 		[Export ("startCapturingFromFileNamed:onError:")]
-		void StartCapturingFromFileNamed (string nameOfFile, [NullAllowed] RTCFileVideoCapturerErrorBlock errorBlock);
+		void StartCapturingFromFileNamed (string nameOfFile, [NullAllowed] LKRTCFileVideoCapturerErrorBlock errorBlock);
 
 		// -(void)stopCapture;
 		[Export ("stopCapture")]
 		void StopCapture ();
 	}
 
-	// @interface RTCNetworkMonitor : NSObject
+	// @interface LKRTCNetworkMonitor : NSObject
 	[BaseType (typeof(NSObject))]
 	[DisableDefaultCtor]
 [Protocol]
-	interface RTCNetworkMonitor
+	interface LKRTCNetworkMonitor
 	{
 	}
 
-	// @interface RTCMTLVideoView : UIView <RTCVideoRenderer>
+	// @interface LKRTCMTLVideoView : UIView <LKRTCVideoRenderer>
 	////[iOS (9,0)]
 	[BaseType (typeof(UIView))]
-	interface RTCMTLVideoView : /****I****/RTCVideoRenderer
+	interface LKRTCMTLVideoView : /****I****/LKRTCVideoRenderer
 	{
 		[Wrap ("WeakDelegate")]
 		[NullAllowed]
-		IRTCVideoViewDelegate Delegate { get; set; }
+		ILKRTCVideoViewDelegate Delegate { get; set; }
 
-		// @property (nonatomic, weak) id<RTCVideoViewDelegate> _Nullable delegate;
+		// @property (nonatomic, weak) id<LKRTCVideoViewDelegate> _Nullable delegate;
 		[NullAllowed, Export ("delegate", ArgumentSemantic.Weak)]
 		NSObject WeakDelegate { get; set; }
 
@@ -1456,7 +1456,7 @@ namespace IOS.WebRTC
 		NSValue RotationOverride { get; set; }
 	}
 
-	// @protocol RTCVideoViewShading <NSObject>
+	// @protocol LKRTCVideoViewShading <NSObject>
 	/*
   Check whether adding [Model] to this declaration is appropriate.
   [Model] is used to generate a C# class that implements this protocol,
@@ -1467,116 +1467,116 @@ namespace IOS.WebRTC
   be used.
 */[Protocol]
 	[BaseType (typeof(NSObject))]
-	interface RTCVideoViewShading
+	interface LKRTCVideoViewShading
 	{
-		// @required -(void)applyShadingForFrameWithWidth:(int)width height:(int)height rotation:(RTCVideoRotation)rotation yPlane:(GLuint)yPlane uPlane:(GLuint)uPlane vPlane:(GLuint)vPlane;
+		// @required -(void)applyShadingForFrameWithWidth:(int)width height:(int)height rotation:(LKRTCVideoRotation)rotation yPlane:(GLuint)yPlane uPlane:(GLuint)uPlane vPlane:(GLuint)vPlane;
 		[Abstract]
 		[Export ("applyShadingForFrameWithWidth:height:rotation:yPlane:uPlane:vPlane:")]
-		void Height (int width, int height, RTCVideoRotation rotation, uint yPlane, uint uPlane, uint vPlane);
+		void Height (int width, int height, LKRTCVideoRotation rotation, uint yPlane, uint uPlane, uint vPlane);
 
-		// @required -(void)applyShadingForFrameWithWidth:(int)width height:(int)height rotation:(RTCVideoRotation)rotation yPlane:(GLuint)yPlane uvPlane:(GLuint)uvPlane;
+		// @required -(void)applyShadingForFrameWithWidth:(int)width height:(int)height rotation:(LKRTCVideoRotation)rotation yPlane:(GLuint)yPlane uvPlane:(GLuint)uvPlane;
 		[Abstract]
 		[Export ("applyShadingForFrameWithWidth:height:rotation:yPlane:uvPlane:")]
-		void Height (int width, int height, RTCVideoRotation rotation, uint yPlane, uint uvPlane);
+		void Height (int width, int height, LKRTCVideoRotation rotation, uint yPlane, uint uvPlane);
 	}
 
-    // @interface RTCEAGLVideoView : UIView <RTCVideoRenderer>
+    // @interface LKRTCEAGLVideoView : UIView <LKRTCVideoRenderer>
     ////[Unavailable (PlatformName.iOSAppExtension)]
  [Protocol]
     [BaseType (typeof(UIView))]
-	interface RTCEAGLVideoView : /****I****/RTCVideoRenderer
+	interface LKRTCEAGLVideoView : /****I****/LKRTCVideoRenderer
 	{
 		[Wrap ("WeakDelegate")]
 		[NullAllowed]
-		IRTCVideoViewDelegate Delegate { get; set; }
+		ILKRTCVideoViewDelegate Delegate { get; set; }
 
-		// @property (nonatomic, weak) id<RTCVideoViewDelegate> _Nullable delegate;
+		// @property (nonatomic, weak) id<LKRTCVideoViewDelegate> _Nullable delegate;
 		[NullAllowed, Export ("delegate", ArgumentSemantic.Weak)]
 		NSObject WeakDelegate { get; set; }
 
-		// -(instancetype _Nonnull)initWithFrame:(CGRect)frame shader:(id<RTCVideoViewShading> _Nonnull)shader __attribute__((objc_designated_initializer));
+		// -(instancetype _Nonnull)initWithFrame:(CGRect)frame shader:(id<LKRTCVideoViewShading> _Nonnull)shader __attribute__((objc_designated_initializer));
 		[Export ("initWithFrame:shader:")]
 		[DesignatedInitializer]
-		NativeHandle Constructor (CGRect frame, RTCVideoViewShading shader);
+		NativeHandle Constructor (CGRect frame, LKRTCVideoViewShading shader);
 
-		// -(instancetype _Nonnull)initWithCoder:(NSCoder * _Nonnull)aDecoder shader:(id<RTCVideoViewShading> _Nonnull)shader __attribute__((objc_designated_initializer));
+		// -(instancetype _Nonnull)initWithCoder:(NSCoder * _Nonnull)aDecoder shader:(id<LKRTCVideoViewShading> _Nonnull)shader __attribute__((objc_designated_initializer));
 		[Export ("initWithCoder:shader:")]
 		[DesignatedInitializer]
-		NativeHandle Constructor (NSCoder aDecoder, RTCVideoViewShading shader);
+		NativeHandle Constructor (NSCoder aDecoder, LKRTCVideoViewShading shader);
 
 		// @property (nonatomic) NSValue * _Nullable rotationOverride;
 		[NullAllowed, Export ("rotationOverride", ArgumentSemantic.Assign)]
 		NSValue RotationOverride { get; set; }
 	}
 
-	// @interface RTCCodecSpecificInfoH264 : NSObject <RTCCodecSpecificInfo>
+	// @interface LKRTCCodecSpecificInfoH264 : NSObject <LKRTCCodecSpecificInfo>
 	[BaseType (typeof(NSObject))]
-	interface RTCCodecSpecificInfoH264 : IRTCCodecSpecificInfo
+	interface LKRTCCodecSpecificInfoH264 : ILKRTCCodecSpecificInfo
 	{
-		// @property (assign, nonatomic) RTCH264PacketizationMode packetizationMode;
+		// @property (assign, nonatomic) LKRTCH264PacketizationMode packetizationMode;
 		[Export ("packetizationMode", ArgumentSemantic.Assign)]
-		RTCH264PacketizationMode PacketizationMode { get; set; }
+		LKRTCH264PacketizationMode PacketizationMode { get; set; }
 	}
 
-	// @interface RTCDefaultVideoDecoderFactory : NSObject <RTCVideoDecoderFactory>
+	// @interface LKRTCDefaultVideoDecoderFactory : NSObject <LKRTCVideoDecoderFactory>
 	////[BaseType (typeof(NSObject))]
-	[BaseType (typeof(RTCVideoDecoderFactory))]
-    interface RTCDefaultVideoDecoderFactory ////: IRTCVideoDecoderFactory
+	[BaseType (typeof(LKRTCVideoDecoderFactory))]
+    interface LKRTCDefaultVideoDecoderFactory ////: ILKRTCVideoDecoderFactory
 	{
 	}
 
-    // @interface RTCDefaultVideoEncoderFactory : NSObject <RTCVideoEncoderFactory>
+    // @interface LKRTCDefaultVideoEncoderFactory : NSObject <LKRTCVideoEncoderFactory>
     ////[BaseType (typeof(NSObject))]
-    [BaseType (typeof(RTCVideoEncoderFactory))]
-    interface RTCDefaultVideoEncoderFactory ////: IRTCVideoEncoderFactory
+    [BaseType (typeof(LKRTCVideoEncoderFactory))]
+    interface LKRTCDefaultVideoEncoderFactory ////: ILKRTCVideoEncoderFactory
 	{
-		// @property (retain, nonatomic) RTCVideoCodecInfo * _Nonnull preferredCodec;
+		// @property (retain, nonatomic) LKRTCVideoCodecInfo * _Nonnull preferredCodec;
 		[Export ("preferredCodec", ArgumentSemantic.Retain)]
-		RTCVideoCodecInfo PreferredCodec { get; set; }
+		LKRTCVideoCodecInfo PreferredCodec { get; set; }
 
-		// +(NSArray<RTCVideoCodecInfo *> * _Nonnull)supportedCodecs;
+		// +(NSArray<LKRTCVideoCodecInfo *> * _Nonnull)supportedCodecs;
 		[Static]
 		[Export ("supportedCodecs")]
 		////[Verify (MethodToProperty)]
-		RTCVideoCodecInfo[] SupportedCodecs { get; }
+		LKRTCVideoCodecInfo[] SupportedCodecs { get; }
 	}
 
     ////[Static]
     ////[Verify (ConstantsInterfaceAssociation)]
     partial interface Constants
 	{
-		// extern NSString *const kRTCVideoCodecH264Name;
-		[Field ("kRTCVideoCodecH264Name", "__Internal")]
-		NSString kRTCVideoCodecH264Name { get; }
+		// extern NSString *const kLKRTCVideoCodecH264Name;
+		[Field ("kLKRTCVideoCodecH264Name", "__Internal")]
+		NSString kLKRTCVideoCodecH264Name { get; }
 
-		// extern NSString *const kRTCLevel31ConstrainedHigh;
-		[Field ("kRTCLevel31ConstrainedHigh", "__Internal")]
-		NSString kRTCLevel31ConstrainedHigh { get; }
+		// extern NSString *const kLKRTCLevel31ConstrainedHigh;
+		[Field ("kLKRTCLevel31ConstrainedHigh", "__Internal")]
+		NSString kLKRTCLevel31ConstrainedHigh { get; }
 
-		// extern NSString *const kRTCLevel31ConstrainedBaseline;
-		[Field ("kRTCLevel31ConstrainedBaseline", "__Internal")]
-		NSString kRTCLevel31ConstrainedBaseline { get; }
+		// extern NSString *const kLKRTCLevel31ConstrainedBaseline;
+		[Field ("kLKRTCLevel31ConstrainedBaseline", "__Internal")]
+		NSString kLKRTCLevel31ConstrainedBaseline { get; }
 
-		// extern NSString *const kRTCMaxSupportedH264ProfileLevelConstrainedHigh;
-		[Field ("kRTCMaxSupportedH264ProfileLevelConstrainedHigh", "__Internal")]
-		NSString kRTCMaxSupportedH264ProfileLevelConstrainedHigh { get; }
+		// extern NSString *const kLKRTCMaxSupportedH264ProfileLevelConstrainedHigh;
+		[Field ("kLKRTCMaxSupportedH264ProfileLevelConstrainedHigh", "__Internal")]
+		NSString kLKRTCMaxSupportedH264ProfileLevelConstrainedHigh { get; }
 
-		// extern NSString *const kRTCMaxSupportedH264ProfileLevelConstrainedBaseline;
-		[Field ("kRTCMaxSupportedH264ProfileLevelConstrainedBaseline", "__Internal")]
-		NSString kRTCMaxSupportedH264ProfileLevelConstrainedBaseline { get; }
+		// extern NSString *const kLKRTCMaxSupportedH264ProfileLevelConstrainedBaseline;
+		[Field ("kLKRTCMaxSupportedH264ProfileLevelConstrainedBaseline", "__Internal")]
+		NSString kLKRTCMaxSupportedH264ProfileLevelConstrainedBaseline { get; }
 	}
 
-	// @interface RTCH264ProfileLevelId : NSObject
+	// @interface LKRTCH264ProfileLevelId : NSObject
 	[BaseType (typeof(NSObject))]
-	interface RTCH264ProfileLevelId
+	interface LKRTCH264ProfileLevelId
 	{
-		// @property (readonly, nonatomic) RTCH264Profile profile;
+		// @property (readonly, nonatomic) LKRTCH264Profile profile;
 		[Export ("profile")]
-		RTCH264Profile Profile { get; }
+		LKRTCH264Profile Profile { get; }
 
-		// @property (readonly, nonatomic) RTCH264Level level;
+		// @property (readonly, nonatomic) LKRTCH264Level level;
 		[Export ("level")]
-		RTCH264Level Level { get; }
+		LKRTCH264Level Level { get; }
 
 		// @property (readonly, nonatomic) NSString * hexString;
 		[Export ("hexString")]
@@ -1586,41 +1586,41 @@ namespace IOS.WebRTC
 		[Export ("initWithHexString:")]
 		NativeHandle Constructor (string hexString);
 
-		// -(instancetype)initWithProfile:(RTCH264Profile)profile level:(RTCH264Level)level;
+		// -(instancetype)initWithProfile:(LKRTCH264Profile)profile level:(LKRTCH264Level)level;
 		[Export ("initWithProfile:level:")]
-		NativeHandle Constructor (RTCH264Profile profile, RTCH264Level level);
+		NativeHandle Constructor (LKRTCH264Profile profile, LKRTCH264Level level);
 	}
 
-	// @interface RTCVideoDecoderFactoryH264 : NSObject <RTCVideoDecoderFactory>
+	// @interface LKRTCVideoDecoderFactoryH264 : NSObject <LKRTCVideoDecoderFactory>
 	[BaseType (typeof(NSObject))]
-	interface RTCVideoDecoderFactoryH264 : IRTCVideoDecoderFactory
+	interface LKRTCVideoDecoderFactoryH264 : ILKRTCVideoDecoderFactory
 	{
 	}
 
-	// @interface RTCVideoDecoderH264 : NSObject <RTCVideoDecoder>
+	// @interface LKRTCVideoDecoderH264 : NSObject <LKRTCVideoDecoder>
 	[BaseType (typeof(NSObject))]
-	interface RTCVideoDecoderH264 : IRTCVideoDecoder
+	interface LKRTCVideoDecoderH264 : ILKRTCVideoDecoder
 	{
 	}
 
-	// @interface RTCVideoEncoderFactoryH264 : NSObject <RTCVideoEncoderFactory>
+	// @interface LKRTCVideoEncoderFactoryH264 : NSObject <LKRTCVideoEncoderFactory>
 	[BaseType (typeof(NSObject))]
-	interface RTCVideoEncoderFactoryH264 : IRTCVideoEncoderFactory
+	interface LKRTCVideoEncoderFactoryH264 : ILKRTCVideoEncoderFactory
 	{
 	}
 
-	// @interface RTCVideoEncoderH264 : NSObject <RTCVideoEncoder>
+	// @interface LKRTCVideoEncoderH264 : NSObject <LKRTCVideoEncoder>
 	[BaseType (typeof(NSObject))]
-	interface RTCVideoEncoderH264 : IRTCVideoEncoder
+	interface LKRTCVideoEncoderH264 : ILKRTCVideoEncoder
 	{
-		// -(instancetype)initWithCodecInfo:(RTCVideoCodecInfo *)codecInfo;
+		// -(instancetype)initWithCodecInfo:(LKRTCVideoCodecInfo *)codecInfo;
 		[Export ("initWithCodecInfo:")]
-		NativeHandle Constructor (RTCVideoCodecInfo codecInfo);
+		NativeHandle Constructor (LKRTCVideoCodecInfo codecInfo);
 	}
 
-	// @interface RTCCVPixelBuffer : NSObject <RTCVideoFrameBuffer>
+	// @interface LKRTCCVPixelBuffer : NSObject <LKRTCVideoFrameBuffer>
 	[BaseType (typeof(NSObject))]
-	interface RTCCVPixelBuffer : IRTCVideoFrameBuffer
+	interface LKRTCCVPixelBuffer : ILKRTCVideoFrameBuffer
 	{
 		// @property (readonly, nonatomic) CVPixelBufferRef _Nonnull pixelBuffer;
 		[Export ("pixelBuffer")]
@@ -1674,32 +1674,32 @@ namespace IOS.WebRTC
 		/****unsafe****/ bool CropAndScaleTo (CVPixelBuffer outputPixelBuffer, [NullAllowed] /****byte* ****/IntPtr tmpBuffer);
 	}
 
-	// @interface RTCCameraPreviewView : UIView
+	// @interface LKRTCCameraPreviewView : UIView
 	[BaseType (typeof(UIView))]
-	interface RTCCameraPreviewView
+	interface LKRTCCameraPreviewView
 	{
 		// @property (nonatomic, strong) AVCaptureSession * captureSession;
 		[Export ("captureSession", ArgumentSemantic.Strong)]
 		AVCaptureSession CaptureSession { get; set; }
 	}
 
-	// @interface RTCDispatcher : NSObject
+	// @interface LKRTCDispatcher : NSObject
 	[BaseType (typeof(NSObject))]
 	[DisableDefaultCtor]
-	interface RTCDispatcher
+	interface LKRTCDispatcher
 	{
-		// +(void)dispatchAsyncOnType:(RTCDispatcherQueueType)dispatchType block:(dispatch_block_t)block;
+		// +(void)dispatchAsyncOnType:(LKRTCDispatcherQueueType)dispatchType block:(dispatch_block_t)block;
 		[Static]
 		[Export ("dispatchAsyncOnType:block:")]
-		void DispatchAsyncOnType (RTCDispatcherQueueType dispatchType, dispatch_block_t block);
+		void DispatchAsyncOnType (LKRTCDispatcherQueueType dispatchType, dispatch_block_t block);
 
-		// +(BOOL)isOnQueueForType:(RTCDispatcherQueueType)dispatchType;
+		// +(BOOL)isOnQueueForType:(LKRTCDispatcherQueueType)dispatchType;
 		[Static]
 		[Export ("isOnQueueForType:")]
-		bool IsOnQueueForType (RTCDispatcherQueueType dispatchType);
+		bool IsOnQueueForType (LKRTCDispatcherQueueType dispatchType);
 	}
 
-	// @interface RTCDevice (UIDevice)
+	// @interface LKRTCDevice (UIDevice)
 	[Category]
 	[BaseType (typeof(UIDevice))]
 	interface UIDevice_RTCDevice
@@ -1711,20 +1711,20 @@ namespace IOS.WebRTC
 		string MachineName { get; }
 	}
 
-	// @interface RTCMediaSource : NSObject
+	// @interface LKRTCMediaSource : NSObject
 	[BaseType (typeof(NSObject))]
 	[DisableDefaultCtor]
-	interface RTCMediaSource
+	interface LKRTCMediaSource
 	{
-		// @property (readonly, nonatomic) RTCSourceState state;
+		// @property (readonly, nonatomic) LKRTCSourceState state;
 		[Export ("state")]
-		RTCSourceState State { get; }
+		LKRTCSourceState State { get; }
 	}
 
-	// @interface RTCAudioSource : RTCMediaSource
-	[BaseType (typeof(RTCMediaSource))]
+	// @interface LKRTCAudioSource : LKRTCMediaSource
+	[BaseType (typeof(LKRTCMediaSource))]
 	[DisableDefaultCtor]
-	interface RTCAudioSource
+	interface LKRTCAudioSource
 	{
 		// @property (assign, nonatomic) double volume;
 		[Export ("volume")]
@@ -1735,19 +1735,19 @@ namespace IOS.WebRTC
     ////[Verify (ConstantsInterfaceAssociation)]
     partial interface Constants
 	{
-		// extern NSString *const _Nonnull kRTCMediaStreamTrackKindAudio;
-		[Field ("kRTCMediaStreamTrackKindAudio", "__Internal")]
-		NSString kRTCMediaStreamTrackKindAudio { get; }
+		// extern NSString *const _Nonnull kLKRTCMediaStreamTrackKindAudio;
+		[Field ("kLKRTCMediaStreamTrackKindAudio", "__Internal")]
+		NSString kLKRTCMediaStreamTrackKindAudio { get; }
 
-		// extern NSString *const _Nonnull kRTCMediaStreamTrackKindVideo;
-		[Field ("kRTCMediaStreamTrackKindVideo", "__Internal")]
-		NSString kRTCMediaStreamTrackKindVideo { get; }
+		// extern NSString *const _Nonnull kLKRTCMediaStreamTrackKindVideo;
+		[Field ("kLKRTCMediaStreamTrackKindVideo", "__Internal")]
+		NSString kLKRTCMediaStreamTrackKindVideo { get; }
 	}
 
-	// @interface RTCMediaStreamTrack : NSObject
+	// @interface LKRTCMediaStreamTrack : NSObject
 	[BaseType (typeof(NSObject))]
 	[DisableDefaultCtor]
-	interface RTCMediaStreamTrack
+	interface LKRTCMediaStreamTrack
 	{
 		// @property (readonly, nonatomic) NSString * _Nonnull kind;
 		[Export ("kind")]
@@ -1761,25 +1761,25 @@ namespace IOS.WebRTC
 		[Export ("isEnabled")]
 		bool IsEnabled { get; set; }
 
-		// @property (readonly, nonatomic) RTCMediaStreamTrackState readyState;
+		// @property (readonly, nonatomic) LKRTCMediaStreamTrackState readyState;
 		[Export ("readyState")]
-		RTCMediaStreamTrackState ReadyState { get; }
+		LKRTCMediaStreamTrackState ReadyState { get; }
 	}
 
-	// @interface RTCAudioTrack : RTCMediaStreamTrack
-	[BaseType (typeof(RTCMediaStreamTrack))]
+	// @interface LKRTCAudioTrack : LKRTCMediaStreamTrack
+	[BaseType (typeof(LKRTCMediaStreamTrack))]
 	[DisableDefaultCtor]
-	interface RTCAudioTrack
+	interface LKRTCAudioTrack
 	{
-		// @property (readonly, nonatomic) RTCAudioSource * _Nonnull source;
+		// @property (readonly, nonatomic) LKRTCAudioSource * _Nonnull source;
 		[Export ("source")]
-		RTCAudioSource Source { get; }
+		LKRTCAudioSource Source { get; }
 	}
 
-	// @interface RTCCertificate : NSObject <NSCopying>
+	// @interface LKRTCCertificate : NSObject <NSCopying>
 	[BaseType (typeof(NSObject))]
 	[DisableDefaultCtor]
-	interface RTCCertificate : INSCopying
+	interface LKRTCCertificate : INSCopying
 	{
 		// @property (readonly, copy, nonatomic) NSString * _Nonnull private_key;
 		[Export ("private_key")]
@@ -1794,17 +1794,17 @@ namespace IOS.WebRTC
 		[DesignatedInitializer]
 		NativeHandle Constructor (string private_key, string certificate);
 
-		// +(RTCCertificate * _Nullable)generateCertificateWithParams:(NSDictionary * _Nonnull)params;
+		// +(LKRTCCertificate * _Nullable)generateCertificateWithParams:(NSDictionary * _Nonnull)params;
 		[Static]
 		[Export ("generateCertificateWithParams:")]
 		[return: NullAllowed]
-		RTCCertificate GenerateCertificateWithParams (NSDictionary @params);
+		LKRTCCertificate GenerateCertificateWithParams (NSDictionary @params);
 	}
 
-	// @interface RTCCryptoOptions : NSObject
+	// @interface LKRTCCryptoOptions : NSObject
 	[BaseType (typeof(NSObject))]
 	[DisableDefaultCtor]
-	interface RTCCryptoOptions
+	interface LKRTCCryptoOptions
 	{
 		// @property (assign, nonatomic) BOOL srtpEnableGcmCryptoSuites;
 		[Export ("srtpEnableGcmCryptoSuites")]
@@ -1828,45 +1828,45 @@ namespace IOS.WebRTC
 		NativeHandle Constructor (bool srtpEnableGcmCryptoSuites, bool srtpEnableAes128Sha1_32CryptoCipher, bool srtpEnableEncryptedRtpHeaderExtensions, bool sframeRequireFrameEncryption);
 	}
 
-	// @interface RTCConfiguration : NSObject
+	// @interface LKRTCConfiguration : NSObject
 	[BaseType (typeof(NSObject))]
-	interface RTCConfiguration
+	interface LKRTCConfiguration
 	{
 		// @property (assign, nonatomic) BOOL enableDscp;
 		[Export ("enableDscp")]
 		bool EnableDscp { get; set; }
 
-		// @property (copy, nonatomic) NSArray<RTCIceServer *> * _Nonnull iceServers;
+		// @property (copy, nonatomic) NSArray<LKRTCIceServer *> * _Nonnull iceServers;
 		[Export ("iceServers", ArgumentSemantic.Copy)]
-		RTCIceServer[] IceServers { get; set; }
+		LKRTCIceServer[] IceServers { get; set; }
 
-		// @property (nonatomic) RTCCertificate * _Nullable certificate;
+		// @property (nonatomic) LKRTCCertificate * _Nullable certificate;
 		[NullAllowed, Export ("certificate", ArgumentSemantic.Assign)]
-		RTCCertificate Certificate { get; set; }
+		LKRTCCertificate Certificate { get; set; }
 
-		// @property (assign, nonatomic) RTCIceTransportPolicy iceTransportPolicy;
+		// @property (assign, nonatomic) LKRTCIceTransportPolicy iceTransportPolicy;
 		[Export ("iceTransportPolicy", ArgumentSemantic.Assign)]
-		RTCIceTransportPolicy IceTransportPolicy { get; set; }
+		LKRTCIceTransportPolicy IceTransportPolicy { get; set; }
 
-		// @property (assign, nonatomic) RTCBundlePolicy bundlePolicy;
+		// @property (assign, nonatomic) LKRTCBundlePolicy bundlePolicy;
 		[Export ("bundlePolicy", ArgumentSemantic.Assign)]
-		RTCBundlePolicy BundlePolicy { get; set; }
+		LKRTCBundlePolicy BundlePolicy { get; set; }
 
-		// @property (assign, nonatomic) RTCRtcpMuxPolicy rtcpMuxPolicy;
+		// @property (assign, nonatomic) LKRTCRtcpMuxPolicy rtcpMuxPolicy;
 		[Export ("rtcpMuxPolicy", ArgumentSemantic.Assign)]
-		RTCRtcpMuxPolicy RtcpMuxPolicy { get; set; }
+		LKRTCRtcpMuxPolicy RtcpMuxPolicy { get; set; }
 
-		// @property (assign, nonatomic) RTCTcpCandidatePolicy tcpCandidatePolicy;
+		// @property (assign, nonatomic) LKRTCTcpCandidatePolicy tcpCandidatePolicy;
 		[Export ("tcpCandidatePolicy", ArgumentSemantic.Assign)]
-		RTCTcpCandidatePolicy TcpCandidatePolicy { get; set; }
+		LKRTCTcpCandidatePolicy TcpCandidatePolicy { get; set; }
 
-		// @property (assign, nonatomic) RTCCandidateNetworkPolicy candidateNetworkPolicy;
+		// @property (assign, nonatomic) LKRTCCandidateNetworkPolicy candidateNetworkPolicy;
 		[Export ("candidateNetworkPolicy", ArgumentSemantic.Assign)]
-		RTCCandidateNetworkPolicy CandidateNetworkPolicy { get; set; }
+		LKRTCCandidateNetworkPolicy CandidateNetworkPolicy { get; set; }
 
-		// @property (assign, nonatomic) RTCContinualGatheringPolicy continualGatheringPolicy;
+		// @property (assign, nonatomic) LKRTCContinualGatheringPolicy continualGatheringPolicy;
 		[Export ("continualGatheringPolicy", ArgumentSemantic.Assign)]
-		RTCContinualGatheringPolicy ContinualGatheringPolicy { get; set; }
+		LKRTCContinualGatheringPolicy ContinualGatheringPolicy { get; set; }
 
 		// @property (assign, nonatomic) BOOL disableIPV6OnWiFi;
 		[Export ("disableIPV6OnWiFi")]
@@ -1896,9 +1896,9 @@ namespace IOS.WebRTC
 		[Export ("iceBackupCandidatePairPingInterval")]
 		int IceBackupCandidatePairPingInterval { get; set; }
 
-		// @property (assign, nonatomic) RTCEncryptionKeyType keyType;
+		// @property (assign, nonatomic) LKRTCEncryptionKeyType keyType;
 		[Export ("keyType", ArgumentSemantic.Assign)]
-		RTCEncryptionKeyType KeyType { get; set; }
+		LKRTCEncryptionKeyType KeyType { get; set; }
 
 		// @property (assign, nonatomic) int iceCandidatePoolSize;
 		[Export ("iceCandidatePoolSize")]
@@ -1920,9 +1920,9 @@ namespace IOS.WebRTC
 		[NullAllowed, Export ("iceCheckMinInterval", ArgumentSemantic.Copy)]
 		NSNumber IceCheckMinInterval { get; set; }
 
-		// @property (assign, nonatomic) RTCSdpSemantics sdpSemantics;
+		// @property (assign, nonatomic) LKRTCSdpSemantics sdpSemantics;
 		[Export ("sdpSemantics", ArgumentSemantic.Assign)]
-		RTCSdpSemantics SdpSemantics { get; set; }
+		LKRTCSdpSemantics SdpSemantics { get; set; }
 
 		// @property (assign, nonatomic) BOOL activeResetSrtpParams;
 		[Export ("activeResetSrtpParams")]
@@ -1932,9 +1932,9 @@ namespace IOS.WebRTC
 		[Export ("allowCodecSwitching")]
 		bool AllowCodecSwitching { get; set; }
 
-		// @property (nonatomic) RTCCryptoOptions * _Nullable cryptoOptions;
+		// @property (nonatomic) LKRTCCryptoOptions * _Nullable cryptoOptions;
 		[NullAllowed, Export ("cryptoOptions", ArgumentSemantic.Assign)]
-		RTCCryptoOptions CryptoOptions { get; set; }
+		LKRTCCryptoOptions CryptoOptions { get; set; }
 
 		// @property (copy, nonatomic) NSString * _Nullable turnLoggingId;
 		[NullAllowed, Export ("turnLoggingId")]
@@ -1977,10 +1977,10 @@ namespace IOS.WebRTC
 		NSNumber IceInactiveTimeout { get; set; }
 	}
 
-	// @interface RTCDataBuffer : NSObject
+	// @interface LKRTCDataBuffer : NSObject
 	[BaseType (typeof(NSObject))]
 	[DisableDefaultCtor]
-	interface RTCDataBuffer
+	interface LKRTCDataBuffer
 	{
 		// @property (readonly, nonatomic) NSData * _Nonnull data;
 		[Export ("data")]
@@ -1995,30 +1995,30 @@ namespace IOS.WebRTC
 		NativeHandle Constructor (NSData data, bool isBinary);
 	}
 
-	// @protocol RTCDataChannelDelegate <NSObject>
+	// @protocol LKRTCDataChannelDelegate <NSObject>
 	[Protocol, Model /****(AutoGeneratedName = true)****/]
 	[BaseType (typeof(NSObject))]
-	interface RTCDataChannelDelegate
+	interface LKRTCDataChannelDelegate
 	{
-		// @required -(void)dataChannelDidChangeState:(RTCDataChannel * _Nonnull)dataChannel;
+		// @required -(void)dataChannelDidChangeState:(LKRTCDataChannel * _Nonnull)dataChannel;
 		[Abstract]
 		[Export ("dataChannelDidChangeState:")]
-		void DataChannelDidChangeState (RTCDataChannel dataChannel);
+		void DataChannelDidChangeState (LKRTCDataChannel dataChannel);
 
-		// @required -(void)dataChannel:(RTCDataChannel * _Nonnull)dataChannel didReceiveMessageWithBuffer:(RTCDataBuffer * _Nonnull)buffer;
+		// @required -(void)dataChannel:(LKRTCDataChannel * _Nonnull)dataChannel didReceiveMessageWithBuffer:(LKRTCDataBuffer * _Nonnull)buffer;
 		[Abstract]
 		[Export ("dataChannel:didReceiveMessageWithBuffer:")]
-		void DidReceiveMessageWithBuffer(RTCDataChannel dataChannel, RTCDataBuffer buffer);
+		void DidReceiveMessageWithBuffer(LKRTCDataChannel dataChannel, LKRTCDataBuffer buffer);
 
-		// @optional -(void)dataChannel:(RTCDataChannel * _Nonnull)dataChannel didChangeBufferedAmount:(uint64_t)amount;
+		// @optional -(void)dataChannel:(LKRTCDataChannel * _Nonnull)dataChannel didChangeBufferedAmount:(uint64_t)amount;
 		[Export ("dataChannel:didChangeBufferedAmount:")]
-		void DidChangeBufferedAmount(RTCDataChannel dataChannel, ulong amount);
+		void DidChangeBufferedAmount(LKRTCDataChannel dataChannel, ulong amount);
 	}
 
-	// @interface RTCDataChannel : NSObject
+	// @interface LKRTCDataChannel : NSObject
 	[BaseType (typeof(NSObject))]
 	[DisableDefaultCtor]
-	interface RTCDataChannel
+	interface LKRTCDataChannel
 	{
 		// @property (readonly, nonatomic) NSString * _Nonnull label;
 		[Export ("label")]
@@ -2060,9 +2060,9 @@ namespace IOS.WebRTC
 		[Export ("channelId")]
 		int ChannelId { get; }
 
-		// @property (readonly, nonatomic) RTCDataChannelState readyState;
+		// @property (readonly, nonatomic) LKRTCDataChannelState readyState;
 		[Export ("readyState")]
-		RTCDataChannelState ReadyState { get; }
+		LKRTCDataChannelState ReadyState { get; }
 
 		// @property (readonly, nonatomic) uint64_t bufferedAmount;
 		[Export ("bufferedAmount")]
@@ -2070,9 +2070,9 @@ namespace IOS.WebRTC
 
 		[Wrap ("WeakDelegate")]
 		[NullAllowed]
-		IRTCDataChannelDelegate Delegate { get; set; }
+		ILKRTCDataChannelDelegate Delegate { get; set; }
 
-		// @property (nonatomic, weak) id<RTCDataChannelDelegate> _Nullable delegate;
+		// @property (nonatomic, weak) id<LKRTCDataChannelDelegate> _Nullable delegate;
 		[NullAllowed, Export ("delegate", ArgumentSemantic.Weak)]
 		NSObject WeakDelegate { get; set; }
 
@@ -2080,14 +2080,14 @@ namespace IOS.WebRTC
 		[Export ("close")]
 		void Close ();
 
-		// -(BOOL)sendData:(RTCDataBuffer * _Nonnull)data;
+		// -(BOOL)sendData:(LKRTCDataBuffer * _Nonnull)data;
 		[Export ("sendData:")]
-		bool SendData (RTCDataBuffer data);
+		bool SendData (LKRTCDataBuffer data);
 	}
 
-	// @interface RTCDataChannelConfiguration : NSObject
+	// @interface LKRTCDataChannelConfiguration : NSObject
 	[BaseType (typeof(NSObject))]
-	interface RTCDataChannelConfiguration
+	interface LKRTCDataChannelConfiguration
 	{
 		// @property (assign, nonatomic) BOOL isOrdered;
 		[Export ("isOrdered")]
@@ -2126,39 +2126,39 @@ namespace IOS.WebRTC
     ////[Verify (ConstantsInterfaceAssociation)]
     partial interface Constants
 	{
-		// extern NSString *const kRTCFieldTrialAudioForceABWENoTWCCKey;
-		[Field ("kRTCFieldTrialAudioForceABWENoTWCCKey", "__Internal")]
-		NSString kRTCFieldTrialAudioForceABWENoTWCCKey { get; }
+		// extern NSString *const kLKRTCFieldTrialAudioForceABWENoTWCCKey;
+		[Field ("kLKRTCFieldTrialAudioForceABWENoTWCCKey", "__Internal")]
+		NSString kLKRTCFieldTrialAudioForceABWENoTWCCKey { get; }
 
-		// extern NSString *const kRTCFieldTrialFlexFec03AdvertisedKey;
-		[Field ("kRTCFieldTrialFlexFec03AdvertisedKey", "__Internal")]
-		NSString kRTCFieldTrialFlexFec03AdvertisedKey { get; }
+		// extern NSString *const kLKRTCFieldTrialFlexFec03AdvertisedKey;
+		[Field ("kLKRTCFieldTrialFlexFec03AdvertisedKey", "__Internal")]
+		NSString kLKRTCFieldTrialFlexFec03AdvertisedKey { get; }
 
-		// extern NSString *const kRTCFieldTrialFlexFec03Key;
-		[Field ("kRTCFieldTrialFlexFec03Key", "__Internal")]
-		NSString kRTCFieldTrialFlexFec03Key { get; }
+		// extern NSString *const kLKRTCFieldTrialFlexFec03Key;
+		[Field ("kLKRTCFieldTrialFlexFec03Key", "__Internal")]
+		NSString kLKRTCFieldTrialFlexFec03Key { get; }
 
-		// extern NSString *const kRTCFieldTrialH264HighProfileKey;
-		[Field ("kRTCFieldTrialH264HighProfileKey", "__Internal")]
-		NSString kRTCFieldTrialH264HighProfileKey { get; }
+		// extern NSString *const kLKRTCFieldTrialH264HighProfileKey;
+		[Field ("kLKRTCFieldTrialH264HighProfileKey", "__Internal")]
+		NSString kLKRTCFieldTrialH264HighProfileKey { get; }
 
-		// extern NSString *const kRTCFieldTrialMinimizeResamplingOnMobileKey;
-		[Field ("kRTCFieldTrialMinimizeResamplingOnMobileKey", "__Internal")]
-		NSString kRTCFieldTrialMinimizeResamplingOnMobileKey { get; }
+		// extern NSString *const kLKRTCFieldTrialMinimizeResamplingOnMobileKey;
+		[Field ("kLKRTCFieldTrialMinimizeResamplingOnMobileKey", "__Internal")]
+		NSString kLKRTCFieldTrialMinimizeResamplingOnMobileKey { get; }
 
-		// extern NSString *const kRTCFieldTrialUseNWPathMonitor;
-		[Field ("kRTCFieldTrialUseNWPathMonitor", "__Internal")]
-		NSString kRTCFieldTrialUseNWPathMonitor { get; }
+		// extern NSString *const kLKRTCFieldTrialUseNWPathMonitor;
+		[Field ("kLKRTCFieldTrialUseNWPathMonitor", "__Internal")]
+		NSString kLKRTCFieldTrialUseNWPathMonitor { get; }
 
-		// extern NSString *const kRTCFieldTrialEnabledValue;
-		[Field ("kRTCFieldTrialEnabledValue", "__Internal")]
-		NSString kRTCFieldTrialEnabledValue { get; }
+		// extern NSString *const kLKRTCFieldTrialEnabledValue;
+		[Field ("kLKRTCFieldTrialEnabledValue", "__Internal")]
+		NSString kLKRTCFieldTrialEnabledValue { get; }
 	}
 
-	// @interface RTCIceCandidate : NSObject
+	// @interface LKRTCIceCandidate : NSObject
 	[BaseType (typeof(NSObject))]
 	[DisableDefaultCtor]
-	interface RTCIceCandidate
+	interface LKRTCIceCandidate
 	{
 		// @property (readonly, nonatomic) NSString * _Nullable sdpMid;
 		[NullAllowed, Export ("sdpMid")]
@@ -2182,9 +2182,9 @@ namespace IOS.WebRTC
 		NativeHandle Constructor (string sdp, int sdpMLineIndex, [NullAllowed] string sdpMid);
 	}
 
-	// @interface RTCIceCandidateErrorEvent : NSObject
+	// @interface LKRTCIceCandidateErrorEvent : NSObject
 	[BaseType (typeof(NSObject))]
-	interface RTCIceCandidateErrorEvent
+	interface LKRTCIceCandidateErrorEvent
 	{
 		// @property (readonly, nonatomic) NSString * _Nonnull address;
 		[Export ("address")]
@@ -2207,10 +2207,10 @@ namespace IOS.WebRTC
 		string ErrorText { get; }
 	}
 
-	// @interface RTCIceServer : NSObject
+	// @interface LKRTCIceServer : NSObject
 	[BaseType (typeof(NSObject))]
 	[DisableDefaultCtor]
-	interface RTCIceServer
+	interface LKRTCIceServer
 	{
 		// @property (readonly, nonatomic) NSArray<NSString *> * _Nonnull urlStrings;
 		[Export ("urlStrings")]
@@ -2224,9 +2224,9 @@ namespace IOS.WebRTC
 		[NullAllowed, Export ("credential")]
 		string Credential { get; }
 
-		// @property (readonly, nonatomic) RTCTlsCertPolicy tlsCertPolicy;
+		// @property (readonly, nonatomic) LKRTCTlsCertPolicy tlsCertPolicy;
 		[Export ("tlsCertPolicy")]
-		RTCTlsCertPolicy TlsCertPolicy { get; }
+		LKRTCTlsCertPolicy TlsCertPolicy { get; }
 
 		// @property (readonly, nonatomic) NSString * _Nullable hostname;
 		[NullAllowed, Export ("hostname")]
@@ -2248,28 +2248,28 @@ namespace IOS.WebRTC
 		[Export ("initWithURLStrings:username:credential:")]
 		NativeHandle Constructor (string[] urlStrings, [NullAllowed] string username, [NullAllowed] string credential);
 
-		// -(instancetype _Nonnull)initWithURLStrings:(NSArray<NSString *> * _Nonnull)urlStrings username:(NSString * _Nullable)username credential:(NSString * _Nullable)credential tlsCertPolicy:(RTCTlsCertPolicy)tlsCertPolicy;
+		// -(instancetype _Nonnull)initWithURLStrings:(NSArray<NSString *> * _Nonnull)urlStrings username:(NSString * _Nullable)username credential:(NSString * _Nullable)credential tlsCertPolicy:(LKRTCTlsCertPolicy)tlsCertPolicy;
 		[Export ("initWithURLStrings:username:credential:tlsCertPolicy:")]
-		NativeHandle Constructor (string[] urlStrings, [NullAllowed] string username, [NullAllowed] string credential, RTCTlsCertPolicy tlsCertPolicy);
+		NativeHandle Constructor (string[] urlStrings, [NullAllowed] string username, [NullAllowed] string credential, LKRTCTlsCertPolicy tlsCertPolicy);
 
-		// -(instancetype _Nonnull)initWithURLStrings:(NSArray<NSString *> * _Nonnull)urlStrings username:(NSString * _Nullable)username credential:(NSString * _Nullable)credential tlsCertPolicy:(RTCTlsCertPolicy)tlsCertPolicy hostname:(NSString * _Nullable)hostname;
+		// -(instancetype _Nonnull)initWithURLStrings:(NSArray<NSString *> * _Nonnull)urlStrings username:(NSString * _Nullable)username credential:(NSString * _Nullable)credential tlsCertPolicy:(LKRTCTlsCertPolicy)tlsCertPolicy hostname:(NSString * _Nullable)hostname;
 		[Export ("initWithURLStrings:username:credential:tlsCertPolicy:hostname:")]
-		NativeHandle Constructor (string[] urlStrings, [NullAllowed] string username, [NullAllowed] string credential, RTCTlsCertPolicy tlsCertPolicy, [NullAllowed] string hostname);
+		NativeHandle Constructor (string[] urlStrings, [NullAllowed] string username, [NullAllowed] string credential, LKRTCTlsCertPolicy tlsCertPolicy, [NullAllowed] string hostname);
 
-		// -(instancetype _Nonnull)initWithURLStrings:(NSArray<NSString *> * _Nonnull)urlStrings username:(NSString * _Nullable)username credential:(NSString * _Nullable)credential tlsCertPolicy:(RTCTlsCertPolicy)tlsCertPolicy hostname:(NSString * _Nullable)hostname tlsAlpnProtocols:(NSArray<NSString *> * _Nonnull)tlsAlpnProtocols;
+		// -(instancetype _Nonnull)initWithURLStrings:(NSArray<NSString *> * _Nonnull)urlStrings username:(NSString * _Nullable)username credential:(NSString * _Nullable)credential tlsCertPolicy:(LKRTCTlsCertPolicy)tlsCertPolicy hostname:(NSString * _Nullable)hostname tlsAlpnProtocols:(NSArray<NSString *> * _Nonnull)tlsAlpnProtocols;
 		[Export ("initWithURLStrings:username:credential:tlsCertPolicy:hostname:tlsAlpnProtocols:")]
-		NativeHandle Constructor (string[] urlStrings, [NullAllowed] string username, [NullAllowed] string credential, RTCTlsCertPolicy tlsCertPolicy, [NullAllowed] string hostname, string[] tlsAlpnProtocols);
+		NativeHandle Constructor (string[] urlStrings, [NullAllowed] string username, [NullAllowed] string credential, LKRTCTlsCertPolicy tlsCertPolicy, [NullAllowed] string hostname, string[] tlsAlpnProtocols);
 
-		// -(instancetype _Nonnull)initWithURLStrings:(NSArray<NSString *> * _Nonnull)urlStrings username:(NSString * _Nullable)username credential:(NSString * _Nullable)credential tlsCertPolicy:(RTCTlsCertPolicy)tlsCertPolicy hostname:(NSString * _Nullable)hostname tlsAlpnProtocols:(NSArray<NSString *> * _Nullable)tlsAlpnProtocols tlsEllipticCurves:(NSArray<NSString *> * _Nullable)tlsEllipticCurves __attribute__((objc_designated_initializer));
+		// -(instancetype _Nonnull)initWithURLStrings:(NSArray<NSString *> * _Nonnull)urlStrings username:(NSString * _Nullable)username credential:(NSString * _Nullable)credential tlsCertPolicy:(LKRTCTlsCertPolicy)tlsCertPolicy hostname:(NSString * _Nullable)hostname tlsAlpnProtocols:(NSArray<NSString *> * _Nullable)tlsAlpnProtocols tlsEllipticCurves:(NSArray<NSString *> * _Nullable)tlsEllipticCurves __attribute__((objc_designated_initializer));
 		[Export ("initWithURLStrings:username:credential:tlsCertPolicy:hostname:tlsAlpnProtocols:tlsEllipticCurves:")]
 		[DesignatedInitializer]
-		NativeHandle Constructor (string[] urlStrings, [NullAllowed] string username, [NullAllowed] string credential, RTCTlsCertPolicy tlsCertPolicy, [NullAllowed] string hostname, [NullAllowed] string[] tlsAlpnProtocols, [NullAllowed] string[] tlsEllipticCurves);
+		NativeHandle Constructor (string[] urlStrings, [NullAllowed] string username, [NullAllowed] string credential, LKRTCTlsCertPolicy tlsCertPolicy, [NullAllowed] string hostname, [NullAllowed] string[] tlsAlpnProtocols, [NullAllowed] string[] tlsEllipticCurves);
 	}
 
-	// @interface RTCLegacyStatsReport : NSObject
+	// @interface LKRTCLegacyStatsReport : NSObject
 	[BaseType (typeof(NSObject))]
 	[DisableDefaultCtor]
-	interface RTCLegacyStatsReport
+	interface LKRTCLegacyStatsReport
 		: INativeObject
 	{
 		// @property (readonly, nonatomic) CFTimeInterval timestamp;
@@ -2293,39 +2293,39 @@ namespace IOS.WebRTC
     ////[Verify (ConstantsInterfaceAssociation)]
     partial interface Constants
 	{
-		// extern NSString *const _Nonnull kRTCMediaConstraintsAudioNetworkAdaptorConfig;
-		[Field ("kRTCMediaConstraintsAudioNetworkAdaptorConfig", "__Internal")]
-		NSString kRTCMediaConstraintsAudioNetworkAdaptorConfig { get; }
+		// extern NSString *const _Nonnull kLKRTCMediaConstraintsAudioNetworkAdaptorConfig;
+		[Field ("kLKRTCMediaConstraintsAudioNetworkAdaptorConfig", "__Internal")]
+		NSString kLKRTCMediaConstraintsAudioNetworkAdaptorConfig { get; }
 
-		// extern NSString *const _Nonnull kRTCMediaConstraintsIceRestart;
-		[Field ("kRTCMediaConstraintsIceRestart", "__Internal")]
-		NSString kRTCMediaConstraintsIceRestart { get; }
+		// extern NSString *const _Nonnull kLKRTCMediaConstraintsIceRestart;
+		[Field ("kLKRTCMediaConstraintsIceRestart", "__Internal")]
+		NSString kLKRTCMediaConstraintsIceRestart { get; }
 
-		// extern NSString *const _Nonnull kRTCMediaConstraintsOfferToReceiveAudio;
-		[Field ("kRTCMediaConstraintsOfferToReceiveAudio", "__Internal")]
-		NSString kRTCMediaConstraintsOfferToReceiveAudio { get; }
+		// extern NSString *const _Nonnull kLKRTCMediaConstraintsOfferToReceiveAudio;
+		[Field ("kLKRTCMediaConstraintsOfferToReceiveAudio", "__Internal")]
+		NSString kLKRTCMediaConstraintsOfferToReceiveAudio { get; }
 
-		// extern NSString *const _Nonnull kRTCMediaConstraintsOfferToReceiveVideo;
-		[Field ("kRTCMediaConstraintsOfferToReceiveVideo", "__Internal")]
-		NSString kRTCMediaConstraintsOfferToReceiveVideo { get; }
+		// extern NSString *const _Nonnull kLKRTCMediaConstraintsOfferToReceiveVideo;
+		[Field ("kLKRTCMediaConstraintsOfferToReceiveVideo", "__Internal")]
+		NSString kLKRTCMediaConstraintsOfferToReceiveVideo { get; }
 
-		// extern NSString *const _Nonnull kRTCMediaConstraintsVoiceActivityDetection;
-		[Field ("kRTCMediaConstraintsVoiceActivityDetection", "__Internal")]
-		NSString kRTCMediaConstraintsVoiceActivityDetection { get; }
+		// extern NSString *const _Nonnull kLKRTCMediaConstraintsVoiceActivityDetection;
+		[Field ("kLKRTCMediaConstraintsVoiceActivityDetection", "__Internal")]
+		NSString kLKRTCMediaConstraintsVoiceActivityDetection { get; }
 
-		// extern NSString *const _Nonnull kRTCMediaConstraintsValueTrue;
-		[Field ("kRTCMediaConstraintsValueTrue", "__Internal")]
-		NSString kRTCMediaConstraintsValueTrue { get; }
+		// extern NSString *const _Nonnull kLKRTCMediaConstraintsValueTrue;
+		[Field ("kLKRTCMediaConstraintsValueTrue", "__Internal")]
+		NSString kLKRTCMediaConstraintsValueTrue { get; }
 
-		// extern NSString *const _Nonnull kRTCMediaConstraintsValueFalse;
-		[Field ("kRTCMediaConstraintsValueFalse", "__Internal")]
-		NSString kRTCMediaConstraintsValueFalse { get; }
+		// extern NSString *const _Nonnull kLKRTCMediaConstraintsValueFalse;
+		[Field ("kLKRTCMediaConstraintsValueFalse", "__Internal")]
+		NSString kLKRTCMediaConstraintsValueFalse { get; }
 	}
 
-	// @interface RTCMediaConstraints : NSObject
+	// @interface LKRTCMediaConstraints : NSObject
 	[BaseType (typeof(NSObject))]
 	[DisableDefaultCtor]
-	interface RTCMediaConstraints
+	interface LKRTCMediaConstraints
 	{
 		// -(instancetype _Nonnull)initWithMandatoryConstraints:(NSDictionary<NSString *,NSString *> * _Nullable)mandatory optionalConstraints:(NSDictionary<NSString *,NSString *> * _Nullable)optional __attribute__((objc_designated_initializer));
 		[Export ("initWithMandatoryConstraints:optionalConstraints:")]
@@ -2333,44 +2333,44 @@ namespace IOS.WebRTC
 		NativeHandle Constructor ([NullAllowed] NSDictionary<NSString, NSString> mandatory, [NullAllowed] NSDictionary<NSString, NSString> optional);
 	}
 
-	// @interface RTCMediaStream : NSObject
+	// @interface LKRTCMediaStream : NSObject
 	[BaseType (typeof(NSObject))]
 	[DisableDefaultCtor]
-	interface RTCMediaStream
+	interface LKRTCMediaStream
 	{
-		// @property (readonly, nonatomic, strong) NSArray<RTCAudioTrack *> * _Nonnull audioTracks;
+		// @property (readonly, nonatomic, strong) NSArray<LKRTCAudioTrack *> * _Nonnull audioTracks;
 		[Export ("audioTracks", ArgumentSemantic.Strong)]
-		RTCAudioTrack[] AudioTracks { get; }
+		LKRTCAudioTrack[] AudioTracks { get; }
 
-		// @property (readonly, nonatomic, strong) NSArray<RTCVideoTrack *> * _Nonnull videoTracks;
+		// @property (readonly, nonatomic, strong) NSArray<LKRTCVideoTrack *> * _Nonnull videoTracks;
 		[Export ("videoTracks", ArgumentSemantic.Strong)]
-		RTCVideoTrack[] VideoTracks { get; }
+		LKRTCVideoTrack[] VideoTracks { get; }
 
 		// @property (readonly, nonatomic) NSString * _Nonnull streamId;
 		[Export ("streamId")]
 		string StreamId { get; }
 
-		// -(void)addAudioTrack:(RTCAudioTrack * _Nonnull)audioTrack;
+		// -(void)addAudioTrack:(LKRTCAudioTrack * _Nonnull)audioTrack;
 		[Export ("addAudioTrack:")]
-		void AddAudioTrack (RTCAudioTrack audioTrack);
+		void AddAudioTrack (LKRTCAudioTrack audioTrack);
 
-		// -(void)addVideoTrack:(RTCVideoTrack * _Nonnull)videoTrack;
+		// -(void)addVideoTrack:(LKRTCVideoTrack * _Nonnull)videoTrack;
 		[Export ("addVideoTrack:")]
-		void AddVideoTrack (RTCVideoTrack videoTrack);
+		void AddVideoTrack (LKRTCVideoTrack videoTrack);
 
-		// -(void)removeAudioTrack:(RTCAudioTrack * _Nonnull)audioTrack;
+		// -(void)removeAudioTrack:(LKRTCAudioTrack * _Nonnull)audioTrack;
 		[Export ("removeAudioTrack:")]
-		void RemoveAudioTrack (RTCAudioTrack audioTrack);
+		void RemoveAudioTrack (LKRTCAudioTrack audioTrack);
 
-		// -(void)removeVideoTrack:(RTCVideoTrack * _Nonnull)videoTrack;
+		// -(void)removeVideoTrack:(LKRTCVideoTrack * _Nonnull)videoTrack;
 		[Export ("removeVideoTrack:")]
-		void RemoveVideoTrack (RTCVideoTrack videoTrack);
+		void RemoveVideoTrack (LKRTCVideoTrack videoTrack);
 	}
 
-	// @interface RTCMetricsSampleInfo : NSObject
+	// @interface LKRTCMetricsSampleInfo : NSObject
 	[BaseType (typeof(NSObject))]
 	[DisableDefaultCtor]
-	interface RTCMetricsSampleInfo
+	interface LKRTCMetricsSampleInfo
 	{
 		// @property (readonly, nonatomic) NSString * _Nonnull name;
 		[Export ("name")]
@@ -2398,241 +2398,241 @@ namespace IOS.WebRTC
     partial interface Constants
 	{
 		/*
-		// extern NSString *const _Nonnull kRTCPeerConnectionErrorDomain;
-		[Field ("kRTCPeerConnectionErrorDomain", "__Internal")]
-		NSString kRTCPeerConnectionErrorDomain { get; }
+		// extern NSString *const _Nonnull kLKRTCPeerConnectionErrorDomain;
+		[Field ("kLKRTCPeerConnectionErrorDomain", "__Internal")]
+		NSString kLKRTCPeerConnectionErrorDomain { get; }
 		*/
 		
 		/*
-		// extern const int kRTCSessionDescriptionErrorCode;
-		[Field ("kRTCSessionDescriptionErrorCode", "__Internal")]
-		int kRTCSessionDescriptionErrorCode { get; }
+		// extern const int kLKRTCSessionDescriptionErrorCode;
+		[Field ("kLKRTCSessionDescriptionErrorCode", "__Internal")]
+		int kLKRTCSessionDescriptionErrorCode { get; }
 		*/
 	}
 
-	// typedef void (^RTCCreateSessionDescriptionCompletionHandler)(RTCSessionDescription * _Nullable, NSError * _Nullable);
-	delegate void RTCCreateSessionDescriptionCompletionHandler ([NullAllowed] RTCSessionDescription arg0, [NullAllowed] NSError arg1);
+	// typedef void (^LKRTCCreateSessionDescriptionCompletionHandler)(LKRTCSessionDescription * _Nullable, NSError * _Nullable);
+	delegate void LKRTCCreateSessionDescriptionCompletionHandler ([NullAllowed] LKRTCSessionDescription arg0, [NullAllowed] NSError arg1);
 
-	// typedef void (^RTCSetSessionDescriptionCompletionHandler)(NSError * _Nullable);
-	delegate void RTCSetSessionDescriptionCompletionHandler ([NullAllowed] NSError arg0);
+	// typedef void (^LKRTCSetSessionDescriptionCompletionHandler)(NSError * _Nullable);
+	delegate void LKRTCSetSessionDescriptionCompletionHandler ([NullAllowed] NSError arg0);
 
-	// @protocol RTCPeerConnectionDelegate <NSObject>
+	// @protocol LKRTCPeerConnectionDelegate <NSObject>
 	[Protocol, Model /****(AutoGeneratedName = true)****/]
 	[BaseType (typeof(NSObject))]
-	interface RTCPeerConnectionDelegate
+	interface LKRTCPeerConnectionDelegate
 	{
-		// @required -(void)peerConnection:(RTCPeerConnection * _Nonnull)peerConnection didChangeSignalingState:(RTCSignalingState)stateChanged;
+		// @required -(void)peerConnection:(LKRTCPeerConnection * _Nonnull)peerConnection didChangeSignalingState:(LKRTCSignalingState)stateChanged;
 		[Abstract]
 		[Export ("peerConnection:didChangeSignalingState:")]
-		void DidChangeSignalingState(RTCPeerConnection peerConnection, RTCSignalingState stateChanged);
+		void DidChangeSignalingState(LKRTCPeerConnection peerConnection, LKRTCSignalingState stateChanged);
 
-		// @required -(void)peerConnection:(RTCPeerConnection * _Nonnull)peerConnection didAddStream:(RTCMediaStream * _Nonnull)stream;
+		// @required -(void)peerConnection:(LKRTCPeerConnection * _Nonnull)peerConnection didAddStream:(LKRTCMediaStream * _Nonnull)stream;
 		[Abstract]
 		[Export ("peerConnection:didAddStream:")]
-		void DidAddStream(RTCPeerConnection peerConnection, RTCMediaStream stream);
+		void DidAddStream(LKRTCPeerConnection peerConnection, LKRTCMediaStream stream);
 
-		// @required -(void)peerConnection:(RTCPeerConnection * _Nonnull)peerConnection didRemoveStream:(RTCMediaStream * _Nonnull)stream;
+		// @required -(void)peerConnection:(LKRTCPeerConnection * _Nonnull)peerConnection didRemoveStream:(LKRTCMediaStream * _Nonnull)stream;
 		[Abstract]
 		[Export ("peerConnection:didRemoveStream:")]
-		void DidRemoveStream(RTCPeerConnection peerConnection, RTCMediaStream stream);
+		void DidRemoveStream(LKRTCPeerConnection peerConnection, LKRTCMediaStream stream);
 
-		// @required -(void)peerConnectionShouldNegotiate:(RTCPeerConnection * _Nonnull)peerConnection;
+		// @required -(void)peerConnectionShouldNegotiate:(LKRTCPeerConnection * _Nonnull)peerConnection;
 		[Abstract]
 		[Export ("peerConnectionShouldNegotiate:")]
-		void ShouldNegotiate (RTCPeerConnection peerConnection);
+		void ShouldNegotiate (LKRTCPeerConnection peerConnection);
 
-		// @required -(void)peerConnection:(RTCPeerConnection * _Nonnull)peerConnection didChangeIceConnectionState:(RTCIceConnectionState)newState;
+		// @required -(void)peerConnection:(LKRTCPeerConnection * _Nonnull)peerConnection didChangeIceConnectionState:(LKRTCIceConnectionState)newState;
 		[Abstract]
 		[Export ("peerConnection:didChangeIceConnectionState:")]
-		void DidChangeIceConnectionState(RTCPeerConnection peerConnection, RTCIceConnectionState newState);
+		void DidChangeIceConnectionState(LKRTCPeerConnection peerConnection, LKRTCIceConnectionState newState);
 
-		// @required -(void)peerConnection:(RTCPeerConnection * _Nonnull)peerConnection didChangeIceGatheringState:(RTCIceGatheringState)newState;
+		// @required -(void)peerConnection:(LKRTCPeerConnection * _Nonnull)peerConnection didChangeIceGatheringState:(LKRTCIceGatheringState)newState;
 		[Abstract]
 		[Export ("peerConnection:didChangeIceGatheringState:")]
-		void DidChangeIceGatheringState(RTCPeerConnection peerConnection, RTCIceGatheringState newState);
+		void DidChangeIceGatheringState(LKRTCPeerConnection peerConnection, LKRTCIceGatheringState newState);
 
-		// @required -(void)peerConnection:(RTCPeerConnection * _Nonnull)peerConnection didGenerateIceCandidate:(RTCIceCandidate * _Nonnull)candidate;
+		// @required -(void)peerConnection:(LKRTCPeerConnection * _Nonnull)peerConnection didGenerateIceCandidate:(LKRTCIceCandidate * _Nonnull)candidate;
 		[Abstract]
 		[Export ("peerConnection:didGenerateIceCandidate:")]
-		void DidGenerateIceCandidate(RTCPeerConnection peerConnection, RTCIceCandidate candidate);
+		void DidGenerateIceCandidate(LKRTCPeerConnection peerConnection, LKRTCIceCandidate candidate);
 
-		// @required -(void)peerConnection:(RTCPeerConnection * _Nonnull)peerConnection didRemoveIceCandidates:(NSArray<RTCIceCandidate *> * _Nonnull)candidates;
+		// @required -(void)peerConnection:(LKRTCPeerConnection * _Nonnull)peerConnection didRemoveIceCandidates:(NSArray<LKRTCIceCandidate *> * _Nonnull)candidates;
 		[Abstract]
 		[Export ("peerConnection:didRemoveIceCandidates:")]
-		void DidRemoveIceCandidates(RTCPeerConnection peerConnection, RTCIceCandidate[] candidates);
+		void DidRemoveIceCandidates(LKRTCPeerConnection peerConnection, LKRTCIceCandidate[] candidates);
 
-		// @required -(void)peerConnection:(RTCPeerConnection * _Nonnull)peerConnection didOpenDataChannel:(RTCDataChannel * _Nonnull)dataChannel;
+		// @required -(void)peerConnection:(LKRTCPeerConnection * _Nonnull)peerConnection didOpenDataChannel:(LKRTCDataChannel * _Nonnull)dataChannel;
 		[Abstract]
 		[Export ("peerConnection:didOpenDataChannel:")]
-		void DidOpenDataChannel(RTCPeerConnection peerConnection, RTCDataChannel dataChannel);
+		void DidOpenDataChannel(LKRTCPeerConnection peerConnection, LKRTCDataChannel dataChannel);
 
-		// @optional -(void)peerConnection:(RTCPeerConnection * _Nonnull)peerConnection didChangeStandardizedIceConnectionState:(RTCIceConnectionState)newState;
+		// @optional -(void)peerConnection:(LKRTCPeerConnection * _Nonnull)peerConnection didChangeStandardizedIceConnectionState:(LKRTCIceConnectionState)newState;
 		[Export ("peerConnection:didChangeStandardizedIceConnectionState:")]
-		void DidChangeStandardizedIceConnectionState(RTCPeerConnection peerConnection, RTCIceConnectionState newState);
+		void DidChangeStandardizedIceConnectionState(LKRTCPeerConnection peerConnection, LKRTCIceConnectionState newState);
 
-		// @optional -(void)peerConnection:(RTCPeerConnection * _Nonnull)peerConnection didChangeConnectionState:(RTCPeerConnectionState)newState;
+		// @optional -(void)peerConnection:(LKRTCPeerConnection * _Nonnull)peerConnection didChangeConnectionState:(LKRTCPeerConnectionState)newState;
 		[Abstract]		
 		[Export ("peerConnection:didChangeConnectionState:")]
-		void DidChangeConnectionState(RTCPeerConnection peerConnection, RTCPeerConnectionState newState);
+		void DidChangeConnectionState(LKRTCPeerConnection peerConnection, LKRTCPeerConnectionState newState);
 
-		// @optional -(void)peerConnection:(RTCPeerConnection * _Nonnull)peerConnection didStartReceivingOnTransceiver:(RTCRtpTransceiver * _Nonnull)transceiver;
+		// @optional -(void)peerConnection:(LKRTCPeerConnection * _Nonnull)peerConnection didStartReceivingOnTransceiver:(LKRTCRtpTransceiver * _Nonnull)transceiver;
 		[Export ("peerConnection:didStartReceivingOnTransceiver:")]
-		void DidStartReceivingOnTransceiver(RTCPeerConnection peerConnection, RTCRtpTransceiver transceiver);
+		void DidStartReceivingOnTransceiver(LKRTCPeerConnection peerConnection, LKRTCRtpTransceiver transceiver);
 
-		// @optional -(void)peerConnection:(RTCPeerConnection * _Nonnull)peerConnection didAddReceiver:(RTCRtpReceiver * _Nonnull)rtpReceiver streams:(NSArray<RTCMediaStream *> * _Nonnull)mediaStreams;
+		// @optional -(void)peerConnection:(LKRTCPeerConnection * _Nonnull)peerConnection didAddReceiver:(LKRTCRtpReceiver * _Nonnull)rtpReceiver streams:(NSArray<LKRTCMediaStream *> * _Nonnull)mediaStreams;
 		[Export ("peerConnection:didAddReceiver:streams:")]
-		void DidAddReceiver(RTCPeerConnection peerConnection, RTCRtpReceiver rtpReceiver, RTCMediaStream[] mediaStreams);
+		void DidAddReceiver(LKRTCPeerConnection peerConnection, LKRTCRtpReceiver rtpReceiver, LKRTCMediaStream[] mediaStreams);
 
-		// @optional -(void)peerConnection:(RTCPeerConnection * _Nonnull)peerConnection didRemoveReceiver:(RTCRtpReceiver * _Nonnull)rtpReceiver;
+		// @optional -(void)peerConnection:(LKRTCPeerConnection * _Nonnull)peerConnection didRemoveReceiver:(LKRTCRtpReceiver * _Nonnull)rtpReceiver;
 		[Export ("peerConnection:didRemoveReceiver:")]
-		void DidRemoveReceiver(RTCPeerConnection peerConnection, RTCRtpReceiver rtpReceiver);
+		void DidRemoveReceiver(LKRTCPeerConnection peerConnection, LKRTCRtpReceiver rtpReceiver);
 
-		// @optional -(void)peerConnection:(RTCPeerConnection * _Nonnull)peerConnection didChangeLocalCandidate:(RTCIceCandidate * _Nonnull)local remoteCandidate:(RTCIceCandidate * _Nonnull)remote lastReceivedMs:(int)lastDataReceivedMs changeReason:(NSString * _Nonnull)reason;
+		// @optional -(void)peerConnection:(LKRTCPeerConnection * _Nonnull)peerConnection didChangeLocalCandidate:(LKRTCIceCandidate * _Nonnull)local remoteCandidate:(LKRTCIceCandidate * _Nonnull)remote lastReceivedMs:(int)lastDataReceivedMs changeReason:(NSString * _Nonnull)reason;
 		[Export ("peerConnection:didChangeLocalCandidate:remoteCandidate:lastReceivedMs:changeReason:")]
-		void DidChangeLocalCandidate(RTCPeerConnection peerConnection, RTCIceCandidate local, RTCIceCandidate remote, int lastDataReceivedMs, string reason);
+		void DidChangeLocalCandidate(LKRTCPeerConnection peerConnection, LKRTCIceCandidate local, LKRTCIceCandidate remote, int lastDataReceivedMs, string reason);
 
-		// @optional -(void)peerConnection:(RTCPeerConnection * _Nonnull)peerConnection didFailToGatherIceCandidate:(RTCIceCandidateErrorEvent * _Nonnull)event;
+		// @optional -(void)peerConnection:(LKRTCPeerConnection * _Nonnull)peerConnection didFailToGatherIceCandidate:(LKRTCIceCandidateErrorEvent * _Nonnull)event;
 		[Export ("peerConnection:didFailToGatherIceCandidate:")]
-		void DidFailToGatherIceCandidate(RTCPeerConnection peerConnection, RTCIceCandidateErrorEvent @event);
+		void DidFailToGatherIceCandidate(LKRTCPeerConnection peerConnection, LKRTCIceCandidateErrorEvent @event);
 	}
 
-	// @interface RTCPeerConnection : NSObject
+	// @interface LKRTCPeerConnection : NSObject
 	[BaseType (typeof(NSObject))]
 	[DisableDefaultCtor]
-	interface RTCPeerConnection
+	interface LKRTCPeerConnection
 	{
 		[Wrap ("WeakDelegate")]
 		[NullAllowed]
-		IRTCPeerConnectionDelegate Delegate { get; set; }
+		ILKRTCPeerConnectionDelegate Delegate { get; set; }
 
-		// @property (nonatomic, weak) id<RTCPeerConnectionDelegate> _Nullable delegate;
+		// @property (nonatomic, weak) id<LKRTCPeerConnectionDelegate> _Nullable delegate;
 		[NullAllowed, Export ("delegate", ArgumentSemantic.Weak)]
 		NSObject WeakDelegate { get; set; }
 
-		// @property (readonly, nonatomic) NSArray<RTCMediaStream *> * _Nonnull localStreams;
+		// @property (readonly, nonatomic) NSArray<LKRTCMediaStream *> * _Nonnull localStreams;
 		[Export ("localStreams")]
-		RTCMediaStream[] LocalStreams { get; }
+		LKRTCMediaStream[] LocalStreams { get; }
 
-		// @property (readonly, nonatomic) RTCSessionDescription * _Nullable localDescription;
+		// @property (readonly, nonatomic) LKRTCSessionDescription * _Nullable localDescription;
 		[NullAllowed, Export ("localDescription")]
-		RTCSessionDescription LocalDescription { get; }
+		LKRTCSessionDescription LocalDescription { get; }
 
-		// @property (readonly, nonatomic) RTCSessionDescription * _Nullable remoteDescription;
+		// @property (readonly, nonatomic) LKRTCSessionDescription * _Nullable remoteDescription;
 		[NullAllowed, Export ("remoteDescription")]
-		RTCSessionDescription RemoteDescription { get; }
+		LKRTCSessionDescription RemoteDescription { get; }
 
-		// @property (readonly, nonatomic) RTCSignalingState signalingState;
+		// @property (readonly, nonatomic) LKRTCSignalingState signalingState;
 		[Export ("signalingState")]
-		RTCSignalingState SignalingState { get; }
+		LKRTCSignalingState SignalingState { get; }
 
-		// @property (readonly, nonatomic) RTCIceConnectionState iceConnectionState;
+		// @property (readonly, nonatomic) LKRTCIceConnectionState iceConnectionState;
 		[Export ("iceConnectionState")]
-		RTCIceConnectionState IceConnectionState { get; }
+		LKRTCIceConnectionState IceConnectionState { get; }
 
-		// @property (readonly, nonatomic) RTCPeerConnectionState connectionState;
+		// @property (readonly, nonatomic) LKRTCPeerConnectionState connectionState;
 		[Export ("connectionState")]
-		RTCPeerConnectionState ConnectionState { get; }
+		LKRTCPeerConnectionState ConnectionState { get; }
 
-		// @property (readonly, nonatomic) RTCIceGatheringState iceGatheringState;
+		// @property (readonly, nonatomic) LKRTCIceGatheringState iceGatheringState;
 		[Export ("iceGatheringState")]
-		RTCIceGatheringState IceGatheringState { get; }
+		LKRTCIceGatheringState IceGatheringState { get; }
 
-		// @property (readonly, copy, nonatomic) RTCConfiguration * _Nonnull configuration;
+		// @property (readonly, copy, nonatomic) LKRTCConfiguration * _Nonnull configuration;
 		[Export ("configuration", ArgumentSemantic.Copy)]
-		RTCConfiguration Configuration { get; }
+		LKRTCConfiguration Configuration { get; }
 
-		// @property (readonly, nonatomic) NSArray<RTCRtpSender *> * _Nonnull senders;
+		// @property (readonly, nonatomic) NSArray<LKRTCRtpSender *> * _Nonnull senders;
 		[Export ("senders")]
-		RTCRtpSender[] Senders { get; }
+		LKRTCRtpSender[] Senders { get; }
 
-		// @property (readonly, nonatomic) NSArray<RTCRtpReceiver *> * _Nonnull receivers;
+		// @property (readonly, nonatomic) NSArray<LKRTCRtpReceiver *> * _Nonnull receivers;
 		[Export ("receivers")]
-		RTCRtpReceiver[] Receivers { get; }
+		LKRTCRtpReceiver[] Receivers { get; }
 
-		// @property (readonly, nonatomic) NSArray<RTCRtpTransceiver *> * _Nonnull transceivers;
+		// @property (readonly, nonatomic) NSArray<LKRTCRtpTransceiver *> * _Nonnull transceivers;
 		[Export ("transceivers")]
-		RTCRtpTransceiver[] Transceivers { get; }
+		LKRTCRtpTransceiver[] Transceivers { get; }
 
-		// -(BOOL)setConfiguration:(RTCConfiguration * _Nonnull)configuration;
+		// -(BOOL)setConfiguration:(LKRTCConfiguration * _Nonnull)configuration;
 		[Export ("setConfiguration:")]
-		bool SetConfiguration (RTCConfiguration configuration);
+		bool SetConfiguration (LKRTCConfiguration configuration);
 
 		// -(void)close;
 		[Export ("close")]
 		void Close ();
 
-		// -(void)addIceCandidate:(RTCIceCandidate * _Nonnull)candidate __attribute__((deprecated("Please use addIceCandidate:completionHandler: instead")));
+		// -(void)addIceCandidate:(LKRTCIceCandidate * _Nonnull)candidate __attribute__((deprecated("Please use addIceCandidate:completionHandler: instead")));
 		[Export ("addIceCandidate:")]
-		void AddIceCandidate (RTCIceCandidate candidate);
+		void AddIceCandidate (LKRTCIceCandidate candidate);
 
-		// -(void)addIceCandidate:(RTCIceCandidate * _Nonnull)candidate completionHandler:(void (^ _Nonnull)(NSError * _Nullable))completionHandler;
+		// -(void)addIceCandidate:(LKRTCIceCandidate * _Nonnull)candidate completionHandler:(void (^ _Nonnull)(NSError * _Nullable))completionHandler;
 		[Export ("addIceCandidate:completionHandler:")]
-		void AddIceCandidate (RTCIceCandidate candidate, Action<NSError> completionHandler);
+		void AddIceCandidate (LKRTCIceCandidate candidate, Action<NSError> completionHandler);
 
-		// -(void)removeIceCandidates:(NSArray<RTCIceCandidate *> * _Nonnull)candidates;
+		// -(void)removeIceCandidates:(NSArray<LKRTCIceCandidate *> * _Nonnull)candidates;
 		[Export ("removeIceCandidates:")]
-		void RemoveIceCandidates (RTCIceCandidate[] candidates);
+		void RemoveIceCandidates (LKRTCIceCandidate[] candidates);
 
-		// -(void)addStream:(RTCMediaStream * _Nonnull)stream;
+		// -(void)addStream:(LKRTCMediaStream * _Nonnull)stream;
 		[Export ("addStream:")]
-		void AddStream (RTCMediaStream stream);
+		void AddStream (LKRTCMediaStream stream);
 
-		// -(void)removeStream:(RTCMediaStream * _Nonnull)stream;
+		// -(void)removeStream:(LKRTCMediaStream * _Nonnull)stream;
 		[Export ("removeStream:")]
-		void RemoveStream (RTCMediaStream stream);
+		void RemoveStream (LKRTCMediaStream stream);
 
-		// -(RTCRtpSender * _Nullable)addTrack:(RTCMediaStreamTrack * _Nonnull)track streamIds:(NSArray<NSString *> * _Nonnull)streamIds;
+		// -(LKRTCRtpSender * _Nullable)addTrack:(LKRTCMediaStreamTrack * _Nonnull)track streamIds:(NSArray<NSString *> * _Nonnull)streamIds;
 		[Export ("addTrack:streamIds:")]
 		[return: NullAllowed]
-		RTCRtpSender AddTrack (RTCMediaStreamTrack track, string[] streamIds);
+		LKRTCRtpSender AddTrack (LKRTCMediaStreamTrack track, string[] streamIds);
 
-		// -(BOOL)removeTrack:(RTCRtpSender * _Nonnull)sender;
+		// -(BOOL)removeTrack:(LKRTCRtpSender * _Nonnull)sender;
 		[Export ("removeTrack:")]
-		bool RemoveTrack (RTCRtpSender sender);
+		bool RemoveTrack (LKRTCRtpSender sender);
 
-		// -(RTCRtpTransceiver * _Nullable)addTransceiverWithTrack:(RTCMediaStreamTrack * _Nonnull)track;
+		// -(LKRTCRtpTransceiver * _Nullable)addTransceiverWithTrack:(LKRTCMediaStreamTrack * _Nonnull)track;
 		[Export ("addTransceiverWithTrack:")]
 		[return: NullAllowed]
-		RTCRtpTransceiver AddTransceiverWithTrack (RTCMediaStreamTrack track);
+		LKRTCRtpTransceiver AddTransceiverWithTrack (LKRTCMediaStreamTrack track);
 
-		// -(RTCRtpTransceiver * _Nullable)addTransceiverWithTrack:(RTCMediaStreamTrack * _Nonnull)track init:(RTCRtpTransceiverInit * _Nonnull)init;
+		// -(LKRTCRtpTransceiver * _Nullable)addTransceiverWithTrack:(LKRTCMediaStreamTrack * _Nonnull)track init:(LKRTCRtpTransceiverInit * _Nonnull)init;
 		[Export ("addTransceiverWithTrack:init:")]
 		[return: NullAllowed]
-		RTCRtpTransceiver AddTransceiverWithTrack (RTCMediaStreamTrack track, RTCRtpTransceiverInit init);
+		LKRTCRtpTransceiver AddTransceiverWithTrack (LKRTCMediaStreamTrack track, LKRTCRtpTransceiverInit init);
 
-		// -(RTCRtpTransceiver * _Nullable)addTransceiverOfType:(RTCRtpMediaType)mediaType;
+		// -(LKRTCRtpTransceiver * _Nullable)addTransceiverOfType:(LKRTCRtpMediaType)mediaType;
 		[Export ("addTransceiverOfType:")]
 		[return: NullAllowed]
-		RTCRtpTransceiver AddTransceiverOfType (RTCRtpMediaType mediaType);
+		LKRTCRtpTransceiver AddTransceiverOfType (LKRTCRtpMediaType mediaType);
 
-		// -(RTCRtpTransceiver * _Nullable)addTransceiverOfType:(RTCRtpMediaType)mediaType init:(RTCRtpTransceiverInit * _Nonnull)init;
+		// -(LKRTCRtpTransceiver * _Nullable)addTransceiverOfType:(LKRTCRtpMediaType)mediaType init:(LKRTCRtpTransceiverInit * _Nonnull)init;
 		[Export ("addTransceiverOfType:init:")]
 		[return: NullAllowed]
-		RTCRtpTransceiver AddTransceiverOfType (RTCRtpMediaType mediaType, RTCRtpTransceiverInit init);
+		LKRTCRtpTransceiver AddTransceiverOfType (LKRTCRtpMediaType mediaType, LKRTCRtpTransceiverInit init);
 
 		// -(void)restartIce;
 		[Export ("restartIce")]
 		void RestartIce ();
 
-		// -(void)offerForConstraints:(RTCMediaConstraints * _Nonnull)constraints completionHandler:(RTCCreateSessionDescriptionCompletionHandler _Nonnull)completionHandler;
+		// -(void)offerForConstraints:(LKRTCMediaConstraints * _Nonnull)constraints completionHandler:(LKRTCCreateSessionDescriptionCompletionHandler _Nonnull)completionHandler;
 		[Export ("offerForConstraints:completionHandler:")]
-		void OfferForConstraints (RTCMediaConstraints constraints, RTCCreateSessionDescriptionCompletionHandler completionHandler);
+		void OfferForConstraints (LKRTCMediaConstraints constraints, LKRTCCreateSessionDescriptionCompletionHandler completionHandler);
 
-		// -(void)answerForConstraints:(RTCMediaConstraints * _Nonnull)constraints completionHandler:(RTCCreateSessionDescriptionCompletionHandler _Nonnull)completionHandler;
+		// -(void)answerForConstraints:(LKRTCMediaConstraints * _Nonnull)constraints completionHandler:(LKRTCCreateSessionDescriptionCompletionHandler _Nonnull)completionHandler;
 		[Export ("answerForConstraints:completionHandler:")]
-		void AnswerForConstraints (RTCMediaConstraints constraints, RTCCreateSessionDescriptionCompletionHandler completionHandler);
+		void AnswerForConstraints (LKRTCMediaConstraints constraints, LKRTCCreateSessionDescriptionCompletionHandler completionHandler);
 
-		// -(void)setLocalDescription:(RTCSessionDescription * _Nonnull)sdp completionHandler:(RTCSetSessionDescriptionCompletionHandler _Nonnull)completionHandler;
+		// -(void)setLocalDescription:(LKRTCSessionDescription * _Nonnull)sdp completionHandler:(LKRTCSetSessionDescriptionCompletionHandler _Nonnull)completionHandler;
 		[Export ("setLocalDescription:completionHandler:")]
-		void SetLocalDescription (RTCSessionDescription sdp, RTCSetSessionDescriptionCompletionHandler completionHandler);
+		void SetLocalDescription (LKRTCSessionDescription sdp, LKRTCSetSessionDescriptionCompletionHandler completionHandler);
 
-		// -(void)setLocalDescriptionWithCompletionHandler:(RTCSetSessionDescriptionCompletionHandler _Nonnull)completionHandler;
+		// -(void)setLocalDescriptionWithCompletionHandler:(LKRTCSetSessionDescriptionCompletionHandler _Nonnull)completionHandler;
 		[Export ("setLocalDescriptionWithCompletionHandler:")]
-		void SetLocalDescriptionWithCompletionHandler (RTCSetSessionDescriptionCompletionHandler completionHandler);
+		void SetLocalDescriptionWithCompletionHandler (LKRTCSetSessionDescriptionCompletionHandler completionHandler);
 
-		// -(void)setRemoteDescription:(RTCSessionDescription * _Nonnull)sdp completionHandler:(RTCSetSessionDescriptionCompletionHandler _Nonnull)completionHandler;
+		// -(void)setRemoteDescription:(LKRTCSessionDescription * _Nonnull)sdp completionHandler:(LKRTCSetSessionDescriptionCompletionHandler _Nonnull)completionHandler;
 		[Export ("setRemoteDescription:completionHandler:")]
-		void SetRemoteDescription (RTCSessionDescription sdp, RTCSetSessionDescriptionCompletionHandler completionHandler);
+		void SetRemoteDescription (LKRTCSessionDescription sdp, LKRTCSetSessionDescriptionCompletionHandler completionHandler);
 
 		// -(BOOL)setBweMinBitrateBps:(NSNumber * _Nullable)minBitrateBps currentBitrateBps:(NSNumber * _Nullable)currentBitrateBps maxBitrateBps:(NSNumber * _Nullable)maxBitrateBps;
 		[Export ("setBweMinBitrateBps:currentBitrateBps:maxBitrateBps:")]
@@ -2647,106 +2647,131 @@ namespace IOS.WebRTC
 		void StopRtcEventLog ();
 	}
 
-	// @interface Media (RTCPeerConnection)
+	// @interface Media (LKRTCPeerConnection)
 	[Category]
-	[BaseType (typeof(RTCPeerConnection))]
-	interface RTCPeerConnection_Media
+	[BaseType (typeof(LKRTCPeerConnection))]
+	interface LKRTCPeerConnection_Media
 	{
-		// -(RTCRtpSender * _Nonnull)senderWithKind:(NSString * _Nonnull)kind streamId:(NSString * _Nonnull)streamId;
+		// -(LKRTCRtpSender * _Nonnull)senderWithKind:(NSString * _Nonnull)kind streamId:(NSString * _Nonnull)streamId;
 		[Export ("senderWithKind:streamId:")]
-		RTCRtpSender SenderWithKind (string kind, string streamId);
+		LKRTCRtpSender SenderWithKind (string kind, string streamId);
 	}
 
-	// @interface DataChannel (RTCPeerConnection)
+	// @interface DataChannel (LKRTCPeerConnection)
 	[Category]
-	[BaseType (typeof(RTCPeerConnection))]
-	interface RTCPeerConnection_DataChannel
+	[BaseType (typeof(LKRTCPeerConnection))]
+	interface LKRTCPeerConnection_DataChannel
 	{
-		// -(RTCDataChannel * _Nullable)dataChannelForLabel:(NSString * _Nonnull)label configuration:(RTCDataChannelConfiguration * _Nonnull)configuration;
+		// -(LKRTCDataChannel * _Nullable)dataChannelForLabel:(NSString * _Nonnull)label configuration:(LKRTCDataChannelConfiguration * _Nonnull)configuration;
 		[Export ("dataChannelForLabel:configuration:")]
 		[return: NullAllowed]
-		RTCDataChannel DataChannelForLabel (string label, RTCDataChannelConfiguration configuration);
+		LKRTCDataChannel DataChannelForLabel (string label, LKRTCDataChannelConfiguration configuration);
 	}
 
-	// typedef void (^RTCStatisticsCompletionHandler)(RTCStatisticsReport * _Nonnull);
-	delegate void RTCStatisticsCompletionHandler (RTCStatisticsReport arg0);
+	// typedef void (^LKRTCStatisticsCompletionHandler)(LKRTCStatisticsReport * _Nonnull);
+	delegate void LKRTCStatisticsCompletionHandler (LKRTCStatisticsReport arg0);
 
-	// @interface Stats (RTCPeerConnection)
+	// @interface Stats (LKRTCPeerConnection)
 	[Category]
-	[BaseType (typeof(RTCPeerConnection))]
-	interface RTCPeerConnection_Stats
+	[BaseType (typeof(LKRTCPeerConnection))]
+	interface LKRTCPeerConnection_Stats
 	{
-		// -(void)statsForTrack:(RTCMediaStreamTrack * _Nullable)mediaStreamTrack statsOutputLevel:(RTCStatsOutputLevel)statsOutputLevel completionHandler:(void (^ _Nullable)(NSArray<RTCLegacyStatsReport *> * _Nonnull))completionHandler;
+		// -(void)statsForTrack:(LKRTCMediaStreamTrack * _Nullable)mediaStreamTrack statsOutputLevel:(LKRTCStatsOutputLevel)statsOutputLevel completionHandler:(void (^ _Nullable)(NSArray<LKRTCLegacyStatsReport *> * _Nonnull))completionHandler;
 		[Export ("statsForTrack:statsOutputLevel:completionHandler:")]
-		void StatsForTrack ([NullAllowed] RTCMediaStreamTrack mediaStreamTrack, RTCStatsOutputLevel statsOutputLevel, [NullAllowed] Action<NSArray<RTCLegacyStatsReport>> completionHandler);
+		void StatsForTrack ([NullAllowed] LKRTCMediaStreamTrack mediaStreamTrack, LKRTCStatsOutputLevel statsOutputLevel, [NullAllowed] Action<NSArray<LKRTCLegacyStatsReport>> completionHandler);
 
-		// -(void)statisticsWithCompletionHandler:(RTCStatisticsCompletionHandler _Nonnull)completionHandler;
+		// -(void)statisticsWithCompletionHandler:(LKRTCStatisticsCompletionHandler _Nonnull)completionHandler;
 		[Export ("statisticsWithCompletionHandler:")]
-		void StatisticsWithCompletionHandler (RTCStatisticsCompletionHandler completionHandler);
+		void StatisticsWithCompletionHandler (LKRTCStatisticsCompletionHandler completionHandler);
 
-		// -(void)statisticsForSender:(RTCRtpSender * _Nonnull)sender completionHandler:(RTCStatisticsCompletionHandler _Nonnull)completionHandler;
+		// -(void)statisticsForSender:(LKRTCRtpSender * _Nonnull)sender completionHandler:(LKRTCStatisticsCompletionHandler _Nonnull)completionHandler;
 		[Export ("statisticsForSender:completionHandler:")]
-		void StatisticsForSender (RTCRtpSender sender, RTCStatisticsCompletionHandler completionHandler);
+		void StatisticsForSender (LKRTCRtpSender sender, LKRTCStatisticsCompletionHandler completionHandler);
 
-		// -(void)statisticsForReceiver:(RTCRtpReceiver * _Nonnull)receiver completionHandler:(RTCStatisticsCompletionHandler _Nonnull)completionHandler;
+		// -(void)statisticsForReceiver:(LKRTCRtpReceiver * _Nonnull)receiver completionHandler:(LKRTCStatisticsCompletionHandler _Nonnull)completionHandler;
 		[Export ("statisticsForReceiver:completionHandler:")]
-		void StatisticsForReceiver (RTCRtpReceiver receiver, RTCStatisticsCompletionHandler completionHandler);
+		void StatisticsForReceiver (LKRTCRtpReceiver receiver, LKRTCStatisticsCompletionHandler completionHandler);
 	}
 
-	// @interface RTCPeerConnectionFactory : NSObject
+	// @interface LKRTCPeerConnectionFactory : NSObject
 	[BaseType (typeof(NSObject))]
-	interface RTCPeerConnectionFactory
+	interface LKRTCPeerConnectionFactory
 	{
-		// -(instancetype _Nonnull)initWithEncoderFactory:(id<RTCVideoEncoderFactory> _Nullable)encoderFactory decoderFactory:(id<RTCVideoDecoderFactory> _Nullable)decoderFactory;
+		// -(instancetype _Nonnull)initWithEncoderFactory:(id<LKRTCVideoEncoderFactory> _Nullable)encoderFactory decoderFactory:(id<LKRTCVideoDecoderFactory> _Nullable)decoderFactory;
 		[Export ("initWithEncoderFactory:decoderFactory:")]
-		NativeHandle Constructor ([NullAllowed] RTCVideoEncoderFactory encoderFactory, [NullAllowed] RTCVideoDecoderFactory decoderFactory);
+		NativeHandle Constructor ([NullAllowed] LKRTCVideoEncoderFactory encoderFactory, [NullAllowed] LKRTCVideoDecoderFactory decoderFactory);
 
-		// -(instancetype _Nonnull)initWithEncoderFactory:(id<RTCVideoEncoderFactory> _Nullable)encoderFactory decoderFactory:(id<RTCVideoDecoderFactory> _Nullable)decoderFactory audioDevice:(id<RTCAudioDevice> _Nullable)audioDevice;
+		// -(instancetype _Nonnull)initWithEncoderFactory:(id<LKRTCVideoEncoderFactory> _Nullable)encoderFactory decoderFactory:(id<LKRTCVideoDecoderFactory> _Nullable)decoderFactory audioDevice:(id<LKRTCAudioDevice> _Nullable)audioDevice;
 		[Export ("initWithEncoderFactory:decoderFactory:audioDevice:")]
-		NativeHandle Constructor ([NullAllowed] RTCVideoEncoderFactory encoderFactory, [NullAllowed] RTCVideoDecoderFactory decoderFactory, [NullAllowed] RTCAudioDevice audioDevice);
+		NativeHandle Constructor ([NullAllowed] LKRTCVideoEncoderFactory encoderFactory, [NullAllowed] LKRTCVideoDecoderFactory decoderFactory, [NullAllowed] LKRTCAudioDevice audioDevice);
 
-		// -(RTCAudioSource * _Nonnull)audioSourceWithConstraints:(RTCMediaConstraints * _Nullable)constraints;
+		// -(instancetype _Nonnull)initWithAudioDeviceModuleType:(LKRTCAudioDeviceModuleType)audioDeviceModuleType bypassVoiceProcessing:(BOOL)bypassVoiceProcessing encoderFactory:(id<LKRTCVideoEncoderFactory> _Nullable)encoderFactory decoderFactory:(id<LKRTCVideoDecoderFactory> _Nullable)decoderFactory audioProcessingModule:(id<LKRTCAudioProcessingModule> _Nullable)audioProcessingModule;
+		[Export ("initWithAudioDeviceModuleType:bypassVoiceProcessing:encoderFactory:decoderFactory:audioProcessingModule:")]
+		NativeHandle Constructor (LKRTCAudioDeviceModuleType audioDeviceModuleType, bool bypassVoiceProcessing, [NullAllowed] LKRTCVideoEncoderFactory encoderFactory, [NullAllowed] LKRTCVideoDecoderFactory decoderFactory, [NullAllowed] ILKRTCAudioProcessingModule audioProcessingModule);
+
+		// @property (readonly, nonatomic) LKRTCAudioDeviceModule * _Nonnull audioDeviceModule;
+		[Export ("audioDeviceModule")]
+		LKRTCAudioDeviceModule AudioDeviceModule { get; }
+
+		// @property (readonly, nonatomic) LKRTCAudioProcessingState * _Nonnull audioProcessingState;
+		[Export ("audioProcessingState")]
+		LKRTCAudioProcessingState AudioProcessingState { get; }
+
+		// +(void)configureFieldTrials:(NSString * _Nullable)fieldTrials;
+		[Static]
+		[Export ("configureFieldTrials:")]
+		void ConfigureFieldTrials ([NullAllowed] string fieldTrials);
+
+		// -(LKRTCRtpCapabilities * _Nonnull)rtpSenderCapabilitiesForKind:(NSString * _Nonnull)kind;
+		[Export ("rtpSenderCapabilitiesForKind:")]
+		LKRTCRtpCapabilities RtpSenderCapabilitiesForKind (string kind);
+
+		// -(LKRTCRtpCapabilities * _Nonnull)rtpReceiverCapabilitiesForKind:(NSString * _Nonnull)kind;
+		[Export ("rtpReceiverCapabilitiesForKind:")]
+		LKRTCRtpCapabilities RtpReceiverCapabilitiesForKind (string kind);
+
+		// -(LKRTCAudioSource * _Nonnull)audioSourceWithConstraints:(LKRTCMediaConstraints * _Nullable)constraints;
 		[Export ("audioSourceWithConstraints:")]
-		RTCAudioSource AudioSourceWithConstraints ([NullAllowed] RTCMediaConstraints constraints);
+		LKRTCAudioSource AudioSourceWithConstraints ([NullAllowed] LKRTCMediaConstraints constraints);
 
-		// -(RTCAudioTrack * _Nonnull)audioTrackWithTrackId:(NSString * _Nonnull)trackId;
+		// -(LKRTCAudioTrack * _Nonnull)audioTrackWithTrackId:(NSString * _Nonnull)trackId;
 		[Export ("audioTrackWithTrackId:")]
-		RTCAudioTrack AudioTrackWithTrackId (string trackId);
+		LKRTCAudioTrack AudioTrackWithTrackId (string trackId);
 
-		// -(RTCAudioTrack * _Nonnull)audioTrackWithSource:(RTCAudioSource * _Nonnull)source trackId:(NSString * _Nonnull)trackId;
+		// -(LKRTCAudioTrack * _Nonnull)audioTrackWithSource:(LKRTCAudioSource * _Nonnull)source trackId:(NSString * _Nonnull)trackId;
 		[Export ("audioTrackWithSource:trackId:")]
-		RTCAudioTrack AudioTrackWithSource (RTCAudioSource source, string trackId);
+		LKRTCAudioTrack AudioTrackWithSource (LKRTCAudioSource source, string trackId);
 
-		// -(RTCVideoSource * _Nonnull)videoSource;
+		// -(LKRTCVideoSource * _Nonnull)videoSource;
 		[Export ("videoSource")]
 		////[Verify (MethodToProperty)]
-		RTCVideoSource VideoSource { get; }
+		LKRTCVideoSource VideoSource { get; }
 
-		// -(RTCVideoSource * _Nonnull)videoSourceForScreenCast:(BOOL)forScreenCast;
+		// -(LKRTCVideoSource * _Nonnull)videoSourceForScreenCast:(BOOL)forScreenCast;
 		[Export ("videoSourceForScreenCast:")]
-		RTCVideoSource VideoSourceForScreenCast (bool forScreenCast);
+		LKRTCVideoSource VideoSourceForScreenCast (bool forScreenCast);
 
-		// -(RTCVideoTrack * _Nonnull)videoTrackWithSource:(RTCVideoSource * _Nonnull)source trackId:(NSString * _Nonnull)trackId;
+		// -(LKRTCVideoTrack * _Nonnull)videoTrackWithSource:(LKRTCVideoSource * _Nonnull)source trackId:(NSString * _Nonnull)trackId;
 		[Export ("videoTrackWithSource:trackId:")]
-		RTCVideoTrack VideoTrackWithSource (RTCVideoSource source, string trackId);
+		LKRTCVideoTrack VideoTrackWithSource (LKRTCVideoSource source, string trackId);
 
-		// -(RTCMediaStream * _Nonnull)mediaStreamWithStreamId:(NSString * _Nonnull)streamId;
+		// -(LKRTCMediaStream * _Nonnull)mediaStreamWithStreamId:(NSString * _Nonnull)streamId;
 		[Export ("mediaStreamWithStreamId:")]
-		RTCMediaStream MediaStreamWithStreamId (string streamId);
+		LKRTCMediaStream MediaStreamWithStreamId (string streamId);
 
-		// -(RTCPeerConnection * _Nullable)peerConnectionWithConfiguration:(RTCConfiguration * _Nonnull)configuration constraints:(RTCMediaConstraints * _Nonnull)constraints delegate:(id<RTCPeerConnectionDelegate> _Nullable)delegate;
+		// -(LKRTCPeerConnection * _Nullable)peerConnectionWithConfiguration:(LKRTCConfiguration * _Nonnull)configuration constraints:(LKRTCMediaConstraints * _Nonnull)constraints delegate:(id<LKRTCPeerConnectionDelegate> _Nullable)delegate;
 		[Export ("peerConnectionWithConfiguration:constraints:delegate:")]
 		[return: NullAllowed]
-		RTCPeerConnection PeerConnectionWithConfiguration (RTCConfiguration configuration, RTCMediaConstraints constraints, [NullAllowed] IRTCPeerConnectionDelegate @delegate);
+		LKRTCPeerConnection PeerConnectionWithConfiguration (LKRTCConfiguration configuration, LKRTCMediaConstraints constraints, [NullAllowed] ILKRTCPeerConnectionDelegate @delegate);
 
-		// -(RTCPeerConnection * _Nullable)peerConnectionWithConfiguration:(RTCConfiguration * _Nonnull)configuration constraints:(RTCMediaConstraints * _Nonnull)constraints certificateVerifier:(id<RTCSSLCertificateVerifier> _Nonnull)certificateVerifier delegate:(id<RTCPeerConnectionDelegate> _Nullable)delegate;
+		// -(LKRTCPeerConnection * _Nullable)peerConnectionWithConfiguration:(LKRTCConfiguration * _Nonnull)configuration constraints:(LKRTCMediaConstraints * _Nonnull)constraints certificateVerifier:(id<LKRTCSSLCertificateVerifier> _Nonnull)certificateVerifier delegate:(id<LKRTCPeerConnectionDelegate> _Nullable)delegate;
 		[Export ("peerConnectionWithConfiguration:constraints:certificateVerifier:delegate:")]
 		[return: NullAllowed]
-		RTCPeerConnection PeerConnectionWithConfiguration (RTCConfiguration configuration, RTCMediaConstraints constraints, RTCSSLCertificateVerifier certificateVerifier, [NullAllowed] IRTCPeerConnectionDelegate @delegate);
+		LKRTCPeerConnection PeerConnectionWithConfiguration (LKRTCConfiguration configuration, LKRTCMediaConstraints constraints, LKRTCSSLCertificateVerifier certificateVerifier, [NullAllowed] ILKRTCPeerConnectionDelegate @delegate);
 
-		// -(void)setOptions:(RTCPeerConnectionFactoryOptions * _Nonnull)options;
+		// -(void)setOptions:(LKRTCPeerConnectionFactoryOptions * _Nonnull)options;
 		[Export ("setOptions:")]
-		void SetOptions (RTCPeerConnectionFactoryOptions options);
+		void SetOptions (LKRTCPeerConnectionFactoryOptions options);
 
 		// -(BOOL)startAecDumpWithFilePath:(NSString * _Nonnull)filePath maxSizeInBytes:(int64_t)maxSizeInBytes;
 		[Export ("startAecDumpWithFilePath:maxSizeInBytes:")]
@@ -2757,9 +2782,9 @@ namespace IOS.WebRTC
 		void StopAecDump ();
 	}
 
-	// @interface RTCPeerConnectionFactoryOptions : NSObject
+	// @interface LKRTCPeerConnectionFactoryOptions : NSObject
 	[BaseType (typeof(NSObject))]
-	interface RTCPeerConnectionFactoryOptions
+	interface LKRTCPeerConnectionFactoryOptions
 	{
 		// @property (assign, nonatomic) BOOL disableEncryption;
 		[Export ("disableEncryption")]
@@ -2790,9 +2815,9 @@ namespace IOS.WebRTC
 		bool IgnoreEthernetNetworkAdapter { get; set; }
 	}
 
-	// @interface RTCRtcpParameters : NSObject
+	// @interface LKRTCRtcpParameters : NSObject
 	[BaseType (typeof(NSObject))]
-	interface RTCRtcpParameters
+	interface LKRTCRtcpParameters
 	{
 		// @property (readonly, copy, nonatomic) NSString * _Nonnull cname;
 		[Export ("cname")]
@@ -2807,76 +2832,78 @@ namespace IOS.WebRTC
     ////[Verify (ConstantsInterfaceAssociation)]
     partial interface Constants
 	{
-		// extern const NSString *const _Nonnull kRTCRtxCodecName;
-		[Field ("kRTCRtxCodecName", "__Internal")]
-		NSString kRTCRtxCodecName { get; }
+		// extern const NSString *const _Nonnull kLKRTCRtxCodecName;
+		[Field ("kLKRTCRtxCodecName", "__Internal")]
+		NSString kLKRTCRtxCodecName { get; }
 
-		// extern const NSString *const _Nonnull kRTCRedCodecName;
-		[Field ("kRTCRedCodecName", "__Internal")]
-		NSString kRTCRedCodecName { get; }
+		// extern const NSString *const _Nonnull kLKRTCRedCodecName;
+		[Field ("kLKRTCRedCodecName", "__Internal")]
+		NSString kLKRTCRedCodecName { get; }
 
-		// extern const NSString *const _Nonnull kRTCUlpfecCodecName;
-		[Field ("kRTCUlpfecCodecName", "__Internal")]
-		NSString kRTCUlpfecCodecName { get; }
+		// extern const NSString *const _Nonnull kLKRTCUlpfecCodecName;
+		[Field ("kLKRTCUlpfecCodecName", "__Internal")]
+		NSString kLKRTCUlpfecCodecName { get; }
 
-		// extern const NSString *const _Nonnull kRTCFlexfecCodecName;
-		[Field ("kRTCFlexfecCodecName", "__Internal")]
-		NSString kRTCFlexfecCodecName { get; }
+		// extern const NSString *const _Nonnull kLKRTCFlexfecCodecName;
+		[Field ("kLKRTCFlexfecCodecName", "__Internal")]
+		NSString kLKRTCFlexfecCodecName { get; }
 
-		// extern const NSString *const _Nonnull kRTCOpusCodecName;
-		[Field ("kRTCOpusCodecName", "__Internal")]
-		NSString kRTCOpusCodecName { get; }
+		// extern const NSString *const _Nonnull kLKRTCOpusCodecName;
+		[Field ("kLKRTCOpusCodecName", "__Internal")]
+		NSString kLKRTCOpusCodecName { get; }
 		
 		/*
-		// extern const NSString *const _Nonnull kRTCIsacCodecName;
-		[Field ("kRTCIsacCodecName", "__Internal")]
-		NSString kRTCIsacCodecName { get; }
+		// extern const NSString *const _Nonnull kLKRTCIsacCodecName;
+		[Field ("kLKRTCIsacCodecName", "__Internal")]
+		NSString kLKRTCIsacCodecName { get; }
 		*/
 		
-		// extern const NSString *const _Nonnull kRTCL16CodecName;
-		[Field ("kRTCL16CodecName", "__Internal")]
-		NSString kRTCL16CodecName { get; }
+		// extern const NSString *const _Nonnull kLKRTCL16CodecName;
+		[Field ("kLKRTCL16CodecName", "__Internal")]
+		NSString kLKRTCL16CodecName { get; }
 
-		// extern const NSString *const _Nonnull kRTCG722CodecName;
-		[Field ("kRTCG722CodecName", "__Internal")]
-		NSString kRTCG722CodecName { get; }
+		// extern const NSString *const _Nonnull kLKRTCG722CodecName;
+		[Field ("kLKRTCG722CodecName", "__Internal")]
+		NSString kLKRTCG722CodecName { get; }
 
-		// extern const NSString *const _Nonnull kRTCIlbcCodecName;
-		[Field ("kRTCIlbcCodecName", "__Internal")]
-		NSString kRTCIlbcCodecName { get; }
+		/*
+		// extern const NSString *const _Nonnull kLKRTCIlbcCodecName;
+		[Field ("kLKRTCIlbcCodecName", "__Internal")]
+		NSString kLKRTCIlbcCodecName { get; }
+		*/
 
-		// extern const NSString *const _Nonnull kRTCPcmuCodecName;
-		[Field ("kRTCPcmuCodecName", "__Internal")]
-		NSString kRTCPcmuCodecName { get; }
+		// extern const NSString *const _Nonnull kLKRTCPcmuCodecName;
+		[Field ("kLKRTCPcmuCodecName", "__Internal")]
+		NSString kLKRTCPcmuCodecName { get; }
 
-		// extern const NSString *const _Nonnull kRTCPcmaCodecName;
-		[Field ("kRTCPcmaCodecName", "__Internal")]
-		NSString kRTCPcmaCodecName { get; }
+		// extern const NSString *const _Nonnull kLKRTCPcmaCodecName;
+		[Field ("kLKRTCPcmaCodecName", "__Internal")]
+		NSString kLKRTCPcmaCodecName { get; }
 
-		// extern const NSString *const _Nonnull kRTCDtmfCodecName;
-		[Field ("kRTCDtmfCodecName", "__Internal")]
-		NSString kRTCDtmfCodecName { get; }
+		// extern const NSString *const _Nonnull kLKRTCDtmfCodecName;
+		[Field ("kLKRTCDtmfCodecName", "__Internal")]
+		NSString kLKRTCDtmfCodecName { get; }
 
-		// extern const NSString *const _Nonnull kRTCComfortNoiseCodecName;
-		[Field ("kRTCComfortNoiseCodecName", "__Internal")]
-		NSString kRTCComfortNoiseCodecName { get; }
+		// extern const NSString *const _Nonnull kLKRTCComfortNoiseCodecName;
+		[Field ("kLKRTCComfortNoiseCodecName", "__Internal")]
+		NSString kLKRTCComfortNoiseCodecName { get; }
 
-		// extern const NSString *const _Nonnull kRTCVp8CodecName;
-		[Field ("kRTCVp8CodecName", "__Internal")]
-		NSString kRTCVp8CodecName { get; }
+		// extern const NSString *const _Nonnull kLKRTCVp8CodecName;
+		[Field ("kLKRTCVp8CodecName", "__Internal")]
+		NSString kLKRTCVp8CodecName { get; }
 
-		// extern const NSString *const _Nonnull kRTCVp9CodecName;
-		[Field ("kRTCVp9CodecName", "__Internal")]
-		NSString kRTCVp9CodecName { get; }
+		// extern const NSString *const _Nonnull kLKRTCVp9CodecName;
+		[Field ("kLKRTCVp9CodecName", "__Internal")]
+		NSString kLKRTCVp9CodecName { get; }
 
-		// extern const NSString *const _Nonnull kRTCH264CodecName;
-		[Field ("kRTCH264CodecName", "__Internal")]
-		NSString kRTCH264CodecName { get; }
+		// extern const NSString *const _Nonnull kLKRTCH264CodecName;
+		[Field ("kLKRTCH264CodecName", "__Internal")]
+		NSString kLKRTCH264CodecName { get; }
 	}
 
-	// @interface RTCRtpCodecParameters : NSObject
+	// @interface LKRTCRtpCodecParameters : NSObject
 	[BaseType (typeof(NSObject))]
-	interface RTCRtpCodecParameters
+	interface LKRTCRtpCodecParameters
 	{
 		// @property (assign, nonatomic) int payloadType;
 		[Export ("payloadType")]
@@ -2903,9 +2930,9 @@ namespace IOS.WebRTC
 		NSDictionary Parameters { get; }
 	}
 
-	// @interface RTCRtpEncodingParameters : NSObject
+	// @interface LKRTCRtpEncodingParameters : NSObject
 	[BaseType (typeof(NSObject))]
-	interface RTCRtpEncodingParameters
+	interface LKRTCRtpEncodingParameters
 	{
 		// @property (copy, nonatomic) NSString * _Nullable rid;
 		[NullAllowed, Export ("rid")]
@@ -2943,18 +2970,18 @@ namespace IOS.WebRTC
 		[Export ("bitratePriority")]
 		double BitratePriority { get; set; }
 
-		// @property (assign, nonatomic) RTCPriority networkPriority;
+		// @property (assign, nonatomic) LKRTCPriority networkPriority;
 		[Export ("networkPriority", ArgumentSemantic.Assign)]
-		RTCPriority NetworkPriority { get; set; }
+		LKRTCPriority NetworkPriority { get; set; }
 
 		// @property (assign, nonatomic) BOOL adaptiveAudioPacketTime;
 		[Export ("adaptiveAudioPacketTime")]
 		bool AdaptiveAudioPacketTime { get; set; }
 	}
 
-	// @interface RTCRtpHeaderExtension : NSObject
+	// @interface LKRTCRtpHeaderExtension : NSObject
 	[BaseType (typeof(NSObject))]
-	interface RTCRtpHeaderExtension
+	interface LKRTCRtpHeaderExtension
 	{
 		// @property (readonly, copy, nonatomic) NSString * _Nonnull uri;
 		[Export ("uri")]
@@ -2969,47 +2996,47 @@ namespace IOS.WebRTC
 		bool Encrypted { [Bind ("isEncrypted")] get; }
 	}
 
-	// @interface RTCRtpParameters : NSObject
+	// @interface LKRTCRtpParameters : NSObject
 	[BaseType (typeof(NSObject))]
-	interface RTCRtpParameters
+	interface LKRTCRtpParameters
 	{
 		// @property (copy, nonatomic) NSString * _Nonnull transactionId;
 		[Export ("transactionId")]
 		string TransactionId { get; set; }
 
-		// @property (readonly, copy, nonatomic) RTCRtcpParameters * _Nonnull rtcp;
+		// @property (readonly, copy, nonatomic) LKRTCRtcpParameters * _Nonnull rtcp;
 		[Export ("rtcp", ArgumentSemantic.Copy)]
-		RTCRtcpParameters Rtcp { get; }
+		LKRTCRtcpParameters Rtcp { get; }
 
-		// @property (readonly, copy, nonatomic) NSArray<RTCRtpHeaderExtension *> * _Nonnull headerExtensions;
+		// @property (readonly, copy, nonatomic) NSArray<LKRTCRtpHeaderExtension *> * _Nonnull headerExtensions;
 		[Export ("headerExtensions", ArgumentSemantic.Copy)]
-		RTCRtpHeaderExtension[] HeaderExtensions { get; }
+		LKRTCRtpHeaderExtension[] HeaderExtensions { get; }
 
-		// @property (copy, nonatomic) NSArray<RTCRtpEncodingParameters *> * _Nonnull encodings;
+		// @property (copy, nonatomic) NSArray<LKRTCRtpEncodingParameters *> * _Nonnull encodings;
 		[Export ("encodings", ArgumentSemantic.Copy)]
-		RTCRtpEncodingParameters[] Encodings { get; set; }
+		LKRTCRtpEncodingParameters[] Encodings { get; set; }
 
-		// @property (copy, nonatomic) NSArray<RTCRtpCodecParameters *> * _Nonnull codecs;
+		// @property (copy, nonatomic) NSArray<LKRTCRtpCodecParameters *> * _Nonnull codecs;
 		[Export ("codecs", ArgumentSemantic.Copy)]
-		RTCRtpCodecParameters[] Codecs { get; set; }
+		LKRTCRtpCodecParameters[] Codecs { get; set; }
 
 		// @property (copy, nonatomic) NSNumber * _Nullable degradationPreference;
 		[NullAllowed, Export ("degradationPreference", ArgumentSemantic.Copy)]
 		NSNumber DegradationPreference { get; set; }
 	}
 
-	// @protocol RTCRtpReceiverDelegate <NSObject>
+	// @protocol LKRTCRtpReceiverDelegate <NSObject>
 	[Protocol, Model /****(AutoGeneratedName = true)****/]
 	[BaseType (typeof(NSObject))]
-	interface RTCRtpReceiverDelegate
+	interface LKRTCRtpReceiverDelegate
 	{
-		// @required -(void)rtpReceiver:(RTCRtpReceiver * _Nonnull)rtpReceiver didReceiveFirstPacketForMediaType:(RTCRtpMediaType)mediaType;
+		// @required -(void)rtpReceiver:(LKRTCRtpReceiver * _Nonnull)rtpReceiver didReceiveFirstPacketForMediaType:(LKRTCRtpMediaType)mediaType;
 		[Abstract]
 		[Export ("rtpReceiver:didReceiveFirstPacketForMediaType:")]
-		void DidReceiveFirstPacketForMediaType (RTCRtpReceiver rtpReceiver, RTCRtpMediaType mediaType);
+		void DidReceiveFirstPacketForMediaType (LKRTCRtpReceiver rtpReceiver, LKRTCRtpMediaType mediaType);
 	}
 
-	// @protocol RTCRtpReceiver <NSObject>
+	// @protocol LKRTCRtpReceiver <NSObject>
 	/*
   Check whether adding [Model] to this declaration is appropriate.
   [Model] is used to generate a C# class that implements this protocol,
@@ -3020,41 +3047,41 @@ namespace IOS.WebRTC
   be used.
 */[Protocol]
 	[BaseType (typeof(NSObject))]
-	interface RTCRtpReceiver
+	interface LKRTCRtpReceiver
     {
 		// @required @property (readonly, nonatomic) NSString * _Nonnull receiverId;
 		[Abstract]
 		[Export ("receiverId")]
 		string ReceiverId { get; }
 
-		// @required @property (readonly, nonatomic) RTCRtpParameters * _Nonnull parameters;
+		// @required @property (readonly, nonatomic) LKRTCRtpParameters * _Nonnull parameters;
 		[Abstract]
 		[Export ("parameters")]
-		RTCRtpParameters Parameters { get; }
+		LKRTCRtpParameters Parameters { get; }
 
-		// @required @property (readonly, nonatomic) RTCMediaStreamTrack * _Nullable track;
+		// @required @property (readonly, nonatomic) LKRTCMediaStreamTrack * _Nullable track;
 		[Abstract]
 		[NullAllowed, Export ("track")]
-		RTCMediaStreamTrack Track { get; }
+		LKRTCMediaStreamTrack Track { get; }
 
 		[Wrap ("WeakDelegate"), Abstract]
 		[NullAllowed]
-		IRTCRtpReceiverDelegate Delegate { get; set; }
+		ILKRTCRtpReceiverDelegate Delegate { get; set; }
 
-		// @required @property (nonatomic, weak) id<RTCRtpReceiverDelegate> _Nullable delegate;
+		// @required @property (nonatomic, weak) id<LKRTCRtpReceiverDelegate> _Nullable delegate;
 		[Abstract]
 		[NullAllowed, Export ("delegate", ArgumentSemantic.Weak)]
 		NSObject WeakDelegate { get; set; }
     }
 
-    // @interface RTCRtpReceiver : NSObject <RTCRtpReceiver>
+    // @interface LKRTCRtpReceiver : NSObject <LKRTCRtpReceiver>
     ////[BaseType (typeof(NSObject))]
     ////[DisableDefaultCtor]
-    ////interface RTCRtpReceiver : IRTCRtpReceiver
+    ////interface LKRTCRtpReceiver : ILKRTCRtpReceiver
     ////{
     ////}
 
-    // @protocol RTCDtmfSender <NSObject>
+    // @protocol LKRTCDtmfSender <NSObject>
     /*
     Check whether adding [Model] to this declaration is appropriate.
     [Model] is used to generate a C# class that implements this protocol,
@@ -3066,7 +3093,7 @@ namespace IOS.WebRTC
     */
     [Protocol]
 	[BaseType (typeof(NSObject))]
-	interface RTCDtmfSender
+	interface LKRTCDtmfSender
 	{
 		// @required @property (readonly, nonatomic) BOOL canInsertDtmf;
 		[Abstract]
@@ -3097,7 +3124,7 @@ namespace IOS.WebRTC
 		double InterToneGap { get; }
 	}
 
-	// @protocol RTCRtpSender <NSObject>
+	// @protocol LKRTCRtpSender <NSObject>
 	/*
   Check whether adding [Model] to this declaration is appropriate.
   [Model] is used to generate a C# class that implements this protocol,
@@ -3108,38 +3135,38 @@ namespace IOS.WebRTC
   be used.
 */[Protocol]
 	[BaseType (typeof(NSObject))]
-	interface RTCRtpSender
+	interface LKRTCRtpSender
     {
 		// @required @property (readonly, nonatomic) NSString * _Nonnull senderId;
 		[Abstract]
 		[Export ("senderId")]
 		string SenderId { get; }
 
-		// @required @property (copy, nonatomic) RTCRtpParameters * _Nonnull parameters;
+		// @required @property (copy, nonatomic) LKRTCRtpParameters * _Nonnull parameters;
 		[Abstract]
 		[Export ("parameters", ArgumentSemantic.Copy)]
-		RTCRtpParameters Parameters { get; set; }
+		LKRTCRtpParameters Parameters { get; set; }
 
-		// @required @property (copy, nonatomic) RTCMediaStreamTrack * _Nullable track;
+		// @required @property (copy, nonatomic) LKRTCMediaStreamTrack * _Nullable track;
 		[Abstract]
 		[NullAllowed, Export ("track", ArgumentSemantic.Copy)]
-		RTCMediaStreamTrack Track { get; set; }
+		LKRTCMediaStreamTrack Track { get; set; }
 
 		// @required @property (copy, nonatomic) NSArray<NSString *> * _Nonnull streamIds;
 		[Abstract]
 		[Export ("streamIds", ArgumentSemantic.Copy)]
 		string[] StreamIds { get; set; }
 
-		// @required @property (readonly, nonatomic) id<RTCDtmfSender> _Nullable dtmfSender;
+		// @required @property (readonly, nonatomic) id<LKRTCDtmfSender> _Nullable dtmfSender;
 		[Abstract]
 		[NullAllowed, Export ("dtmfSender")]
-		RTCDtmfSender DtmfSender { get; }
+		LKRTCDtmfSender DtmfSender { get; }
 	}
 
-    // @interface RTCRtpSender : NSObject <RTCRtpSender>
+    // @interface LKRTCRtpSender : NSObject <LKRTCRtpSender>
     ////[BaseType (typeof(NSObject))]
     ////[DisableDefaultCtor]
-    ////interface RTCRtpSender : IRTCRtpSender
+    ////interface LKRTCRtpSender : ILKRTCRtpSender
     ////{
     ////}
 
@@ -3148,30 +3175,30 @@ namespace IOS.WebRTC
     partial interface Constants
 	{
 		/*
-		// extern NSString *const _Nonnull kRTCRtpTransceiverErrorDomain;
-		[Field ("kRTCRtpTransceiverErrorDomain", "__Internal")]
-		NSString kRTCRtpTransceiverErrorDomain { get; }
+		// extern NSString *const _Nonnull kLKRTCRtpTransceiverErrorDomain;
+		[Field ("kLKRTCRtpTransceiverErrorDomain", "__Internal")]
+		NSString kLKRTCRtpTransceiverErrorDomain { get; }
 		*/
 	}
 
-	// @interface RTCRtpTransceiverInit : NSObject
+	// @interface LKRTCRtpTransceiverInit : NSObject
 	[BaseType (typeof(NSObject))]
-	interface RTCRtpTransceiverInit
+	interface LKRTCRtpTransceiverInit
 	{
-		// @property (nonatomic) RTCRtpTransceiverDirection direction;
+		// @property (nonatomic) LKRTCRtpTransceiverDirection direction;
 		[Export ("direction", ArgumentSemantic.Assign)]
-		RTCRtpTransceiverDirection Direction { get; set; }
+		LKRTCRtpTransceiverDirection Direction { get; set; }
 
 		// @property (nonatomic) NSArray<NSString *> * _Nonnull streamIds;
 		[Export ("streamIds", ArgumentSemantic.Assign)]
 		string[] StreamIds { get; set; }
 
-		// @property (nonatomic) NSArray<RTCRtpEncodingParameters *> * _Nonnull sendEncodings;
+		// @property (nonatomic) NSArray<LKRTCRtpEncodingParameters *> * _Nonnull sendEncodings;
 		[Export ("sendEncodings", ArgumentSemantic.Assign)]
-		RTCRtpEncodingParameters[] SendEncodings { get; set; }
+		LKRTCRtpEncodingParameters[] SendEncodings { get; set; }
 	}
 
-	// @protocol RTCRtpTransceiver <NSObject>
+	// @protocol LKRTCRtpTransceiver <NSObject>
 	/*
   Check whether adding [Model] to this declaration is appropriate.
   [Model] is used to generate a C# class that implements this protocol,
@@ -3182,108 +3209,108 @@ namespace IOS.WebRTC
   be used.
 */[Protocol]
 	[BaseType (typeof(NSObject))]
-	interface RTCRtpTransceiver
+	interface LKRTCRtpTransceiver
     {
-		// @required @property (readonly, nonatomic) RTCRtpMediaType mediaType;
+		// @required @property (readonly, nonatomic) LKRTCRtpMediaType mediaType;
 		[Abstract]
 		[Export ("mediaType")]
-		RTCRtpMediaType MediaType { get; }
+		LKRTCRtpMediaType MediaType { get; }
 
 		// @required @property (readonly, nonatomic) NSString * _Nonnull mid;
 		[Abstract]
 		[Export ("mid")]
 		string Mid { get; }
 
-		// @required @property (readonly, nonatomic) RTCRtpSender * _Nonnull sender;
+		// @required @property (readonly, nonatomic) LKRTCRtpSender * _Nonnull sender;
 		[Abstract]
 		[Export ("sender")]
-		RTCRtpSender Sender { get; }
+		LKRTCRtpSender Sender { get; }
 
-		// @required @property (readonly, nonatomic) RTCRtpReceiver * _Nonnull receiver;
+		// @required @property (readonly, nonatomic) LKRTCRtpReceiver * _Nonnull receiver;
 		[Abstract]
 		[Export ("receiver")]
-		RTCRtpReceiver Receiver { get; }
+		LKRTCRtpReceiver Receiver { get; }
 
 		// @required @property (readonly, nonatomic) BOOL isStopped;
 		[Abstract]
 		[Export ("isStopped")]
 		bool IsStopped { get; }
 
-		// @required @property (readonly, nonatomic) RTCRtpTransceiverDirection direction;
+		// @required @property (readonly, nonatomic) LKRTCRtpTransceiverDirection direction;
 		[Abstract]
 		[Export ("direction")]
-		RTCRtpTransceiverDirection Direction { get; }
+		LKRTCRtpTransceiverDirection Direction { get; }
 
-		// @required -(BOOL)currentDirection:(RTCRtpTransceiverDirection * _Nonnull)currentDirectionOut;
+		// @required -(BOOL)currentDirection:(LKRTCRtpTransceiverDirection * _Nonnull)currentDirectionOut;
 		[Abstract]
 		[Export ("currentDirection:")]
-		/****unsafe****/ bool CurrentDirection (/****RTCRtpTransceiverDirection* currentDirectionOut****/ref RTCRtpTransceiverDirection currentDirectionOut);
+		/****unsafe****/ bool CurrentDirection (/****LKRTCRtpTransceiverDirection* currentDirectionOut****/ref LKRTCRtpTransceiverDirection currentDirectionOut);
 
 		// @required -(void)stopInternal;
 		[Abstract]
 		[Export ("stopInternal")]
 		void StopInternal ();
 
-		// @required -(void)setDirection:(RTCRtpTransceiverDirection)direction error:(NSError * _Nullable * _Nullable)error;
+		// @required -(void)setDirection:(LKRTCRtpTransceiverDirection)direction error:(NSError * _Nullable * _Nullable)error;
 		[Abstract]
 		[Export ("setDirection:error:")]
-		void SetDirection (RTCRtpTransceiverDirection direction, [NullAllowed] out NSError error);
+		void SetDirection (LKRTCRtpTransceiverDirection direction, [NullAllowed] out NSError error);
 	}
 
-	// @interface RTCRtpTransceiver : NSObject <RTCRtpTransceiver>
+	// @interface LKRTCRtpTransceiver : NSObject <LKRTCRtpTransceiver>
 	////[BaseType (typeof(NSObject))]
 	////[DisableDefaultCtor]
-	////interface RTCRtpTransceiver : IRTCRtpTransceiver
+	////interface LKRTCRtpTransceiver : ILKRTCRtpTransceiver
 	////{
 	////}
 
-	// @interface RTCSessionDescription : NSObject
+	// @interface LKRTCSessionDescription : NSObject
 	[BaseType (typeof(NSObject))]
 	[DisableDefaultCtor]
-	interface RTCSessionDescription
+	interface LKRTCSessionDescription
 	{
-		// @property (readonly, nonatomic) RTCSdpType type;
+		// @property (readonly, nonatomic) LKRTCSdpType type;
 		[Export ("type")]
-		RTCSdpType Type { get; }
+		LKRTCSdpType Type { get; }
 
 		// @property (readonly, nonatomic) NSString * _Nonnull sdp;
 		[Export ("sdp")]
 		string Sdp { get; }
 
-		// -(instancetype _Nonnull)initWithType:(RTCSdpType)type sdp:(NSString * _Nonnull)sdp __attribute__((objc_designated_initializer));
+		// -(instancetype _Nonnull)initWithType:(LKRTCSdpType)type sdp:(NSString * _Nonnull)sdp __attribute__((objc_designated_initializer));
 		[Export ("initWithType:sdp:")]
 		[DesignatedInitializer]
-		NativeHandle Constructor (RTCSdpType type, string sdp);
+		NativeHandle Constructor (LKRTCSdpType type, string sdp);
 
-		// +(NSString * _Nonnull)stringForType:(RTCSdpType)type;
+		// +(NSString * _Nonnull)stringForType:(LKRTCSdpType)type;
 		[Static]
 		[Export ("stringForType:")]
-		string StringForType (RTCSdpType type);
+		string StringForType (LKRTCSdpType type);
 
-		// +(RTCSdpType)typeForString:(NSString * _Nonnull)string;
+		// +(LKRTCSdpType)typeForString:(NSString * _Nonnull)string;
 		[Static]
 		[Export ("typeForString:")]
-		RTCSdpType TypeForString (string @string);
+		LKRTCSdpType TypeForString (string @string);
 	}
 
-	// @interface RTCStatisticsReport : NSObject
+	// @interface LKRTCStatisticsReport : NSObject
 	[BaseType (typeof(NSObject))]
 	[DisableDefaultCtor]
-	interface RTCStatisticsReport
+	interface LKRTCStatisticsReport
 	{
 		// @property (readonly, nonatomic) CFTimeInterval timestamp_us;
 		[Export ("timestamp_us")]
 		double Timestamp_us { get; }
 
-		// @property (readonly, nonatomic) NSDictionary<NSString *,RTCStatistics *> * _Nonnull statistics;
+		// @property (readonly, nonatomic) NSDictionary<NSString *,LKRTCStatistics *> * _Nonnull statistics;
 		[Export ("statistics")]
-		NSDictionary<NSString, RTCStatistics> Statistics { get; }
+		NSDictionary<NSString, LKRTCStatistics> Statistics { get; }
 	}
 
-	// @interface RTCStatistics : NSObject
+	// @interface LKRTCStatistics : NSObject
 	[BaseType (typeof(NSObject))]
 	[DisableDefaultCtor]
-	interface RTCStatistics
+	interface LKRTCStatistics
 		: INativeObject
 	{
 		// @property (readonly, nonatomic) NSString * _Nonnull id;
@@ -3303,72 +3330,72 @@ namespace IOS.WebRTC
 		NSDictionary<NSString, NSObject> Values { get; }
 	}
 
-    // @interface RTCVideoSource : RTCMediaSource <RTCVideoCapturerDelegate>
+    // @interface LKRTCVideoSource : LKRTCMediaSource <LKRTCVideoCapturerDelegate>
 [Protocol]
-    [BaseType (typeof(RTCMediaSource))]
+    [BaseType (typeof(LKRTCMediaSource))]
 	[DisableDefaultCtor]
-	interface RTCVideoSource : /****I***/RTCVideoCapturerDelegate
+	interface LKRTCVideoSource : /****I***/LKRTCVideoCapturerDelegate
 	{
 		// -(void)adaptOutputFormatToWidth:(int)width height:(int)height fps:(int)fps;
 		[Export ("adaptOutputFormatToWidth:height:fps:")]
 		void AdaptOutputFormatToWidth (int width, int height, int fps);
 	}
 
-	// @interface RTCVideoTrack : RTCMediaStreamTrack
-	[BaseType (typeof(RTCMediaStreamTrack))]
+	// @interface LKRTCVideoTrack : LKRTCMediaStreamTrack
+	[BaseType (typeof(LKRTCMediaStreamTrack))]
 	[DisableDefaultCtor]
-	interface RTCVideoTrack
+	interface LKRTCVideoTrack
 	{
-		// @property (readonly, nonatomic) RTCVideoSource * _Nonnull source;
+		// @property (readonly, nonatomic) LKRTCVideoSource * _Nonnull source;
 		[Export ("source")]
-		RTCVideoSource Source { get; }
+		LKRTCVideoSource Source { get; }
 
-		// -(void)addRenderer:(id<RTCVideoRenderer> _Nonnull)renderer;
+		// -(void)addRenderer:(id<LKRTCVideoRenderer> _Nonnull)renderer;
 		[Export ("addRenderer:")]
-		void AddRenderer (IRTCVideoRenderer renderer);
+		void AddRenderer (ILKRTCVideoRenderer renderer);
 
-		// -(void)removeRenderer:(id<RTCVideoRenderer> _Nonnull)renderer;
+		// -(void)removeRenderer:(id<LKRTCVideoRenderer> _Nonnull)renderer;
 		[Export ("removeRenderer:")]
-		void RemoveRenderer (IRTCVideoRenderer renderer);
+		void RemoveRenderer (ILKRTCVideoRenderer renderer);
 	}
 
     ////[Static]
     ////[Verify (ConstantsInterfaceAssociation)]
     partial interface Constants
 	{
-		// extern NSString *const kRTCVideoCodecVp8Name;
-		[Field ("kRTCVideoCodecVp8Name", "__Internal")]
-		NSString kRTCVideoCodecVp8Name { get; }
+		// extern NSString *const kLKRTCVideoCodecVp8Name;
+		[Field ("kLKRTCVideoCodecVp8Name", "__Internal")]
+		NSString kLKRTCVideoCodecVp8Name { get; }
 
-		// extern NSString *const kRTCVideoCodecVp9Name;
-		[Field ("kRTCVideoCodecVp9Name", "__Internal")]
-		NSString kRTCVideoCodecVp9Name { get; }
+		// extern NSString *const kLKRTCVideoCodecVp9Name;
+		[Field ("kLKRTCVideoCodecVp9Name", "__Internal")]
+		NSString kLKRTCVideoCodecVp9Name { get; }
 
-		// extern NSString *const kRTCVideoCodecAv1Name;
-		[Field ("kRTCVideoCodecAv1Name", "__Internal")]
-		NSString kRTCVideoCodecAv1Name { get; }
+		// extern NSString *const kLKRTCVideoCodecAv1Name;
+		[Field ("kLKRTCVideoCodecAv1Name", "__Internal")]
+		NSString kLKRTCVideoCodecAv1Name { get; }
 	}
 
-	// @interface RTCVideoDecoderVP8 : NSObject
+	// @interface LKRTCVideoDecoderVP8 : NSObject
 	[BaseType (typeof(NSObject))]
-	interface RTCVideoDecoderVP8
+	interface LKRTCVideoDecoderVP8
 	{
-		// +(id<RTCVideoDecoder>)vp8Decoder;
+		// +(id<LKRTCVideoDecoder>)vp8Decoder;
 		[Static]
 		[Export ("vp8Decoder")]
 		////[Verify (MethodToProperty)]
-		RTCVideoDecoder Vp8Decoder { get; }
+		LKRTCVideoDecoder Vp8Decoder { get; }
 	}
 
-	// @interface RTCVideoDecoderVP9 : NSObject
+	// @interface LKRTCVideoDecoderVP9 : NSObject
 	[BaseType (typeof(NSObject))]
-	interface RTCVideoDecoderVP9
+	interface LKRTCVideoDecoderVP9
 	{
-		// +(id<RTCVideoDecoder>)vp9Decoder;
+		// +(id<LKRTCVideoDecoder>)vp9Decoder;
 		[Static]
 		[Export ("vp9Decoder")]
 		////[Verify (MethodToProperty)]
-		RTCVideoDecoder Vp9Decoder { get; }
+		LKRTCVideoDecoder Vp9Decoder { get; }
 
 		// +(_Bool)isSupported;
 		[Static]
@@ -3377,37 +3404,37 @@ namespace IOS.WebRTC
 		bool IsSupported { get; }
 	}
 
-	// @interface RTCVideoDecoderAV1 : NSObject
+	// @interface LKRTCVideoDecoderAV1 : NSObject
 	[BaseType (typeof(NSObject))]
-	interface RTCVideoDecoderAV1
+	interface LKRTCVideoDecoderAV1
 	{
-		// +(id<RTCVideoDecoder>)av1Decoder;
+		// +(id<LKRTCVideoDecoder>)av1Decoder;
 		[Static]
 		[Export ("av1Decoder")]
 		////[Verify (MethodToProperty)]
-		RTCVideoDecoder Av1Decoder { get; }
+		LKRTCVideoDecoder Av1Decoder { get; }
 	}
 
-	// @interface RTCVideoEncoderVP8 : NSObject
+	// @interface LKRTCVideoEncoderVP8 : NSObject
 	[BaseType (typeof(NSObject))]
-	interface RTCVideoEncoderVP8
+	interface LKRTCVideoEncoderVP8
 	{
-		// +(id<RTCVideoEncoder>)vp8Encoder;
+		// +(id<LKRTCVideoEncoder>)vp8Encoder;
 		[Static]
 		[Export ("vp8Encoder")]
 		////[Verify (MethodToProperty)]
-		RTCVideoEncoder Vp8Encoder { get; }
+		LKRTCVideoEncoder Vp8Encoder { get; }
 	}
 
-	// @interface RTCVideoEncoderVP9 : NSObject
+	// @interface LKRTCVideoEncoderVP9 : NSObject
 	[BaseType (typeof(NSObject))]
-	interface RTCVideoEncoderVP9
+	interface LKRTCVideoEncoderVP9
 	{
-		// +(id<RTCVideoEncoder>)vp9Encoder;
+		// +(id<LKRTCVideoEncoder>)vp9Encoder;
 		[Static]
 		[Export ("vp9Encoder")]
 		////[Verify (MethodToProperty)]
-		RTCVideoEncoder Vp9Encoder { get; }
+		LKRTCVideoEncoder Vp9Encoder { get; }
 
 		// +(_Bool)isSupported;
 		[Static]
@@ -3416,15 +3443,15 @@ namespace IOS.WebRTC
 		bool IsSupported { get; }
 	}
 
-	// @interface RTCVideoEncoderAV1 : NSObject
+	// @interface LKRTCVideoEncoderAV1 : NSObject
 	[BaseType (typeof(NSObject))]
-	interface RTCVideoEncoderAV1
+	interface LKRTCVideoEncoderAV1
 	{
-		// +(id<RTCVideoEncoder>)av1Encoder;
+		// +(id<LKRTCVideoEncoder>)av1Encoder;
 		[Static]
 		[Export ("av1Encoder")]
 		////[Verify (MethodToProperty)]
-		RTCVideoEncoder Av1Encoder { get; }
+		LKRTCVideoEncoder Av1Encoder { get; }
 
 		// +(_Bool)isSupported;
 		[Static]
@@ -3433,56 +3460,56 @@ namespace IOS.WebRTC
 		bool IsSupported { get; }
     }
 
-    // @interface RTCI420Buffer : NSObject <RTCI420Buffer>
+    // @interface LKRTCI420Buffer : NSObject <LKRTCI420Buffer>
     [BaseType (typeof(NSObject))]
-    interface RTCI420Buffer : IRTCI420Buffer
+    interface LKRTCI420Buffer : ILKRTCI420Buffer
     {
     }
 
-    // @interface RTCMutableI420Buffer : RTCI420Buffer <RTCMutableI420Buffer>
-    [BaseType (typeof(RTCI420Buffer))]
-	interface RTCMutableI420Buffer : IRTCMutableI420Buffer
+    // @interface LKRTCMutableI420Buffer : LKRTCI420Buffer <LKRTCMutableI420Buffer>
+    [BaseType (typeof(LKRTCI420Buffer))]
+	interface LKRTCMutableI420Buffer : ILKRTCMutableI420Buffer
 	{
 	}
 
-	// typedef void (^RTCCallbackLoggerMessageHandler)(NSString * _Nonnull);
-	delegate void RTCCallbackLoggerMessageHandler (string arg0);
+	// typedef void (^LKRTCCallbackLoggerMessageHandler)(NSString * _Nonnull);
+	delegate void LKRTCCallbackLoggerMessageHandler (string arg0);
 
-	// typedef void (^RTCCallbackLoggerMessageAndSeverityHandler)(NSString * _Nonnull, RTCLoggingSeverity);
-	delegate void RTCCallbackLoggerMessageAndSeverityHandler (string arg0, RTCLoggingSeverity arg1);
+	// typedef void (^LKRTCCallbackLoggerMessageAndSeverityHandler)(NSString * _Nonnull, LKRTCLoggingSeverity);
+	delegate void LKRTCCallbackLoggerMessageAndSeverityHandler (string arg0, LKRTCLoggingSeverity arg1);
 
-	// @interface RTCCallbackLogger : NSObject
+	// @interface LKRTCCallbackLogger : NSObject
 	[BaseType (typeof(NSObject))]
-	interface RTCCallbackLogger
+	interface LKRTCCallbackLogger
 	{
-		// @property (assign, nonatomic) RTCLoggingSeverity severity;
+		// @property (assign, nonatomic) LKRTCLoggingSeverity severity;
 		[Export ("severity", ArgumentSemantic.Assign)]
-		RTCLoggingSeverity Severity { get; set; }
+		LKRTCLoggingSeverity Severity { get; set; }
 
-		// -(void)start:(RTCCallbackLoggerMessageHandler _Nullable)handler;
+		// -(void)start:(LKRTCCallbackLoggerMessageHandler _Nullable)handler;
 		[Export ("start:")]
-		void Start ([NullAllowed] RTCCallbackLoggerMessageHandler handler);
+		void Start ([NullAllowed] LKRTCCallbackLoggerMessageHandler handler);
 
-		// -(void)startWithMessageAndSeverityHandler:(RTCCallbackLoggerMessageAndSeverityHandler _Nullable)handler;
+		// -(void)startWithMessageAndSeverityHandler:(LKRTCCallbackLoggerMessageAndSeverityHandler _Nullable)handler;
 		[Export ("startWithMessageAndSeverityHandler:")]
-		void StartWithMessageAndSeverityHandler ([NullAllowed] RTCCallbackLoggerMessageAndSeverityHandler handler);
+		void StartWithMessageAndSeverityHandler ([NullAllowed] LKRTCCallbackLoggerMessageAndSeverityHandler handler);
 
 		// -(void)stop;
 		[Export ("stop")]
 		void Stop ();
 	}
 
-	// @interface RTCFileLogger : NSObject
+	// @interface LKRTCFileLogger : NSObject
 	[BaseType (typeof(NSObject))]
-	interface RTCFileLogger
+	interface LKRTCFileLogger
 	{
-		// @property (assign, nonatomic) RTCFileLoggerSeverity severity;
+		// @property (assign, nonatomic) LKRTCFileLoggerSeverity severity;
 		[Export ("severity", ArgumentSemantic.Assign)]
-		RTCFileLoggerSeverity Severity { get; set; }
+		LKRTCFileLoggerSeverity Severity { get; set; }
 
-		// @property (readonly, nonatomic) RTCFileLoggerRotationType rotationType;
+		// @property (readonly, nonatomic) LKRTCFileLoggerRotationType rotationType;
 		[Export ("rotationType")]
-		RTCFileLoggerRotationType RotationType { get; }
+		LKRTCFileLoggerRotationType RotationType { get; }
 
 		// @property (assign, nonatomic) BOOL shouldDisableBuffering;
 		[Export ("shouldDisableBuffering")]
@@ -3492,10 +3519,10 @@ namespace IOS.WebRTC
 		[Export ("initWithDirPath:maxFileSize:")]
 		NativeHandle Constructor (string dirPath, nuint maxFileSize);
 
-		// -(instancetype _Nonnull)initWithDirPath:(NSString * _Nonnull)dirPath maxFileSize:(NSUInteger)maxFileSize rotationType:(RTCFileLoggerRotationType)rotationType __attribute__((objc_designated_initializer));
+		// -(instancetype _Nonnull)initWithDirPath:(NSString * _Nonnull)dirPath maxFileSize:(NSUInteger)maxFileSize rotationType:(LKRTCFileLoggerRotationType)rotationType __attribute__((objc_designated_initializer));
 		[Export ("initWithDirPath:maxFileSize:rotationType:")]
 		[DesignatedInitializer]
-		NativeHandle Constructor (string dirPath, nuint maxFileSize, RTCFileLoggerRotationType rotationType);
+		NativeHandle Constructor (string dirPath, nuint maxFileSize, LKRTCFileLoggerRotationType rotationType);
 
 		// -(void)start;
 		[Export ("start")]

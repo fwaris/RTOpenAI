@@ -26,7 +26,7 @@ type WebRtcClientConfig =
         { BindAddress = None
           IceServerUrls = [ "stun:stun.l.google.com:19302" ]
           IceGatherTimeoutMs = 4000
-          IosAudioRoutePolicy = IosAudioRoutePolicy.ReceiverOrHeadset }
+          IosAudioRoutePolicy = IosAudioRoutePolicy.Speakerphone }
 
 [<RequireQualifiedAccess>]
 module internal WebRtcClientConfigHelpers =

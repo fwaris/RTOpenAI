@@ -211,7 +211,7 @@ The RT.Assistant is a *Maui* application and so the project structure is defined
 
 The platform specific folders contain the native-app required components (plists, app manifests, etc.). For example, here is the IOS [plist](/src/Samples/PlanSelection/RT.Assistant/Platforms/iOS/Info.plist).
 
-RT.Assistant application code is 90% shared across platforms. However platform-specific libraries are required when interfacing with hardware that Maui does not cover. For WebRTC, RTOpenAI uses platform-native libraries with [Native Library Interop](https://devblogs.microsoft.com/dotnet/native-library-interop-dotnet-maui/). The [IOS WebRtc binding library](/src/Bindings/FsWebRTC.Bindings.Maui.iOS/FsWebRTC.Bindings.Maui.iOS.csproj) wraps the `WebRTC.xcframework` written in C++. And [for Android](/src/Bindings/FsWebRTC.Bindings.Maui.Android/FsWebRTC.Bindings.Maui.Android.csproj) the native `libwebrtc.arr` Android Archive is wrapped.
+RT.Assistant application code is 90% shared across platforms. However platform-specific libraries are required when interfacing with hardware that Maui does not cover. For WebRTC, RTOpenAI uses platform-native libraries with [Native Library Interop](https://devblogs.microsoft.com/dotnet/native-library-interop-dotnet-maui/). The [iOS WebRTC binding library](/src/Bindings/FsWebRTC.Bindings.Maui.iOS/FsWebRTC.Bindings.Maui.iOS.csproj) wraps LiveKit's `LiveKitWebRTC.xcframework`. And [for Android](/src/Bindings/FsWebRTC.Bindings.Maui.Android/FsWebRTC.Bindings.Maui.Android.csproj) the native `libwebrtc.aar` Android Archive is wrapped.
 
 Since most mobile apps have both IOS and Android versions, as such, Maui makes a lot of sense. Instead of maintaining multiple code bases and dev teams, with Maui one can maintain a single code base with 90% shared code across platforms. And unlike other mobile platforms (e.g. React Native), Maui apps are proper native apps. For example, it would be problematic to host a realtime multi-agent systems like RTFlow in a JavaScript-based system like React Native.
 
@@ -331,7 +331,6 @@ For this particular task, GPT-5.1 has the clear edge, generating code that produ
 FTW, both models generate syntactically correct Prolog 99% of the time. (A retry loop corrects generated errors, if any.)
 
 For question-answering, the OpenAI realtime model generates satisfactory answers to user queries from the generated Prolog output. Note that for any real production system there should be a well-crafted 'eval' suite to truly gauge the performance.
-
 
 
 
